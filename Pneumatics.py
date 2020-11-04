@@ -10,22 +10,22 @@ class Piston:
     valve = []      #valve to control
 
     def __init__():
-        pass
+        super().__init()
 
 class Sensor:
     sensorType = ''
     adress = 0
     active = False
     def __init__():
-        pass
+        super().__init()
 
 class PressureSensor(Sensor):
     def __init__():
-        pass
+        super().__init()
 
 class Reed(Sensor):
     def __init__():
-        pass
+        super().__init()
 
 class Coil():
     coilType = 'DC'
@@ -33,6 +33,7 @@ class Coil():
     voltage = 24
     current = 200/1000
     def __init__():
+        super().__init()
 
 class Valve():
     valveType = ''

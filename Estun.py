@@ -8,7 +8,7 @@ from TactWatchdog import TactWatchdog
 class Estun():
     RTU = minimalmodbus.Instrument()
     Errors = {
-        communication:False,
+        'communication':False,
 
     }
     Velocity = 0
@@ -19,7 +19,7 @@ class Estun():
         try:
             return self.RTU.read_register(305,0,3,False)
         except:
-            Errors['communication']=True
+            Estun.Errors['communication']=True
 
     def __init__(self, comport = "COM1", slaveadress = 1, protocol = ascii, close_port_after_each_call = False, debug = false, baud = 4800, stopbits = 2, parity = "N", bytesize = 7, shared, lock, *args, **kwargs):
         self.RTU = minimalmodbus.Instrument(comport,slaveadress,protocol,close_port_after_each_call,debug)
