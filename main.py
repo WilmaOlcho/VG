@@ -11,7 +11,7 @@ if __name__=="__main__":
         shared = manager.dict({
             'Events':{
                 'ack':False,
-                'Error':False}
+                'Error':False},
             'Error':255*[False],
             'Errors':'',
             'servoModuleFirstAccess':True,
