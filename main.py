@@ -9,13 +9,21 @@ from Estun import Estun
 if __name__=="__main__":
     with Manager() as manager:
         shared = manager.dict({
-            'piston':0
+            'Events':{
+                'ack':False,
+                'Error':False}
+            'Error':255*[False],
+            'Errors':'',
+            'servoModuleFirstAccess':True,
+            'configurationError':False,
+            'TactWDT':False
+
         })
         lock = Lock()
         processes = [
             Process(target = Estun.Run(), args=(shared,lock)),
         ]
         for i in range(len(processes)):
-            p[i].start()
+            processes[i].start()
         for i in range(len(processes)):
-            p[i].join()
+            processes[i].join()
