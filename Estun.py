@@ -41,9 +41,11 @@ class Estun():
             config = configparser.ConfigParser()
             fileFeedback = config.read('servoEstun.ini')
             if fileFeedback == []:
+                lock.acquire()
                 shared['configurationError']=True
                 shared['Errors'] += '/n Servo configuration file not found'
                 shared['Error'][0] = True
+                lock.release()
                 break
             lock.acquire()
             Alive = shared['servoModule']
