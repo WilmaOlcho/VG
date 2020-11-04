@@ -17,11 +17,11 @@ class TactWatchdog():
         self.setpoint()
         if scale == 'ns':
             pass
-        if scale == 'us':
+        elif scale == 'us':
             limitval *= 1000
-        if scale == 'ms':
+        elif scale == 'ms':
             limitval *= 1000000
-        if scale == 's':
+        elif scale == 's':
             limitval *= 1000000000
         while True:
             lock.acquire()
