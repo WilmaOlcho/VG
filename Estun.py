@@ -21,7 +21,8 @@ class Estun():
         except:
             Estun.Errors['communication']=True
 
-    def __init__(self, comport = "COM1", slaveadress = 1, protocol = ascii, close_port_after_each_call = False, debug = false, baud = 4800, stopbits = 2, parity = "N", bytesize = 7, shared, lock, *args, **kwargs):
+# Predefiniowane argumenty powinny zawsze występować później niż zwykłe argumenty, dlatego przesunąłem shared, lock tak aby były pierwszymi argumentami
+    def __init__(self, shared, lock, comport = "COM1", slaveadress = 1, protocol = ascii, close_port_after_each_call = False, debug = False, baud = 4800, stopbits = 2, parity = "N", bytesize = 7, *args, **kwargs):
         self.RTU = minimalmodbus.Instrument(comport,slaveadress,protocol,close_port_after_each_call,debug)
         self.RTU.serial.baudrate = baud
         self.RTU.serial.bytesize = bytesize 
