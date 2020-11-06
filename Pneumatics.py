@@ -9,33 +9,33 @@ class Piston:
     sensors = []    #reed in back, reed in front
     valve = []      #valve to control
 
-    def __init__():
-        super().__init()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 class Sensor:
     sensorType = ''
     adress = 0
     active = False
-    def __init__():
-        super().__init()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
 
 class PressureSensor(Sensor):
-    def __init__():
-        super().__init()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
 
 class Reed(Sensor):
-    def __init__():
-        super().__init()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
 
-class Coil():
-    coilType = 'DC'
-    adress = 0
-    voltage = 24
-    current = 200/1000
-    def __init__():
-        super().__init()
+class Coil:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
+        self.coilType = 'DC'
+        self.adress = 0
+        self.voltage = 24
+        self.current = 200/1000
 
-class Valve():
+class Valve:
     valveType = ''
     coils = []
 
