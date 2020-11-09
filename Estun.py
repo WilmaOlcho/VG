@@ -3,21 +3,9 @@ import minimalmodbus
 import serial
 import configparser
 from TactWatchdog import TactWatchdog
+from PRONET_constants import PRONET_constants
 
-class Estun():
-    def sendRegister(self, address, value):
-        self.RTU.write_register(address,value,0,16,False)
-
-    def ReadJOGVelocity(self, shared, lock):
-        try:
-            return self.RTU.read_register(305,0,3,False)
-        except:
-            errorlevel = 0
-            lock.acquire()
-            shared['Error'][errorlevel] = True
-            shared['Errors'] += 'communication'
-            lock.release()
-
+class Estun(PRONET_constants):
     def __init__(self, shared, lock,
                     comport = "COM1",
                     slaveadress = 1,
@@ -40,7 +28,18 @@ class Estun():
             self.Velocity = self.ReadJOGVelocity(shared, lock)
         except:
             pass ##error
+    def sendRegister(self, address, value):
+        self.RTU.write_register(address,value,0,16,False)
 
+    def ReadJOGVelocity(self, shared, lock):
+        try:
+            return self.RTU.read_register(305,0,3,False)
+        except:
+            errorlevel = 0
+            lock.acquire()
+            shared['Error'][errorlevel] = True
+            shared['Errors'] += 'communication'
+            lock.release()
     @classmethod
     def Run(cls, shared, lock):
         Servo = None

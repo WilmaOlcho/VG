@@ -13,7 +13,7 @@ if __name__=="__main__":
                 'RobotMoving':False,
                 'ServoMoving':False,
                 'anyButtonPressed':False},
-            'Error':255*[False],
+            'Error':256*[False],
             'Errors':'',
             'servoModuleFirstAccess':True,
             'configurationError':False,

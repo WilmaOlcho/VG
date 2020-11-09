@@ -1,3 +1,8 @@
 {
-    "githubPullRequests.pullRequestDescription": "ask"
+    "githubPullRequests.pullRequestDescription": "ask",
+    "githubPullRequests.remotes": [
+        "origin",
+        "upstream",
+        "https://github.com/WilmaOlcho/VG"
+    ]
 }
