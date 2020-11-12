@@ -24,22 +24,69 @@ class Estun(PRONET_constants):
         self.RTU.serial.stopbits = stopbits
         self.RTU.serial.parity = parity
         self.RTU.serial.timeout = 1
-        try:
-            self.Velocity = self.ReadJOGVelocity(shared, lock)
-        except:
-            pass ##error
-    def sendRegister(self, address, value):
-        self.RTU.write_register(address,value,0,16,False)
 
-    def ReadJOGVelocity(self, shared, lock):
-        try:
-            return self.RTU.read_register(305,0,3,False)
-        except:
-            errorlevel = 0
-            lock.acquire()
-            shared['Error'][errorlevel] = True
-            shared['Errors'] += 'communication'
-            lock.release()
+    def sendRegister(self, address, value):
+        return self.RTU.write_register(address,value,0,16,False)
+
+    def readRegister(self, address):
+        return self.RTU.read_register(address,0,3,False)
+
+    def parameterType(self, parameter = CurrentAlarm):
+        return parameter[-1]
+
+    def valueType(self, parameter = CurrentAlarm):
+        return parameter[1][0]
+
+    def parameterMask(self, parameter = CurrentAlarm, bitonly=False):
+        if parameterType(parameter) == 'bit' or parameterType(parameter) == 'bin' or bitonly:
+            if parameter[1][1] == 0:
+                return 0b1110
+            if parameter[1][1] == 1:
+                return 0b1101
+            if parameter[1][1] == 2:
+                return 0b1011
+            if parameter[1][1] == 3:
+                return 0b0111
+        elif parameterType(parameter) == "hex":
+            if parameter[1][1] == 0:
+                return 0xFFF0
+            if parameter[1][1] == 1:
+                return 0xFF0F
+            if parameter[1][1] == 2:
+                return 0xF0FF
+            if parameter[1][1] == 3:
+                return 0x0FFF 
+        else:
+            return 0
+    
+    def parameterAddress(self, parameter = CurrentAlarm):
+        return parameter[0]
+
+    def invertedReducedMask(self, parameter):
+        mask = not parameterMask(parameter)
+        if parameterType(parameter) == 'hex':
+            mask /= 0xF
+        return mask
+
+    def readParameter(self, parameter):
+        if parameterType == WRITE_ONLY:
+            return False
+        else:
+            Value = readRegister(parameterAddress)
+            if not valueType=='int':
+                Value *= invertedReducedMask(parameter)
+            return Value
+
+    def setParameter(self, parameter = CurrentAlarm, value = 0):
+        if parameterType == READ_ONLY:
+            return False
+        else:
+            if not valueType=='int':
+                currentValue = readRegister(parameterAddress)
+                currentValue &= parameterMask(parameter)
+                writeValue = currentValue + (value * invertedReducedMask(parameter))
+            sendRegister(parameterAddress,writeValue)
+
     @classmethod
     def Run(cls, shared, lock):
         Servo = None

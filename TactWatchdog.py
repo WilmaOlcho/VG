@@ -105,18 +105,18 @@ if __name__=='__main__': ##Test
     @lockDecorator
     def decproc(shared, lock, *args, **kwargs):
         shared['Events']['ff'] = False
-        print("Zuparomana")
+        print("decproc1")
     @lockDecorator
     def decproc2(shared, lock, *args, **kwargs):
         shared['Events']['ack'] = True
-        print("Giuseppe")
-    TactWatchdog.WDT(shared, lock, errToRaise = 'doopa', limitval = 3)
-    TactWatchdog.WDT(shared, lock, caption = 'doopa2', limitval = 8)
+        print("decproc2")
+    TactWatchdog.WDT(shared, lock, errToRaise = 'ERR1', limitval = 3)
+    TactWatchdog.WDT(shared, lock, caption = 'TACT1EXCEEDED', limitval = 8)
     TactWatchdog.WDT(shared, lock, errToRaise = 'Servo', limitval = 10000, scale = 'ms', errorlevel = 3)
-    TactWatchdog.WDT(shared, lock, caption = 'ESTUN leci w trabke', limitval = 20, scale = 's',eventToCatch = '-ff', additionalFuncOnCatch = decproc2)
-    TactWatchdog.WDT(shared, lock, errToRaise = 'sd', limitval = 10, scale = 's')
+    TactWatchdog.WDT(shared, lock, caption = 'ESTUN working', limitval = 20, scale = 's',eventToCatch = '-ff', additionalFuncOnCatch = decproc2)
+    TactWatchdog.WDT(shared, lock, errToRaise = 'ERR2', limitval = 10, scale = 's')
     TactWatchdog.WDT(shared, lock, limitval = 4, scale = 's')
-    TactWatchdog.WDT(shared, lock, errToRaise = 'gebo', limitval = 4, scale = 's', additionalFuncOnExceed = decproc)
+    TactWatchdog.WDT(shared, lock, errToRaise = 'ERR3', limitval = 4, scale = 's', additionalFuncOnExceed = decproc)
     dt = True
     last = ''
     while dt:
