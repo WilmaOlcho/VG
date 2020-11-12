@@ -1,6 +1,6 @@
 from multiprocessing import Process, Manager, Lock
 from time import sleep
-from Estun import Estun
+from Estun import MyEstun
 
 
 
@@ -53,7 +53,7 @@ if __name__=="__main__":
         })
         lock = Lock()
         processes = [
-            Process(target = Estun.Run, args=(shared,lock)),
+            Process(target = MyEstun.Run, args=(shared,lock)),
         ]
         for i in range(len(processes)):
             processes[i].start()

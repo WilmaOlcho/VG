@@ -2,11 +2,13 @@ from multiprocessing import Process, Manager, Lock
 import minimalmodbus
 import serial
 import configparser
+import sys
+import time
 from TactWatchdog import TactWatchdog
 from pronet_constants import Pronet_constants
 from modbus_constants import Modbus_constants
 
-class Estun(Pronet_constants, Modbus_constants):
+class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
     def __init__(self, shared, lock,
                     comport = "COM1",
                     slaveadress = 1,
@@ -26,9 +28,18 @@ class Estun(Pronet_constants, Modbus_constants):
         self.RTU.serial.stopbits = stopbits
         self.RTU.serial.parity = parity
         self.RTU.serial.timeout = 1
+        self.Lock = lock
+        self.Shared = shared
 
     def sendRegister(self, address, value):
-        return self.RTU.write_register(address,value,0,self.WRITE_REGISTER,False)
+        try:
+            return self.RTU.write_register(address,value,0,self.WRITE_REGISTER,False)
+        except:
+            self.Lock.acquire()
+            self.Shared['Errors'] += sys.exc_info()[0]
+            self.Lock.release()
+            return None
+
 
     def readRegister(self, address):
         return self.RTU.read_register(address,0,self.READ_HOLDING_REGISTERS,False)
@@ -75,7 +86,7 @@ class Estun(Pronet_constants, Modbus_constants):
 
     def readParameter(self, parameter):
         if self.parameterType == self.WRITE_ONLY:
-            return False
+            return None
         else:
             Value = self.readRegister(self.parameterAddress)
             if not self.valueType=='int':
@@ -92,12 +103,51 @@ class Estun(Pronet_constants, Modbus_constants):
                 writeValue = currentValue + (value * self.invertedReducedMask(parameter))
             self.sendRegister(self.parameterAddress,writeValue)
 
+class MyEstun():
+
+    def __init__(self, shared, lock):
+        super().__init__(self, shared, lock)
+        self.Servo = None
+        self.config = configparser.ConfigParser()
+        self.servobak = configparser.ConfigParser()
+        self.Shared = shared
+        self.Lock = lock
+
+    def ServoIsNone(self, config):
+        with config['COMSETTINGS'] as COMSETTINGS:
+            self.Servo = Estun(self.Shared, self.Lock,
+                        comport = COMSETTINGS['comport'],
+                        slaveadress = COMSETTINGS['adress'],
+                        protocol = COMSETTINGS['protocol'],
+                        close_port_after_each_call = COMSETTINGS['close_port_after_each_call'] == 'True',
+                        debug = COMSETTINGS['debug'] == 'True',
+                        baud = COMSETTINGS.getboolean('baudrate'),
+                        stopbits = COMSETTINGS.getboolean('stopbits'),
+                        parity = COMSETTINGS['parity'],
+                        bytesize = COMSETTINGS.getboolean('bytesize'))
+
+    def ServoFirstAccess(self, Servo, servobak):
+        bakparams = {'SERVOPARAMS':{}}
+        for n in range(1000):
+            data = Servo.read_register(n)
+            if data is not None:
+                bakparams['SERVOPARAMS'][str(n)] = data
+                self.servobak.write('servobak'+ time.time() +'.ini')
+                    #    with config['SERVOPARAMETERS'] as SERVOPARAMETERS:
+                    #        for n, param in enumerate(SERVOPARAMETERS):
+                    #            Servo.sendRegister(adress=int(param),value=int(SERVOPARAMETERS[param]))
+                    #        lock.acquire()
+                    #        shared['servoModuleFirstAccess'] = False
+                    #        lock.release()
+
+    def ServoLoop(self):
+        pass
+
     @classmethod
     def Run(cls, shared, lock):
-        Servo = None
-        while True:
-            config = configparser.ConfigParser()
-            fileFeedback = config.read('servoEstun.ini')
+        control = cls(shared, lock)
+        while True:   
+            fileFeedback = control.config.read('servoEstun.ini')
             if fileFeedback == []:
                 lock.acquire()
                 shared['configurationError']=True
@@ -109,31 +159,16 @@ class Estun(Pronet_constants, Modbus_constants):
             Alive = shared['servoModule']
             lock.release()
             if Alive:
-                if Servo is None:
-                    with config['COMSETTINGS'] as COMSETTINGS:
-                        Servo = cls(shared, lock,
-                            comport = COMSETTINGS['comport'],
-                            slaveadress = COMSETTINGS['adress'],
-                            protocol = COMSETTINGS['protocol'],
-                            close_port_after_each_call = COMSETTINGS['close_port_after_each_call'] == 'True',
-                            debug = COMSETTINGS['debug'] == 'True',
-                            baud = COMSETTINGS.getboolean('baudrate'),
-                            stopbits = COMSETTINGS.getboolean('stopbits'),
-                            parity = COMSETTINGS['parity'],
-                            bytesize = COMSETTINGS.getboolean('bytesize'))
+                if control.Servo is None:
+                    control.ServoIsNone(fileFeedback)
                 else:
-                    lock.acquire()
+                    lock.acquire(control.config)
                     firstAccess = shared['servoModuleFirstAccess']
                     lock.release()
                     if firstAccess == True:
-                        with config['SERVOPARAMETERS'] as SERVOPARAMETERS:
-                            for param in SERVOPARAMETERS:
-                                Servo.sendRegister(adress=int(param),value=int(SERVOPARAMETERS[param]))
-                            lock.acquire()
-                            shared['servoModuleFirstAccess'] = False
-                            lock.release()
+                        control.ServoFirstAccess(control.Servo,control.servobak)
                     else:
-                        pass
+                        control.ServoLoop()
             else:
                 break
 
