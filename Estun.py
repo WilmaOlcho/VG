@@ -4,9 +4,10 @@ import serial
 import configparser
 import sys
 import time
-from TactWatchdog import TactWatchdog
+from TactWatchdog import TactWatchdog as WDT
 from pronet_constants import Pronet_constants
 from modbus_constants import Modbus_constants
+from blank import BlankFunc
 
 class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
     def __init__(self, shared, lock,
@@ -104,14 +105,68 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
             self.sendRegister(self.parameterAddress,writeValue)
 
 class MyEstun():
+    class procedures(object):
+        @staticmethod
+        def homing(instance):
+            def writeInLambda(variable, value):
+                variable = value
+                return None
+            if instance.timer == None: instance.timer = WDT.WDT(instance.Shared, instance.Lock, scale = 's',limitval = 30, errToRaise='Homing Time exceeded', errorlevel=10)
+            if instance.readDOG(instance):
+                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['homing'], False), instance)
+                instance.timer.Destruct()
+            else:
+                with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['MODBUS']['stringval']) as IsTrue:
+                    if IsTrue(instance,'TGON'):
+                        instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['SHOM'], False), instance)
+                    else:
+                        instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['SHOM'], True), instance)
+            # homing key reaction:
+            #   set homing input on servo for a while, resets when servo runs
+            #   looking for DOG input for 30s
+            #   DOG input destructs timer and close homing procedure 
 
+        @staticmethod
+        def step(instance):
+            pass
+        @staticmethod
+        def reset(instance):
+            pass
+        @staticmethod
+        def readDOG(instance):
+            pass
+        @staticmethod
+        def withLock(instance, func = BlankFunc, *args, **kwargs):
+            instance.Lock.acquire()
+            result = func(*args, **kwargs)
+            instance.Lock.release()
+            return result
+        @staticmethod
+        def IOControl(instance):
+            pass
+            
     def __init__(self, shared, lock):
         super().__init__(self, shared, lock)
+        self.control_switch = {
+            'procedure':{
+                'homing':self.procedures.homing,
+                'step':self.procedures.step,
+                'reset':self.procedures.reset,
+                'DOG':self.procedures.readDOG
+            }
+        } 
         self.Servo = None
         self.config = configparser.ConfigParser()
         self.servobak = configparser.ConfigParser()
         self.Shared = shared
         self.Lock = lock
+    
+    def ServoLoop(self):
+        with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['stringval']) as IsTrue:
+            if IsTrue(self,'homing'): self.control_switch['homing'](self)
+            if IsTrue(self,'step'): self.control_switch['step'](self)
+            if IsTrue(self,'reset'): self.control_switch['reset'](self)
+            if IsTrue(self,'DOG'): self.control_switch['DOG'](self)
 
     def ServoIsNone(self, config):
         with config['COMSETTINGS'] as COMSETTINGS:
@@ -126,22 +181,20 @@ class MyEstun():
                         parity = COMSETTINGS['parity'],
                         bytesize = COMSETTINGS.getboolean('bytesize'))
 
-    def ServoFirstAccess(self, Servo, servobak):
+    def ServoFirstAccess(self, Servo, servobak, config):
         bakparams = {'SERVOPARAMS':{}}
         for n in range(1000):
             data = Servo.read_register(n)
             if data is not None:
                 bakparams['SERVOPARAMS'][str(n)] = data
-                self.servobak.write('servobak'+ time.time() +'.ini')
-                    #    with config['SERVOPARAMETERS'] as SERVOPARAMETERS:
-                    #        for n, param in enumerate(SERVOPARAMETERS):
-                    #            Servo.sendRegister(adress=int(param),value=int(SERVOPARAMETERS[param]))
-                    #        lock.acquire()
-                    #        shared['servoModuleFirstAccess'] = False
-                    #        lock.release()
-
-    def ServoLoop(self):
-        pass
+        self.servobak.read_dict(bakparams)
+        self.servobak.write('servobak'+ time.time() +'.ini')
+        with config['SERVOPARAMETERS'] as SERVOPARAMETERS:
+            for n, param in enumerate(SERVOPARAMETERS):
+                    Servo.sendRegister(adress=int(param),value=int(SERVOPARAMETERS[param]))
+                    self.Lock.acquire()
+                    self.Shared['servoModuleFirstAccess'] = False
+                    self.Lock.release()
 
     @classmethod
     def Run(cls, shared, lock):
@@ -166,7 +219,7 @@ class MyEstun():
                     firstAccess = shared['servoModuleFirstAccess']
                     lock.release()
                     if firstAccess == True:
-                        control.ServoFirstAccess(control.Servo,control.servobak)
+                        control.ServoFirstAccess(control.Servo, control.servobak, control.config)
                     else:
                         control.ServoLoop()
             else:

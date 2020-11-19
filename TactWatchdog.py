@@ -1,9 +1,7 @@
 import time
 from threading import Thread
 from multiprocessing import Process, Manager, Lock
-
-def BlankFunc(*args, **kwargs):
-    pass
+from blank import BlankFunc
 
 class TactWatchdog():
     scaleMultiplier = {
@@ -21,6 +19,10 @@ class TactWatchdog():
         super().__init__(*args, **kwargs)
         self.timePoint = 0
         self.setpoint()
+        self.destruct = False
+
+    def Destruct(self):
+        self.destruct = True
 
     def setpoint(self):
         self.timePoint = time.time_ns()
@@ -60,6 +62,8 @@ class TactWatchdog():
                 shared['Error'][errorlevel] = True
                 lock.release()
                 additionalFuncOnExceed(shared, lock, *args, **kwargs)
+                break
+            if self.destruct:
                 break
 
     @classmethod
