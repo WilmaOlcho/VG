@@ -49,7 +49,12 @@ if __name__=="__main__":
                 'ZoneError':False,
                 'SafetyArmed':False,
                 'SafetyError':False,
-                'LockingJig':False}
+                'LockingJig':False},
+            'Estun':{
+                'homing':False,
+                'step':False,
+                'DOG':False,
+                'reset':False}
         })
         lock = Lock()
         processes = [

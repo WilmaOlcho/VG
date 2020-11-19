@@ -104,16 +104,18 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
                 writeValue = currentValue + (value * self.invertedReducedMask(parameter))
             self.sendRegister(self.parameterAddress,writeValue)
 
+def writeInLambda(variable, value):
+    variable = value
+    return None
+
 class MyEstun():
     class procedures(object):
         @staticmethod
         def homing(instance):
-            def writeInLambda(variable, value):
-                variable = value
-                return None
-            if instance.timer == None: instance.timer = WDT.WDT(instance.Shared, instance.Lock, scale = 's',limitval = 30, errToRaise='Homing Time exceeded', errorlevel=10)
+            if instance.timerhoming == None: instance.timerhoming = WDT.WDT(instance.Shared, instance.Lock, scale = 's',limitval = 30, errToRaise='Servo Homing Time exceeded', errorlevel=10)
             if instance.readDOG(instance):
                 instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['homing'], False), instance)
+                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['homingComplete'], True), instance)
                 instance.timer.Destruct()
             else:
                 with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['MODBUS']['stringval']) as IsTrue:
@@ -128,10 +130,28 @@ class MyEstun():
 
         @staticmethod
         def step(instance):
-            pass
+            if instance.timerstep == None: instance.timerstep = WDT.WDT(instance.Shared, instance.Lock, scale = 's',limitval = 10, errToRaise='Servo Step Time exceeded', errorlevel=10)
+            with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['MODBUS']['stringval']) as IsTrue:
+                if IsTrue(instance,'TGON'):
+                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['PCON'], False), instance)
+                else:
+                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['PCON'], True), instance)
+                if IsTrue(instance,'COIN'):
+                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['step'], False), instance)
+                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['stepComplete'], True), instance)
+                    instance.timer.Destruct()
+            #step key reaction:
+            #set PCON for a while, reset whne servo runs
+            #looking for 10s for coin input
+            #coin input destructs wdt timer and close step procedure
+
         @staticmethod
-        def reset(instance):
-            pass
+        def resetAlarm(instance):
+            if instance.readParameter(instance,instance.CurrentAlarm) != 0:
+                instance.writeParameter(instance,instance.ClearCurrentAlarms, 0x01)
+                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['reset'], False), instance)
+                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['resetDone'], True), instance)
+
         @staticmethod
         def readDOG(instance):
             pass
@@ -151,7 +171,7 @@ class MyEstun():
             'procedure':{
                 'homing':self.procedures.homing,
                 'step':self.procedures.step,
-                'reset':self.procedures.reset,
+                'reset':self.procedures.resetAlarm,
                 'DOG':self.procedures.readDOG
             }
         } 
