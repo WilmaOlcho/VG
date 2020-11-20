@@ -7,7 +7,7 @@ import time
 from TactWatchdog import TactWatchdog as WDT
 from pronet_constants import Pronet_constants
 from modbus_constants import Modbus_constants
-from blank import BlankFunc
+from misc import BlankFunc, writeInLambda, dictKeyByVal
 
 class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
     def __init__(self, shared, lock,
@@ -40,7 +40,6 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
             self.Shared['Errors'] += sys.exc_info()[0]
             self.Lock.release()
             return None
-
 
     def readRegister(self, address):
         return self.RTU.read_register(address,0,self.READ_HOLDING_REGISTERS,False)
@@ -104,10 +103,6 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
                 writeValue = currentValue + (value * self.invertedReducedMask(parameter))
             self.sendRegister(self.parameterAddress,writeValue)
 
-def writeInLambda(variable, value):
-    variable = value
-    return None
-
 class MyEstun():
     class procedures(object):
         @staticmethod
@@ -148,23 +143,75 @@ class MyEstun():
         @staticmethod
         def resetAlarm(instance):
             if instance.readParameter(instance,instance.CurrentAlarm) != 0:
-                instance.writeParameter(instance,instance.ClearCurrentAlarms, 0x01)
-                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['reset'], False), instance)
-                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['resetDone'], True), instance)
+                with instance.procedures.withLock as lock:
+                    instance.writeParameter(instance,instance.ClearCurrentAlarms, 0x01)
+                    lock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['reset'], False), instance)
+                    lock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['resetDone'], True), instance)
 
         @staticmethod
         def readDOG(instance):
-            pass
+            with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['MODBUS']['stringval']) as IsTrue:
+                return IsTrue(instance,'ORG')
+
         @staticmethod
         def withLock(instance, func = BlankFunc, *args, **kwargs):
             instance.Lock.acquire()
             result = func(*args, **kwargs)
             instance.Lock.release()
             return result
+
+        @staticmethod
+        def getIOTerminals(instance):
+            default = None
+            terminals = { 
+            'S-ON':default,
+            'P-CON':default,
+            'P-OT':default,
+            'N-OT':default,
+            'ALMRST':default,
+            'CLR':default,
+            'P-CL':default,
+            'N-CL':default,
+            'G-SEL':default,
+            'JDPOS-JOG+':default,
+            'JDPOS-JOG-':default,
+            'JDPOS-HALT':default,
+            'HmRef':default,
+            'SHOM':default,
+            'ORG':default,
+            '/COIN/VMCP':default,
+            '/TGON':default,
+            '/S-RDY':default,
+            '/CLT':default,
+            '/BK':default,
+            '/PGC':default,
+            'OT':default,
+            '/RD':default,
+            '/HOME':default}
+            with config['SERVOPARAMETERS'] as SERVOPARAMETERS:
+                with instance.servo as srv:
+                    getTerminal = lambda srv, terminal: dictKeyByVal(srv.dterminals[terminal+'v'],srv.InvertedReducedMask(srv.dterminals[terminal]) & SERVOPARAMETERS[str(srv.dterminals[terminal][0])])
+                    for val in srv.dterminalTypes:
+                        terminals[getTerminal(srv,str(val[0]))] = val
+            return terminals
+
         @staticmethod
         def IOControl(instance):
-            pass
-            
+            terminals = instance.procedures.getIOTerminals(instance)
+            with instance.Shared['Estun']['MODBUS'] as IOport:
+                with instance.Servo as srv:
+                    buscontrol = [srv.BusCtrlInputNode1_14,srv.BusCtrlInputNode1_15,
+                                    srv.BusCtrlInputNode1_16,srv.BusCtrlInputNode1_17,
+                                    srv.BusCtrlInputNode1_39,srv.BusCtrlInputNode1_40,
+                                    srv.BusCtrlInputNode1_41,srv.BusCtrlInputNode1_42]
+                    for n, param in enumerate(srv.dterminalTypes[:8]):
+                        if instance.config[buscontrol[n][0]] & srv.InvertedReducedMask(buscontrol[n]):
+                            srv.setParameter(param,IOPort[dictKeyByVal(terminals,srv.dterminalTypes[n])])
+                        else:
+                            IOPort[dictKeyByVal(terminals,srv.dterminalTypes[n])] = srv.readParameter(param)
+                    for n, param in enumerate(srv.dterminalTypes[8:]):
+                            IOPort[dictKeyByVal(terminals,srv.dterminalTypes[n])] = srv.readParameter(param)
+
     def __init__(self, shared, lock):
         super().__init__(self, shared, lock)
         self.control_switch = {
@@ -172,21 +219,21 @@ class MyEstun():
                 'homing':self.procedures.homing,
                 'step':self.procedures.step,
                 'reset':self.procedures.resetAlarm,
-                'DOG':self.procedures.readDOG
-            }
-        } 
+                'DOG':self.procedures.readDOG,
+                'IOControl':self.procedures.IOcontrol}} 
         self.Servo = None
         self.config = configparser.ConfigParser()
         self.servobak = configparser.ConfigParser()
         self.Shared = shared
         self.Lock = lock
-    
+
     def ServoLoop(self):
         with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['stringval']) as IsTrue:
             if IsTrue(self,'homing'): self.control_switch['homing'](self)
             if IsTrue(self,'step'): self.control_switch['step'](self)
             if IsTrue(self,'reset'): self.control_switch['reset'](self)
             if IsTrue(self,'DOG'): self.control_switch['DOG'](self)
+            self.control_switch['DOGIOControl'](self)
 
     def ServoIsNone(self, config):
         with config['COMSETTINGS'] as COMSETTINGS:
