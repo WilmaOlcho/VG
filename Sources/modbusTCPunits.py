@@ -637,6 +637,11 @@ class ADAMModule(object):
             **self.AnalogParameters['common'],
             **self.CommonParameters
         }
+        self.ADAM6015 = {
+            **self.ADAM6217, #without ch7
+            'ModuleName1':(0x40211,('int',0),'r'),
+            'ModuleName2':(0x40212,('int',0),'r')
+        }
 
 class ADAM6052(ModbusTCPClient):
     def __init__(self, *args, **kwargs):
