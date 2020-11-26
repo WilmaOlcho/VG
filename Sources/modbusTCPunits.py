@@ -908,11 +908,12 @@ class ADAM6052(ModbusClient):
     def read_coil(self, input = 'I0'):
         if isinstance(input,str):
             if 'I' in input or 'DI' in input:
+                pass #dosome
         if isinstance(input,int):
             try:
                 address = self.addresses['DI' + re.search('\d')][0]
             except:
-
+                pass
         super().read_coil(address,)
         else:
             WithLock(self,lambda: writeInLambda(self.Shared[Errors],self.Shared[Errors]+"invalid input value for read_coil method"))
