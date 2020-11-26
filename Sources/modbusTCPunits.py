@@ -914,7 +914,7 @@ class ADAM6052(ModbusClient):
                 address = self.addresses['DI' + re.search('\d')][0]
             except:
                 pass
-        super().read_coil(address,)
+            super().read_coil(address,None) ##
         else:
             WithLock(self,lambda: writeInLambda(self.Shared[Errors],self.Shared[Errors]+"invalid input value for read_coil method"))
             WithLock(self,lambda: writeInLambda(self.Shared[Error][2],True))
