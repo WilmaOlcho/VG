@@ -1,6 +1,6 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from misc import *
-from functools import wraps
+#from misc import *
+from functools import wraps, partial
 import re
 
 class ADAMModule(object):
@@ -899,40 +899,157 @@ class ADAM6052(ModbusClient):
 
     def __getAddress(self, parameterName):
         try:
-            return self.addresses[parameterName]
+            return self.addresses[parameterName][0]
         except:
-            self.WithLock(self, writeInLambda, self.Shared['Errors'], self.Shared['Errors']+"Key not found in ADAM 6052 parameters")
-            self.WithLock(self, writeInLambda, self.Shared['Error'][2], True)
-            return None 
+            raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 __getAddress, parameter = ' + str(parameterName))
 
-    def read_coils(self, input = 'DI0', NumberOfCoils = 1):
+    def read_coils(self, input = 'DI0', NumberOfCoils = 1, **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 read_coils, parameter = ' + str(input))
+        accessError = partial(ParameterIsNotReadable, self.Shared, self.Lock, 'ADAM 6052 read_coils, parameter = ' + str(input))
+        access = ''
         if isinstance(input,str):
             if 'I' in input or 'DI' in input:
                 try:
-                    address = self.addresses['DI' + str().join(re.findall(r'\d',input))][0]
+                    address, pType, access = self.addresses['DI' + str().join(re.findall(r'\d',input))][0]
                 except:
-                    raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 read_coils, parameter = ' + str(input))
+                    raise inputError
+            else:
+                raise inputError
         if isinstance(input,int):
             try:
-                address = self.addresses['DI' + str(input)][0]
+                address, pType, access = self.addresses['DI' + str(input)][0]
             except:
-                raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 read_coils, parameter = ' + str(input))
-        return super().read_coils(address,NumberOfCoils)
+                raise inputError
+        if access == 'w':
+            raise accessError
+        return super().read_coils(address, NumberOfCoils, **kwargs)
 
-    def write_coils(self, startCoil = 'DO0', listOfValues = [True]):
+    def write_coils(self, startCoil = 'DO0', listOfValues = [True], **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 write_coils, parameter = ' + str(startCoil))
+        accessError = partial(ParameterIsNotWritable, self.Shared, self.Lock, 'ADAM 6052 write_coils, parameter = ' + str(startCoil))
+        access = ''
         if isinstance(startCoil,str):
             if 'O' in startCoil or 'DO' in startCoil:
                 try:
-                    address = self.addresses['DO' + str().join(re.findall(r'\d',startCoil))][0]
+                    address, pType, access = self.addresses['DO' + str().join(re.findall(r'\d',startCoil))]
                 except:
-                    raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 write_coils, parameter = ' + str(startCoil))
+                    raise inputError
+            else:
+                raise inputError
         if isinstance(startCoil,int):
             try:
-                address = self.addresses['DO' + str(startCoil)][0]
+                address, pType, access = self.addresses['DO' + str(startCoil)][0]
             except:
-                raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 write_coils, parameter = ' + str(startCoil))
-        return super().write_coils(address,listOfValues)
- 
+                raise inputError
+        if access == 'r':
+            raise accessError
+        return super().write_coils(address, listOfValues, **kwargs)
+
+    def write_coil(self, Coil, value, **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 write_coil, parameter = ' + str(Coil))
+        accessError = partial(ParameterIsNotWritable, self.Shared, self.Lock, 'ADAM 6052 write_coil, parameter = ' + str(Coil))
+        access = ''
+        if isinstance(Coil,str):
+            if 'O' in Coil or 'DO' in Coil:
+                try:
+                    address, pType, access = self.addresses['DO' + str().join(re.findall(r'\d',Coil))]
+                except:
+                    raise inputError
+            else:
+                raise inputError
+        if isinstance(Coil,int):
+            try:
+                address, pType, access = self.addresses['DO' + str(Coil)][0]
+            except:
+                raise inputError
+        if access == 'r':
+            raise accessError
+        return super().write_coil(address, value, **kwargs)
+
+    def read_discrete_inputs(self, InputToStartFrom = 'DI0', count=1, **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 read_discrete_inputs, parameter = ' + str(InputToStartFrom))
+        accessError = partial(ParameterIsNotReadable, self.Shared, self.Lock, 'ADAM 6052 read_discrete_inputs, parameter = ' + str(InputToStartFrom))
+        access = ''
+        if isinstance(InputToStartFrom,str):
+            if 'I' in InputToStartFrom or 'DI' in InputToStartFrom:
+                try:
+                    address, pType, access = self.addresses['DI' + str().join(re.findall(r'\d',InputToStartFrom))]
+                except:
+                    raise inputError
+            else:
+                raise inputError
+        if isinstance(InputToStartFrom,int):
+            try:
+                address, pType, access = self.addresses['DO' + str(InputToStartFrom)][0]
+            except:
+                raise inputError
+        if access == 'w':
+            raise accessError
+        return super().read_discrete_inputs(address, count, **kwargs)
+    
+    def read_holding_registers(self, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 read_holding_registers, parameter = ' + str(registerToStartFrom))
+        accessError = partial(ParameterIsNotReadable, self.Shared, self.Lock, 'ADAM 6052 read_holding_registers, parameter = ' + str(registerToStartFrom))
+        access = ''
+        if isinstance(registerToStartFrom,str):
+            try:
+                address, pType, access = self.addresses[registerToStartFrom]
+            except:
+                raise inputError
+        else:
+            raise inputError
+        if access == 'w':
+            raise accessError
+        return super().read_holding_registers(address, count, **kwargs)
+
+    def read_input_registers(self, registerToStartFrom = 'DIvalue', count=1, **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 read_input_registers, parameter = ' + str(registerToStartFrom))
+        accessError = partial(ParameterIsNotReadable, self.Shared, self.Lock, 'ADAM 6052 read_input_registers, parameter = ' + str(registerToStartFrom))
+        access = ''
+        if isinstance(registerToStartFrom,str):
+            try:
+                address, pType, access = self.addresses[registerToStartFrom]
+            except:
+                raise inputError
+        else:
+            raise inputError
+        if access == 'w':
+            raise accessError
+        return super().read_input_registers(address, count, **kwargs)
+    
+    ##def readwrite_registers(self, *args, **kwargs):## very unnecessary
+
+    def write_register(self, register = '', value = 0xFFFF, **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 write_register, parameter = ' + str(register))
+        accessError = partial(ParameterIsNotWritable, self.Shared, self.Lock, 'ADAM 6052 write_register, parameter = ' + str(register))
+        access = ''
+        if isinstance(register,str):
+            try:
+                address, pType, access = self.addresses[register]
+            except:
+                raise inputError
+        else:
+            raise inputError
+        if access == 'r':
+            raise accessError
+        return super().write_registers(address, value, **kwargs)
+
+    def write_registers(self, registerToStartFrom = '', values = [0xFFFF], **kwargs):
+        inputError = partial(ParameterDictionaryError, self.Shared, self.Lock, 'ADAM 6052 write_registers, parameter = ' + str(registerToStartFrom))
+        accessError = partial(ParameterIsNotWritable, self.Shared, self.Lock, 'ADAM 6052 write_registers, parameter = ' + str(registerToStartFrom))
+        access = ''
+        if isinstance(registerToStartFrom,str):
+            try:
+                address, pType, access = self.addresses[registerToStartFrom]
+            except:
+                raise inputError
+        else:
+            raise inputError
+        if access == 'r':
+            raise accessError
+        return super().write_registers(address, values, **kwargs)
+
+    ##def mask_write_register(self, *args, **kwargs):##
 
 
 class ParameterDictionaryError(ValueError):
@@ -940,6 +1057,23 @@ class ParameterDictionaryError(ValueError):
         self.args = args
         lock.acquire()
         shared['Errors'] += 'Invalid key for parameter dictionary in ' + str().join(map(str, *args))
+        shared['Error'][2] = True #High errorLevel
+        lock.release()
+    
+class ParameterIsNotReadable(TypeError):
+    def __init__(self, shared, lock, *args, **kwargs):
+        self.args = args
+        lock.acquire()
+        shared['Errors'] += 'Trying to read from write-only register in ' + str().join(map(str, *args))
+        shared['Error'][2] = True #High errorLevel
+        lock.release()
+    
+    
+class ParameterIsNotWritable(TypeError):
+    def __init__(self, shared, lock, *args, **kwargs):
+        self.args = args
+        lock.acquire()
+        shared['Errors'] += 'Trying to write to read-only register in ' + str().join(map(str, *args))
         shared['Error'][2] = True #High errorLevel
         lock.release()
     
