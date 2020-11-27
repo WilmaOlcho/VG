@@ -1087,3 +1087,6 @@ class ParameterIsNotWritable(TypeError):
         shared['Error'][2] = True #High errorLevel
         lock.release()
     
+class SICKGmod(ModbusClient):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
