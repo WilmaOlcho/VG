@@ -888,7 +888,7 @@ class ADAM6052(ModbusClient):
         self.Shared = shared
         self.Lock = lock
 
-    def WithLock(self, f):
+    def WithLock(self, f, *args, **kwargs):
         @wraps(f)
         def wrapper(self, *args, **kwargs):
             self.Lock.acquire()
@@ -901,27 +901,45 @@ class ADAM6052(ModbusClient):
         try:
             return self.addresses[parameterName]
         except:
-            WithLock(self,lambda: writeInLambda(self.Shared[Errors],self.Shared[Errors]+"Key not found in ADAM 6052 parameters"))
-            WithLock(self,lambda: writeInLambda(self.Shared[Error][2],True))
+            self.WithLock(self, writeInLambda, self.Shared['Errors'], self.Shared['Errors']+"Key not found in ADAM 6052 parameters")
+            self.WithLock(self, writeInLambda, self.Shared['Error'][2], True)
             return None 
 
-    def read_coil(self, input = 'I0'):
+    def read_coils(self, input = 'DI0', NumberOfCoils = 1):
         if isinstance(input,str):
             if 'I' in input or 'DI' in input:
-                pass #dosome
+                try:
+                    address = self.addresses['DI' + str().join(re.findall(r'\d',input))][0]
+                except:
+                    raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 read_coils, parameter = ' + str(input))
         if isinstance(input,int):
             try:
-                address = self.addresses['DI' + re.search('\d')][0]
+                address = self.addresses['DI' + str(input)][0]
             except:
-                pass
-            super().read_coil(address,None) ##
-        else:
-            WithLock(self,lambda: writeInLambda(self.Shared[Errors],self.Shared[Errors]+"invalid input value for read_coil method"))
-            WithLock(self,lambda: writeInLambda(self.Shared[Error][2],True))
-            return None 
+                raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 read_coils, parameter = ' + str(input))
+        return super().read_coils(address,NumberOfCoils)
+
+    def write_coils(self, startCoil = 'DO0', listOfValues = [True]):
+        if isinstance(startCoil,str):
+            if 'O' in startCoil or 'DO' in startCoil:
+                try:
+                    address = self.addresses['DO' + str().join(re.findall(r'\d',startCoil))][0]
+                except:
+                    raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 write_coils, parameter = ' + str(startCoil))
+        if isinstance(startCoil,int):
+            try:
+                address = self.addresses['DO' + str(startCoil)][0]
+            except:
+                raise ParameterDictionaryError(self.Shared, self.Lock, 'ADAM 6052 write_coils, parameter = ' + str(startCoil))
+        return super().write_coils(address,listOfValues)
+ 
 
 
 class ParameterDictionaryError(ValueError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, shared, lock, *args, **kwargs):
         self.args = args
+        lock.acquire()
+        shared['Errors'] += 'Invalid key for parameter dictionary in ' + str().join(map(str, *args))
+        shared['Error'][2] = True #High errorLevel
+        lock.release()
     
