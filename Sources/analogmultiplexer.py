@@ -2,11 +2,10 @@ from modbusTCPunits import ADAMDataAcquisitionModule
 import configparser
 from TactWatchdog import TactWatchdog as WDT
 from misc import BlankFunc
+from StaticLock import SharedLocker
 
-class AnalogMultiplexer(ADAMDataAcquisitionModule):
-    def __init__(self, shared, lock, settingFilePath, *args, **kwargs):
-        self.Shared = shared
-        self.Lock = lock
+class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
+    def __init__(self, settingFilePath, *args, **kwargs):
         self.config = configparser.ConfigParser()
         self.parameters = self.config.read(settingFilePath)
         with self.parameters['AnalogMultiplexer'] as AmuxParameters:
@@ -14,7 +13,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
             self.moduleName = AmuxParameters['moduleName']
             self.Port = AmuxParameters['Port']
             self.myOutput = AmuxParameters['BindOutput']
-        super().__init__(shared, lock, self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
+        super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
 
     def __prohibitedBehaviour(self, action = BlankFunc, *args, **kwargs):
         self.currentState = self.getState()

@@ -1,4 +1,3 @@
-from multiprocessing import Process, Manager, Lock
 import minimalmodbus
 import serial
 import configparser
@@ -8,19 +7,20 @@ from TactWatchdog import TactWatchdog as WDT
 from pronet_constants import Pronet_constants
 from modbus_constants import Modbus_constants
 from misc import BlankFunc, writeInLambda, dictKeyByVal
+from Staticlock import SharedLocker
 
-class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
-    def __init__(self, shared, lock,
-                    comport = "COM1",
-                    slaveadress = 1,
-                    protocol = ascii,
-                    close_port_after_each_call = False,
-                    debug = False,
-                    baud = 4800,
-                    stopbits = 2,
-                    parity = "N",
-                    bytesize = 7,
-                    *args, **kwargs):
+class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException, SharedLocker):
+    def __init__(self,
+            comport = "COM1",
+            slaveadress = 1,
+            protocol = ascii,
+            close_port_after_each_call = False,
+            debug = False,
+            baud = 4800,
+            stopbits = 2,
+            parity = "N",
+            bytesize = 7,
+            *args, **kwargs):
         super().__init__(self)
         #Pronet_constants.__init__(self)
         self.RTU = minimalmodbus.Instrument(comport,slaveadress,protocol,close_port_after_each_call,debug)
@@ -29,16 +29,14 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
         self.RTU.serial.stopbits = stopbits
         self.RTU.serial.parity = parity
         self.RTU.serial.timeout = 1
-        self.Lock = lock
-        self.Shared = shared
 
     def sendRegister(self, address, value):
         try:
             return self.RTU.write_register(address,value,0,self.WRITE_REGISTER,False)
         except:
-            self.Lock.acquire()
-            self.Shared['Errors'] += sys.exc_info()[0]
-            self.Lock.release()
+            self.lock.acquire()
+            self.shared['Errors'] += sys.exc_info()[0]
+            self.lock.release()
             return None
 
     def readRegister(self, address):
@@ -107,17 +105,17 @@ class MyEstun():
     class procedures(object):
         @staticmethod
         def homing(instance):
-            if instance.timerhoming == None: instance.timerhoming = WDT.WDT(instance.Shared, instance.Lock, scale = 's',limitval = 30, errToRaise='Servo Homing Time exceeded', errorlevel=10)
+            if instance.timerhoming == None: instance.timerhoming = WDT.WDT(instance.shared, instance.lock, scale = 's',limitval = 30, errToRaise='Servo Homing Time exceeded', errorlevel=10)
             if instance.readDOG(instance):
-                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['homing'], False), instance)
-                instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['homingComplete'], True), instance)
+                instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Estun']['homing'], False), instance)
+                instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Events']['Estun']['homingComplete'], True), instance)
                 instance.timer.Destruct()
             else:
-                with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['MODBUS']['stringval']) as IsTrue:
+                with lambda instance, stringval: instance.procedures.WithLock(instance, lambda instance, stringval: instance.shared['Estun']['MODBUS']['stringval']) as IsTrue:
                     if IsTrue(instance,'TGON'):
-                        instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['SHOM'], False), instance)
+                        instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Estun']['MODBUS']['SHOM'], False), instance)
                     else:
-                        instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['SHOM'], True), instance)
+                        instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Estun']['MODBUS']['SHOM'], True), instance)
             # homing key reaction:
             #   set homing input on servo for a while, resets when servo runs
             #   looking for DOG input for 30s
@@ -125,15 +123,15 @@ class MyEstun():
 
         @staticmethod
         def step(instance):
-            if instance.timerstep == None: instance.timerstep = WDT.WDT(instance.Shared, instance.Lock, scale = 's',limitval = 10, errToRaise='Servo Step Time exceeded', errorlevel=10)
-            with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['MODBUS']['stringval']) as IsTrue:
+            if instance.timerstep == None: instance.timerstep = WDT.WDT(instance.shared, instance.lock, scale = 's',limitval = 10, errToRaise='Servo Step Time exceeded', errorlevel=10)
+            with lambda instance, stringval: instance.procedures.WithLock(instance, lambda instance, stringval: instance.shared['Estun']['MODBUS']['stringval']) as IsTrue:
                 if IsTrue(instance,'TGON'):
-                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['PCON'], False), instance)
+                    instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Estun']['MODBUS']['PCON'], False), instance)
                 else:
-                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['MODBUS']['PCON'], True), instance)
+                    instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Estun']['MODBUS']['PCON'], True), instance)
                 if IsTrue(instance,'COIN'):
-                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['step'], False), instance)
-                    instance.withLock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['stepComplete'], True), instance)
+                    instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Estun']['step'], False), instance)
+                    instance.WithLock(instance, lambda instance: writeInLambda(instance.shared['Events']['Estun']['stepComplete'], True), instance)
                     instance.timer.Destruct()
             #step key reaction:
             #set PCON for a while, reset whne servo runs
@@ -143,51 +141,44 @@ class MyEstun():
         @staticmethod
         def resetAlarm(instance):
             if instance.readParameter(instance,instance.CurrentAlarm) != 0:
-                with instance.procedures.withLock as lock:
+                with instance.procedures.WithLock as lock:
                     instance.writeParameter(instance,instance.ClearCurrentAlarms, 0x01)
-                    lock(instance, lambda instance: writeInLambda(instance.Shared['Estun']['reset'], False), instance)
-                    lock(instance, lambda instance: writeInLambda(instance.Shared['Events']['Estun']['resetDone'], True), instance)
+                    lock(instance, lambda instance: writeInLambda(instance.shared['Estun']['reset'], False), instance)
+                    lock(instance, lambda instance: writeInLambda(instance.shared['Events']['Estun']['resetDone'], True), instance)
 
         @staticmethod
         def readDOG(instance):
-            with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['MODBUS']['stringval']) as IsTrue:
+            with lambda instance, stringval: instance.procedures.WithLock(instance, lambda instance, stringval: instance.shared['Estun']['MODBUS']['stringval']) as IsTrue:
                 return IsTrue(instance,'ORG')
-
-        @staticmethod
-        def withLock(instance, func = BlankFunc, *args, **kwargs):
-            instance.Lock.acquire()
-            result = func(*args, **kwargs)
-            instance.Lock.release()
-            return result
 
         @staticmethod
         def getIOTerminals(instance):
             default = None
             terminals = { 
-            'S-ON':default,
-            'P-CON':default,
-            'P-OT':default,
-            'N-OT':default,
-            'ALMRST':default,
-            'CLR':default,
-            'P-CL':default,
-            'N-CL':default,
-            'G-SEL':default,
-            'JDPOS-JOG+':default,
-            'JDPOS-JOG-':default,
-            'JDPOS-HALT':default,
-            'HmRef':default,
-            'SHOM':default,
-            'ORG':default,
-            '/COIN/VMCP':default,
-            '/TGON':default,
-            '/S-RDY':default,
-            '/CLT':default,
-            '/BK':default,
-            '/PGC':default,
-            'OT':default,
-            '/RD':default,
-            '/HOME':default}
+                'S-ON':default,
+                'P-CON':default,
+                'P-OT':default,
+                'N-OT':default,
+                'ALMRST':default,
+                'CLR':default,
+                'P-CL':default,
+                'N-CL':default,
+                'G-SEL':default,
+                'JDPOS-JOG+':default,
+                'JDPOS-JOG-':default,
+                'JDPOS-HALT':default,
+                'HmRef':default,
+                'SHOM':default,
+                'ORG':default,
+                '/COIN/VMCP':default,
+                '/TGON':default,
+                '/S-RDY':default,
+                '/CLT':default,
+                '/BK':default,
+                '/PGC':default,
+                'OT':default,
+                '/RD':default,
+                '/HOME':default}
             with config['SERVOPARAMETERS'] as SERVOPARAMETERS:
                 with instance.servo as srv:
                     getTerminal = lambda srv, terminal: dictKeyByVal(srv.dterminals[terminal+'v'],srv.InvertedReducedMask(srv.dterminals[terminal]) & SERVOPARAMETERS[str(srv.dterminals[terminal][0])])
@@ -198,9 +189,9 @@ class MyEstun():
         @staticmethod
         def IOControl(instance):
             terminals = instance.procedures.getIOTerminals(instance)
-            with instance.Shared['Estun']['MODBUS'] as IOport:
+            with instance.shared['Estun']['MODBUS'] as IOport:
                 with instance.Servo as srv:
-                    buscontrol = [srv.BusCtrlInputNode1_14,srv.BusCtrlInputNode1_15,
+                    buscontrol = [  srv.BusCtrlInputNode1_14,srv.BusCtrlInputNode1_15,
                                     srv.BusCtrlInputNode1_16,srv.BusCtrlInputNode1_17,
                                     srv.BusCtrlInputNode1_39,srv.BusCtrlInputNode1_40,
                                     srv.BusCtrlInputNode1_41,srv.BusCtrlInputNode1_42]
@@ -212,8 +203,8 @@ class MyEstun():
                     for n, param in enumerate(srv.dterminalTypes[8:]):
                             IOPort[dictKeyByVal(terminals,srv.dterminalTypes[n])] = srv.readParameter(param)
 
-    def __init__(self, shared, lock):
-        super().__init__(self, shared, lock)
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
         self.control_switch = {
             'procedure':{
                 'homing':self.procedures.homing,
@@ -224,11 +215,9 @@ class MyEstun():
         self.Servo = None
         self.config = configparser.ConfigParser()
         self.servobak = configparser.ConfigParser()
-        self.Shared = shared
-        self.Lock = lock
 
     def ServoLoop(self):
-        with lambda instance, stringval: instance.procedures.withLock(instance, lambda instance, stringval: instance.Shared['Estun']['stringval']) as IsTrue:
+        with lambda instance, stringval: instance.WithLock(instance, lambda instance, stringval: instance.shared['Estun']['stringval']) as IsTrue:
             if IsTrue(self,'homing'): self.control_switch['homing'](self)
             if IsTrue(self,'step'): self.control_switch['step'](self)
             if IsTrue(self,'reset'): self.control_switch['reset'](self)
@@ -237,16 +226,15 @@ class MyEstun():
 
     def ServoIsNone(self, config):
         with config['COMSETTINGS'] as COMSETTINGS:
-            self.Servo = Estun(self.Shared, self.Lock,
-                        comport = COMSETTINGS['comport'],
-                        slaveadress = COMSETTINGS['adress'],
-                        protocol = COMSETTINGS['protocol'],
-                        close_port_after_each_call = COMSETTINGS['close_port_after_each_call'] == 'True',
-                        debug = COMSETTINGS['debug'] == 'True',
-                        baud = COMSETTINGS.getboolean('baudrate'),
-                        stopbits = COMSETTINGS.getboolean('stopbits'),
-                        parity = COMSETTINGS['parity'],
-                        bytesize = COMSETTINGS.getboolean('bytesize'))
+            self.Servo = Estun( comport = COMSETTINGS['comport'],
+                                slaveadress = COMSETTINGS['adress'],
+                                protocol = COMSETTINGS['protocol'],
+                                close_port_after_each_call = COMSETTINGS['close_port_after_each_call'] == 'True',
+                                debug = COMSETTINGS['debug'] == 'True',
+                                baud = COMSETTINGS.getboolean('baudrate'),
+                                stopbits = COMSETTINGS.getboolean('stopbits'),
+                                parity = COMSETTINGS['parity'],
+                                bytesize = COMSETTINGS.getboolean('bytesize'))
 
     def ServoFirstAccess(self, Servo, servobak, config):
         bakparams = {'SERVOPARAMS':{}}
@@ -259,32 +247,30 @@ class MyEstun():
         with config['SERVOPARAMETERS'] as SERVOPARAMETERS:
             for n, param in enumerate(SERVOPARAMETERS):
                     Servo.sendRegister(adress=int(param),value=int(SERVOPARAMETERS[param]))
-                    self.Lock.acquire()
-                    self.Shared['servoModuleFirstAccess'] = False
-                    self.Lock.release()
+                    self.WithLock(lambda: writeInLambda(self.shared['servoModuleFirstAccess'], False))
 
     @classmethod
-    def Run(cls, shared, lock):
-        control = cls(shared, lock)
+    def Run(cli, *args, **kwargs):
+        control = cli(*args, **kwargs)
         while True:   
             fileFeedback = control.config.read('servoEstun.ini')
             if fileFeedback == []:
-                lock.acquire()
+                self.lock.acquire()
                 shared['configurationError']=True
                 shared['Errors'] += '/n Servo configuration file not found'
                 shared['Error'][0] = True
-                lock.release()
+                self.lock.release()
                 break
-            lock.acquire()
-            Alive = shared['servoModule']
-            lock.release()
+            self.lock.acquire()
+            Alive = self.shared['servoModule']
+            self.lock.release()
             if Alive:
                 if control.Servo is None:
                     control.ServoIsNone(fileFeedback)
                 else:
-                    lock.acquire(control.config)
+                    self.lock.acquire(control.config)
                     firstAccess = shared['servoModuleFirstAccess']
-                    lock.release()
+                    self.lock.release()
                     if firstAccess == True:
                         control.ServoFirstAccess(control.Servo, control.servobak, control.config)
                     else:
