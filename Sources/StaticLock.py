@@ -9,15 +9,27 @@ class SharedLocker(object):
     pistons = None
     safety = None
     estun = None
+    mux = None
+    estunModbus = None
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if SharedLocker.mux == None:
+            SharedLocker.mux = Manager().dict({
+                'busy':False,
+                'ready':False,
+                'onpath':False,
+                'acquire':False,
+                'release':False,
+                'Alive':False})
         if SharedLocker.events == None:
             SharedLocker.events = Manager().dict({
                 'ack':False,
                 'Error':False,
                 'RobotMoving':True,
                 'ServoMoving':False,
-                'anyButtonPressed':False})
+                'anyButtonPressed':False,
+                'EstunResetDone':False,
+                'closeApplication':False})
         if SharedLocker.errorlevel == None:
             SharedLocker.errorlevel = Manager().dict({
                 0:False,    1:False,    2:False,    3:False,    4:False,    5:False,    6:False,    7:False,    8:False,    9:False,    10:False,   11:False,   12:False,   13:False,   14:False,   15:False, 
@@ -75,7 +87,16 @@ class SharedLocker(object):
                 'homing':False,
                 'step':False,
                 'DOG':False,
-                'reset':False})
+                'reset':False,
+                'servoModuleFirstAccess':True,
+                'Alive':True})
+        if SharedLocker.estunModbus == None:
+            SharedLocker.estunModbus = Manager().dict({
+                'TGON':False,
+                'SHOM':False,
+                'PCON':False,
+                'COIN':False
+            })
         if SharedLocker.shared == None:
             SharedLocker.shared = Manager().dict({
                 'Errors':'',

@@ -14,9 +14,10 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
             self.Port = AmuxParameters['Port']
             self.myOutput = AmuxParameters['BindOutput']
         super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
+        self.currentState = self.getState()
 
     def __prohibitedBehaviour(self, action = BlankFunc, *args, **kwargs):
-        self.currentState = self.getState()
+        self.getState()
         prohibited = False
         if action == self.write_coil:
             if not self.currentState[2]:
@@ -32,12 +33,14 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
         return prohibited  
     
     def getState(self):
-        return self.read_coils('DO0',3)
+        self.currentState = self.read_coils('DO0',3)
+        return self.currentState
 
     def isBusy(self):
-        if self.getState()[2]:
+        self.getState()
+        if self.currentState[2]:
             return True
-        if self.getState()[self.myOutput] or not any(self.getState()):
+        if self.currentState[self.myOutput] or not any(self.currentState):
             return False
         else:
             return True
@@ -69,16 +72,64 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
 class MyMultiplexer(AnalogMultiplexer, SharedLocker):
     def __init__(self, settingFilePath, *args, **kwargs):
         super().__init__(settingFilePath, *args, **kwargs)
+        self.lock.acquire()
+        self.mux['Alive'] = True
+        self.lock.release()
+        self.MUXloop()
+
+    def isBusy(self):
+        result = super().isBusy() 
+        self.lock.acquire()
+        self.mux['busy'] = result
+        self.lock.release()
+        return result
+
+    def getState(self):
+        self.currentState = super().getState()
+        self.lock.acquire()
+        self.mux['onpath'] = self.currentState[self.myOutput]
+        if self.mux['onpath']:
+            self.mux['ready'] = self.currentState[2]
+        self.lock.release()
+        
+    def _acquire(self): 
+        if not self.isBusy():
+            if self.currentState[self.myOutput]:
+                if self.currentState[2]:
+                    self.lock.acquire()
+                    self.mux['acquire'] = False
+                    self.lock.release()
+                else:
+                    self.activatePath()
+            else:
+                self.setPath()
+
+    def _release(self):
+        if self.currentState[self.myOutput]:
+            if not self.currentState[2]:
+                if self.currentState[self.myOutput]:
+                    self.resetPath()
+                else:
+                    self.lock.acquire()
+                    self.mux['release'] = False
+                    self.lock.release()
+            else:
+                self.releasePath()
 
     def MUXloop(self, *args, **kwargs):
-        pass
-
-
+        while True:
+            self.lock.acquire()
+            self.Alive = self.mux['Alive']
+            self.lock.release()
+            if not self.Alive: break
+            self.getState()
+            if self.mux['acquire']: self._acquire()
+            if self.mux['release']: self._release()
 
 class AnalogMultiplexerError(Exception, SharedLocker):
     def __init__(self, *args, **kwargs):
         self.args = args
-        SharedLocker.lock.acquire()
-        SharedLocker.shared['Errors'] += 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
-        SharedLocker.shared['Error'][2] = True #High errorLevel
-        SharedLocker.lock.release()
+        self.lock.acquire()
+        self.shared['Errors'] += 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
+        self.shared['Error'][2] = True #High errorLevel
+        self.lock.release()

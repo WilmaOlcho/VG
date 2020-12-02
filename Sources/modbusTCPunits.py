@@ -1039,27 +1039,62 @@ class ADAMDataAcquisitionModule(ModbusClient, SharedLocker):
 class ParameterDictionaryError(ValueError, SharedLocker):
     def __init__(self, *args, **kwargs):
         self.args = args
-        SharedLocker.lock.acquire()
-        SharedLocker.shared['Errors'] += 'Invalid key for parameter dictionary in ' + ''.join(map(str, *args))
-        SharedLocker.shared['Error'][2] = True #High errorLevel
-        SharedLocker.lock.release()
+        self.lock.acquire()
+        self.shared['Errors'] += 'Invalid key for parameter dictionary in ' + ''.join(map(str, *args))
+        self.shared['Errorlevel'][2] = True #High errorLevel
+        self.lock.release()
     
 class ParameterIsNotReadable(TypeError, SharedLocker):
     def __init__(self, *args, **kwargs):
         self.args = args
-        SharedLocker.lock.acquire()
-        SharedLocker.shared['Errors'] += 'Trying to read from write-only register in ' + ''.join(map(str, *args))
-        SharedLocker.shared['Error'][2] = True #High errorLevel
-        SharedLocker.lock.release()
+        self.lock.acquire()
+        self.shared['Errors'] += 'Trying to read from write-only register in ' + ''.join(map(str, *args))
+        self.shared['Errorlevel'][2] = True #High errorLevel
+        self.lock.release()
 
 class ParameterIsNotWritable(TypeError, SharedLocker):
     def __init__(self, *args, **kwargs):
         self.args = args
-        SharedLocker.lock.acquire()
-        SharedLocker.shared['Errors'] += 'Trying to write to read-only register in ' + ''.join(map(str, *args))
-        SharedLocker.shared['Error'][2] = True #High errorLevel
-        SharedLocker.lock.release()
+        self.lock.acquire()
+        self.shared['Errors'] += 'Trying to write to read-only register in ' + ''.join(map(str, *args))
+        self.shared['Errorlevel'][2] = True #High errorLevel
+        self.lock.release()
     
 class SICKGmod(ModbusClient, SharedLocker):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+class KawasakiRobot(object):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.status = {
+            'StatusRegister':(4030,('int',0),'r'),
+            'StatusRegisterValues':{
+                
+            }
+        }
+        self.position = {
+            'CurrentPositionNumber':(4020,('int',0),'r'),
+            'DestinationPositionNumber':(4021,('int',0),'r')
+        }
+        self.correction = {
+            'MaxValues':{
+                'A':(4008,('int',0),'rw'),
+                'X':(4009,('int',0),'rw'),
+                'Y':(4010,('int',0),'rw'),
+                'Z':(4011,('int',0),'rw')
+            },
+            'A':(4000,('int',0),'rw'),
+            '00A':(4001,('int',0),'rw'),
+            'X':(4002,('int',0),'rw'),
+            '00X':(4003,('int',0),'rw'),
+            'Y':(4004,('int',0),'rw'),
+            '00Y':(4005,('int',0),'rw'),
+            'Z':(4006,('int',0),'rw'),
+            '00Z':(4007,('int',0),'rw')}
+
+        
+
+
+
+
