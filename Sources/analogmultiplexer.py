@@ -123,8 +123,11 @@ class MyMultiplexer(AnalogMultiplexer, SharedLocker):
             self.lock.release()
             if not self.Alive: break
             self.getState()
-            if self.mux['acquire']: self._acquire()
-            if self.mux['release']: self._release()
+            self.lock.acquire()
+            ack, rel = self.mux['acquire'], self.mux['release']
+            self.lock.release()
+            if ack: self._acquire()
+            if rel: self._release()
 
 class AnalogMultiplexerError(Exception, SharedLocker):
     def __init__(self, *args, **kwargs):
