@@ -15,7 +15,7 @@ class SharedLocker(object):
             SharedLocker.events = Manager().dict({
                 'ack':False,
                 'Error':False,
-                'RobotMoving':False,
+                'RobotMoving':True,
                 'ServoMoving':False,
                 'anyButtonPressed':False})
         if SharedLocker.errorlevel == None:
@@ -85,8 +85,8 @@ class SharedLocker(object):
         if SharedLocker.lock == None:
             SharedLocker.lock = Lock()
 
-    def WithLock(self, function = BlankFunc, *args, **kwargs):
-        SharedLocker.lock.acquire()
+    def WithLock(self, function, *args, **kwargs):
+        self.lock.acquire()
         result = function(*args, **kwargs)
-        SharedLocker.lock.release()
+        self.lock.release()
         return result
