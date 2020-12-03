@@ -8,13 +8,21 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
     def __init__(self, settingFilePath, *args, **kwargs):
         self.config = configparser.ConfigParser()
         self.parameters = self.config.read(settingFilePath)
-        with self.parameters['AnalogMultiplexer'] as AmuxParameters:
-            self.IPAddress = AmuxParameters['IPAddress']
-            self.moduleName = AmuxParameters['moduleName']
-            self.Port = AmuxParameters['Port']
-            self.myOutput = AmuxParameters['BindOutput']
-        super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
-        self.currentState = self.getState()
+        try:
+            with self.parameters['AnalogMultiplexer'] as AmuxParameters:
+                self.IPAddress = AmuxParameters.get('IPAddress')
+                self.moduleName = AmuxParameters.get('moduleName')
+                self.Port = AmuxParameters.getint('Port')
+                self.myOutput = AmuxParameters.getint('BindOutput')
+        except:
+            self.lock.acquire()
+            self.events['Error'] = True
+            self.errorlevel[10] = True
+            self.shared['Errors'] += '/nAnalog multiplexer init error - Error while reading config file'
+            self.lock.release()
+        finally:
+            super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
+            self.currentState = self.getState()
 
     def __prohibitedBehaviour(self, action = BlankFunc, *args, **kwargs):
         self.getState()

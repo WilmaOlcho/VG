@@ -1,6 +1,7 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from StaticLock import SharedLocker
 from functools import wraps, partial
+from pymodbus.transaction import ModbusAsciiFramer
 import re
 
 class ADAMModule(object):
@@ -1068,32 +1069,217 @@ class KawasakiRobot(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.status = {
-            'StatusRegister':(4030,('int',0),'r'),
-            'StatusRegisterValues':{
-                
-            }
-        }
+            'StatusRegister0':(0x0030,('int',0),'r'), #dec 48
+            'StatusRegister1':(0x0038,('int',0),'r'), #dec 56
+            'StatusRegister2':(0x0040,('int',0),'r'), #dec 64
+            'StatusRegister3':(0x0048,('int',0),'r'), #dec 72
+            'StatusRegister4':(0x0050,('int',0),'r'), #dec 80
+            'StatusRegister5':(0x0058,('int',0),'r'), #dec 88
+            'StatusRegister6':(0x0060,('int',0),'r'), #dec 96
+            'StatusRegister7':(0x0068,('int',0),'r'), #dec 104
+            'StatusRegister8':(0x0070,('int',0),'r'), #dec 112
+            'StatusRegister9':(0x0078,('int',0),'r'), #dec 120
+            'StatusRegister10':(0x0080,('int',0),'r'), #dec 128
+            'StatusRegister11':(0x0088,('int',0),'r'), #dec 136
+            'StatusRegister12':(0x0090,('int',0),'r'), #dec 144
+            'StatusRegister13':(0x0098,('int',0),'r'), #dec 152
+            'StatusRegisterValuesMasks':{
+                "st0":0b00000001,
+                "st1":0b00000010,
+                "st2":0b00000100,
+                "st3":0b00001000,
+                "st4":0b00010000,
+                "st5":0b00100000,
+                "st6":0b01000000,
+                "st7":0b10000000}}
         self.position = {
-            'CurrentPositionNumber':(4020,('int',0),'r'),
-            'DestinationPositionNumber':(4021,('int',0),'r')
-        }
+            'CurrentPositionNumber':(0x0FA0,('int',0),'r'), #4000
+            'DestinationPositionNumber':(0x0FA8,('int',0),'rw')} #4008
         self.correction = {
             'MaxValues':{
-                'A':(4008,('int',0),'rw'),
-                'X':(4009,('int',0),'rw'),
-                'Y':(4010,('int',0),'rw'),
-                'Z':(4011,('int',0),'rw')
+                'A':(0x0FB0,('int',0),'rw'), #4016
+                'X':(0x0FB8,('int',0),'rw'), #4024
+                'Y':(0x0FC0,('int',0),'rw'), #4032
+                'Z':(0x0FC8,('int',0),'rw') #4040
             },
-            'A':(4000,('int',0),'rw'),
-            '00A':(4001,('int',0),'rw'),
-            'X':(4002,('int',0),'rw'),
-            '00X':(4003,('int',0),'rw'),
-            'Y':(4004,('int',0),'rw'),
-            '00Y':(4005,('int',0),'rw'),
-            'Z':(4006,('int',0),'rw'),
-            '00Z':(4007,('int',0),'rw')}
-
+            'A':(0x0FD0,('int',0),'rw'), #4048
+            '00A':(0x0FD8,('int',0),'rw'), #4056
+            'X':(0x0FE0,('int',0),'rw'), #4064
+            '00X':(0x0FE8,('int',0),'rw'), #4072
+            'Y':(0x0FF0,('int',0),'rw'), #4080
+            '00Y':(0x0FF8,('int',0),'rw'), #4088
+            'Z':(0x1000,('int',0),'rw'), #4096
+            '00Z':(0x1008,('int',0),'rw')} #4104
+        self.inputs = {
+            'I1-8':(0x03E9,('int',0),'r'), #1001
+            'I9-16':(0x03F1,('int',0),'r'), #1009
+            'I17-24':(0x03F9,('int',0),'r'), #1017
+            'I25-32':(0x0401,('int',0),'r'), #1025
+            'I1':(0x03E9,('bit',0),'r'), #1001
+            'I2':(0x03EA,('bit',0),'r'), #1002
+            'I3':(0x03EB,('bit',0),'r'), #1003
+            'I4':(0x03EC,('bit',0),'r'), #1004
+            'I5':(0x03ED,('bit',0),'r'), #1005
+            'I6':(0x03EE,('bit',0),'r'), #1006
+            'I7':(0x03EF,('bit',0),'r'), #1007
+            'I8':(0x03F0,('bit',0),'r'), #1008
+            'I9':(0x03F1,('bit',0),'r'), #1009
+            'I10':(0x03F2,('bit',0),'r'), #1010
+            'I11':(0x03F3,('bit',0),'r'), #1011
+            'I12':(0x03F4,('bit',0),'r'), #1012
+            'I13':(0x03F5,('bit',0),'r'), #1013
+            'I14':(0x03F6,('bit',0),'r'), #1014
+            'I15':(0x03F7,('bit',0),'r'), #1015
+            'I16':(0x03F8,('bit',0),'r'), #1016
+            'I17':(0x03F9,('bit',0),'r'), #1017
+            'I18':(0x03FA,('bit',0),'r'), #1018
+            'I19':(0x03FB,('bit',0),'r'), #1019
+            'I20':(0x03FC,('bit',0),'r'), #1020
+            'I21':(0x03FD,('bit',0),'r'), #1021
+            'I22':(0x03FE,('bit',0),'r'), #1022
+            'I23':(0x03FF,('bit',0),'r'), #1023
+            'I24':(0x0400,('bit',0),'r'), #1024
+            'I25':(0x0401,('bit',0),'r'), #1025
+            'I26':(0x0402,('bit',0),'r'), #1026
+            'I27':(0x0403,('bit',0),'r'), #1027
+            'I28':(0x0404,('bit',0),'r'), #1028
+            'I29':(0x0405,('bit',0),'r'), #1029
+            'I30':(0x0406,('bit',0),'r'), #1030
+            'I31':(0x0407,('bit',0),'r'), #1031
+            'I32':(0x0408,('bit',0),'r')} #1032
+        self.outputs = {
+            'O1-8':(0x0001,('int',0),'rw'), #1
+            'O9-16':(0x0009,('int',0),'rw'), #9
+            'O17-24':(0x0011,('int',0),'rw'), #17
+            'O25-32':(0x0019,('int',0),'rw'), #25
+            'O1':(0x0001,('bit',0),'rw'), #1
+            'O2':(0x0002,('bit',0),'rw'), #2
+            'O3':(0x0003,('bit',0),'rw'), #3
+            'O4':(0x0004,('bit',0),'rw'), #4
+            'O5':(0x0005,('bit',0),'rw'), #5
+            'O6':(0x0006,('bit',0),'rw'), #6
+            'O7':(0x0007,('bit',0),'rw'), #7
+            'O8':(0x0008,('bit',0),'rw'), #8
+            'O9':(0x0009,('bit',0),'rw'), #9
+            'O10':(0x000A,('bit',0),'rw'), #10
+            'O11':(0x000B,('bit',0),'rw'), #11
+            'O12':(0x000C,('bit',0),'rw'), #12
+            'O13':(0x000D,('bit',0),'rw'), #13
+            'O14':(0x000E,('bit',0),'rw'), #14
+            'O15':(0x000F,('bit',0),'rw'), #15
+            'O16':(0x0010,('bit',0),'rw'), #16
+            'O17':(0x0011,('bit',0),'rw'), #17
+            'O18':(0x0012,('bit',0),'rw'), #18
+            'O19':(0x0013,('bit',0),'rw'), #19
+            'O20':(0x0014,('bit',0),'rw'), #20
+            'O21':(0x0015,('bit',0),'rw'), #21
+            'O22':(0x0016,('bit',0),'rw'), #22
+            'O23':(0x0017,('bit',0),'rw'), #23
+            'O24':(0x0018,('bit',0),'rw'), #24
+            'O25':(0x0019,('bit',0),'rw'), #25
+            'O26':(0x001A,('bit',0),'rw'), #26
+            'O27':(0x001B,('bit',0),'rw'), #27
+            'O28':(0x001C,('bit',0),'rw'), #28
+            'O29':(0x001D,('bit',0),'rw'), #29
+            'O30':(0x001E,('bit',0),'rw'), #30
+            'O31':(0x001F,('bit',0),'rw'), #31
+            'O32':(0x0020,('bit',0),'rw')} #32
+        self.command = {
+            'command':(0x1010,('bit',0),'rw'), #4112
+            'command_values':{
+                'NOP':0,
+                '':1
+            }} 
+        self.addresses = {
+            **self.command,
+            **self.inputs,
+            **self.outputs,
+            **self.position,
+            **self.correction,
+            **self.status
+        }
         
+class KawasakiVG(ModbusClient, SharedLocker):
+    def __init__(self, address = '192.168.0.1', port = 9200, *args, **kwargs):
+        super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
+        self.addresses = KawasakiRobot().addresses
+        
+    def __getAddress(self, parameterName):
+        try:
+            return self.addresses[parameterName][0]
+        except:
+            raise ParameterDictionaryError('KawasakiVG __getAddress, parameter = ' + str(parameterName))
+
+    def read_coils(self, input = 'I1', NumberOfCoils = 1, **kwargs):
+        access = ''
+        if isinstance(input,str):
+            if 'I' in input:
+                try:
+                    with self.addresses['I' + ''.join(re.findall(r'\d',input))] as ParameterTuple:
+                        address, access = ParameterTuple[::len(ParameterTuple)-1]
+                except:
+                    raise ParameterDictionaryError('KawasakiVG read_coils, parameter = ' + input)
+            else:
+                raise ParameterDictionaryError('KawasakiVG read_coils, parameter = ' + input)
+        if isinstance(input,int):
+            try:
+                with self.addresses['I' + str(input)] as ParameterTuple:
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+            except:
+                raise ParameterDictionaryError('KawasakiVG read_coils, parameter = ' + str(input))
+        if access == 'w':
+            raise ParameterIsNotReadable('KawasakiVG read_coils, parameter = ' + str(input))
+        return super().read_coils(address, NumberOfCoils, **kwargs)
+
+    def write_coil(self, Coil, value, **kwargs):
+        access = ''
+        if isinstance(Coil,str):
+            if 'O' in Coil:
+                try:
+                    with self.addresses['O' + ''.join(re.findall(r'\d',Coil))] as ParameterTuple:
+                        address, access = ParameterTuple[::len(ParameterTuple)-1]
+                except:
+                    raise ParameterDictionaryError('KawasakiVG write_coil, parameter = ' + str(Coil))
+            else:
+                raise ParameterDictionaryError('KawasakiVG write_coil, parameter = ' + str(Coil))
+        if isinstance(Coil,int):
+            try:
+                with self.addresses['O' + str(Coil)] as ParameterTuple:
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+            except:
+                raise ParameterDictionaryError('KawasakiVG write_coil, parameter = ' + str(Coil))
+        if access == 'r':
+            raise ParameterIsNotWritable('KawasakiVG write_coil, parameter = ' + str(Coil))
+        return super().write_coil(address, value, **kwargs)
+
+    def read_holding_registers(self, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
+        access = ''
+        if isinstance(registerToStartFrom,str):
+            try:
+                with self.addresses[registerToStartFrom] as ParameterTuple:
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+            except:
+                raise ParameterDictionaryError('KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+        else:
+            raise ParameterDictionaryError('KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+        if access == 'w':
+            raise ParameterIsNotReadable('KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+        return super().read_holding_registers(address, count, **kwargs)
+
+    def write_register(self, register = '', value = 0xFFFF, **kwargs):
+        access = ''
+        if isinstance(register,str):
+            try:
+                with self.addresses[register] as ParameterTuple:
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+            except:
+                raise ParameterDictionaryError('KawasakiVG write_register, parameter = ' + str(register))
+        else:
+            raise ParameterDictionaryError('KawasakiVG write_register, parameter = ' + str(register))
+        if access == 'r':
+            raise ParameterIsNotWritable('KawasakiVG write_register, parameter = ' + str(register))
+        return super().write_registers(address, value, **kwargs)
+
 
 
 

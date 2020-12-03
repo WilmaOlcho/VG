@@ -11,8 +11,14 @@ class SharedLocker(object):
     estun = None
     mux = None
     estunModbus = None
+    robot = None
+    GPIO = None
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if SharedLocker.robot == None:
+            SharedLocker.robot = Manager().dict({})
+        if SharedLocker.GPIO == None:
+            SharedLocker.GPIO = Manager().dict({})
         if SharedLocker.mux == None:
             SharedLocker.mux = Manager().dict({
                 'busy':False,
