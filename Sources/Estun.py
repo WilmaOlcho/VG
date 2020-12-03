@@ -2,6 +2,7 @@ import minimalmodbus
 import serial
 import configparser
 import sys
+import time
 from functools import lru_cache
 from TactWatchdog import TactWatchdog as WDT
 from pronet_constants import Pronet_constants
@@ -210,10 +211,12 @@ class MyEstun(Estun, SharedLocker):
                 'reset':self.resetAlarm,
                 'DOG':self.readDOG,
                 'IOControl':self.IOControl}} 
+        self.timerhoming = None
+        self.timerstep = None
         self.config = configparser.ConfigParser()
         self.servobak = configparser.ConfigParser()
         fileFeedback = self.config.read(configFile)
-        if fileFeedback == []:
+        if not any(fileFeedback):
             self.lock.acquire()
             self.shared['configurationError']=True
             self.shared['Errors'] += '/n Servo configuration file not found'
@@ -226,14 +229,14 @@ class MyEstun(Estun, SharedLocker):
         self.lock.release()
         COMSETTINGS = self.config['COMSETTINGS']
         super().__init__(   comport = COMSETTINGS['comport'],
-                            slaveadress = COMSETTINGS['adress'],
+                            slaveadress = COMSETTINGS.getint('adress'),
                             protocol = COMSETTINGS['protocol'],
-                            close_port_after_each_call = COMSETTINGS['close_port_after_each_call'] == 'True',
-                            debug = COMSETTINGS['debug'] == 'True',
-                            baud = COMSETTINGS.getboolean('baudrate'),
-                            stopbits = COMSETTINGS.getboolean('stopbits'),
-                            parity = COMSETTINGS['parity'],
-                            bytesize = COMSETTINGS['bytesize'], *args, **kwargs)
+                            close_port_after_each_call = COMSETTINGS.getboolean('close_port_after_each_call') == 'True',
+                            debug = COMSETTINGS.getboolean('debug') == 'True',
+                            baud = COMSETTINGS.getint('baudrate'),
+                            stopbits = COMSETTINGS.getint('stopbits'),
+                            parity = COMSETTINGS.get('parity'),
+                            bytesize = COMSETTINGS.getint('bytesize'), *args, **kwargs)
         while self.Alive:
             self.lock.acquire()
             firstAccess = self.estun['servoModuleFirstAccess']
@@ -244,24 +247,26 @@ class MyEstun(Estun, SharedLocker):
                 self.ServoLoop()
 
     def ServoLoop(self):
-        with lambda instance, stringval: instance.WithLock(instance, lambda instance, stringval: instance.shared['Estun']['stringval']) as IsTrue:
-            if IsTrue(self,'homing'): self.control_switch['homing'](self)
-            if IsTrue(self,'step'): self.control_switch['step'](self)
-            if IsTrue(self,'reset'): self.control_switch['reset'](self)
-            if IsTrue(self,'DOG'): self.control_switch['DOG'](self)
-            self.control_switch['DOGIOControl'](self)
+        self.lock.acquire()
+        homing, step, reset, Dog = self.estun['homing'], self.estun['step'], self.estun['reset'], self.estun['DOG']
+        self.lock.release()
+        if homing: self.control_switch['homing']()
+        if step: self.control_switch['step']()
+        if reset: self.control_switch['reset']()
+        if Dog: self.control_switch['DOG']()
+        self.control_switch['DOGIOControl']()
 
     def ServoFirstAccess(self):
         bakparams = {'SERVOPARAMS':{}}
         for n in range(1000):
-            data = self.read_register(n)
+            data = self.readRegister(n)
             if data is not None:
                 bakparams['SERVOPARAMS'][str(n)] = data
         self.servobak.read_dict(bakparams)
         self.servobak.write('servobak'+ time.time() +'.ini')
         with self.config['SERVOPARAMETERS'] as SERVOPARAMETERS:
             for n, param in enumerate(SERVOPARAMETERS):
-                self.sendRegister(adress=int(param),value=int(SERVOPARAMETERS[param]))
+                self.sendRegister(address=int(param),value=int(SERVOPARAMETERS[param]))
                 self.lock.acquire()
                 self.estun['servoModuleFirstAccess'] = False
                 self.lock.release()
