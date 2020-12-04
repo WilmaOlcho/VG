@@ -1112,9 +1112,7 @@ class KawasakiRobot(object):
             '00Z':(0x1008,('int',0),'rw')} #4104
         self.inputs = {
             'I1-8':(0x03E9,('int',0),'r'), #1001
-            'I9-16':(0x03F1,('int',0),'r'), #1009
-            'I17-24':(0x03F9,('int',0),'r'), #1017
-            'I25-32':(0x0401,('int',0),'r'), #1025
+            'I17-32':(0x03F9,('int',0),'r'), #1017
             'I1':(0x03E9,('bit',0),'r'), #1001
             'I2':(0x03EA,('bit',0),'r'), #1002
             'I3':(0x03EB,('bit',0),'r'), #1003
@@ -1148,10 +1146,8 @@ class KawasakiRobot(object):
             'I31':(0x0407,('bit',0),'r'), #1031
             'I32':(0x0408,('bit',0),'r')} #1032
         self.outputs = {
-            'O1-8':(0x0001,('int',0),'rw'), #1
-            'O9-16':(0x0009,('int',0),'rw'), #9
-            'O17-24':(0x0011,('int',0),'rw'), #17
-            'O25-32':(0x0019,('int',0),'rw'), #25
+            'O1-16':(0x0001,('int',0),'rw'), #1
+            'O17-32':(0x0011,('int',0),'rw'), #17
             'O1':(0x0001,('bit',0),'rw'), #1
             'O2':(0x0002,('bit',0),'rw'), #2
             'O3':(0x0003,('bit',0),'rw'), #3
@@ -1188,7 +1184,8 @@ class KawasakiRobot(object):
             'command':(0x1010,('bit',0),'rw'), #4112
             'command_values':{
                 'NOP':0,
-                '':1
+                'homing':1,
+                'go':2
             }} 
         self.addresses = {
             **self.command,
@@ -1196,8 +1193,7 @@ class KawasakiRobot(object):
             **self.outputs,
             **self.position,
             **self.correction,
-            **self.status
-        }
+            **self.status}
         
 class KawasakiVG(ModbusClient, SharedLocker):
     def __init__(self, address = '192.168.0.1', port = 9200, *args, **kwargs):
@@ -1252,7 +1248,7 @@ class KawasakiVG(ModbusClient, SharedLocker):
             raise ParameterIsNotWritable('KawasakiVG write_coil, parameter = ' + str(Coil))
         return super().write_coil(address, value, **kwargs)
 
-    def read_holding_registers(self, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
+    def read_holding_registers(self, registerToStartFrom = 'command', count=1, **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:

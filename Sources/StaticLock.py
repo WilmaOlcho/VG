@@ -21,7 +21,14 @@ class SharedLocker(object):
                 'homepos':False,
                 'homing':False,
                 'go':False,
-                'setpos':0
+                'setpos':0,
+                'currentpos':0,
+                'activecommand':False
+                'A':0.0,
+                'X':0.0,
+                'Y':0.0,
+                'Z':0.0
+
 
             })
         if SharedLocker.GPIO == None:
