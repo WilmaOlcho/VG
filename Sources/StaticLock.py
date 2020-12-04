@@ -23,7 +23,7 @@ class SharedLocker(object):
                 'go':False,
                 'setpos':0,
                 'currentpos':0,
-                'activecommand':False
+                'activecommand':False,
                 'A':0.0,
                 'X':0.0,
                 'Y':0.0,
