@@ -16,9 +16,33 @@ class SharedLocker(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if SharedLocker.robot == None:
-            SharedLocker.robot = Manager().dict({})
+            SharedLocker.robot = Manager().dict({
+                'Alive':False,
+                'homepos':False,
+                'homing':False,
+                'go':False,
+                'setpos':0
+
+            })
         if SharedLocker.GPIO == None:
-            SharedLocker.GPIO = Manager().dict({})
+            SharedLocker.GPIO = Manager().dict({
+                'somethingChaged':False,
+                'I1':False, 'I2':False, 'I3':False, 'I4':False,
+                'I5':False, 'I6':False, 'I7':False, 'I8':False,
+                'I9':False, 'I10':False, 'I11':False, 'I12':False,
+                'I13':False, 'I14':False, 'I15':False, 'I16':False,
+                'I17':False, 'I18':False, 'I19':False, 'I20':False,
+                'I21':False, 'I22':False, 'I23':False, 'I24':False,
+                'I25':False, 'I26':False, 'I27':False, 'I28':False,
+                'I29':False, 'I30':False, 'I31':False, 'I32':False,
+                'O1':False, 'O2':False, 'O3':False, 'O4':False,
+                'O5':False, 'O6':False, 'O7':False, 'O8':False,
+                'O9':False, 'O10':False, 'O11':False, 'O12':False,
+                'O13':False, 'O14':False, 'O15':False, 'O16':False,
+                'O17':False, 'O18':False, 'O19':False, 'O20':False,
+                'O21':False, 'O22':False, 'O23':False, 'O24':False,
+                'O25':False, 'O26':False, 'O27':False, 'O28':False,
+                'O29':False, 'O30':False, 'O31':False, 'O32':False})
         if SharedLocker.mux == None:
             SharedLocker.mux = Manager().dict({
                 'busy':False,
