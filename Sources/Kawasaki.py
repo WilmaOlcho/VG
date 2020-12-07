@@ -1,6 +1,7 @@
 from modbusTCPunits import KawasakiVG
 from TactWatchdog import TactWatchdog
 from StaticLock import SharedLocker
+from functools import lru_cache
 import configparser
 
 class RobotVG(KawasakiVG, SharedLocker):
@@ -20,23 +21,68 @@ class RobotVG(KawasakiVG, SharedLocker):
             self.lock.release()
         finally:
             super().__init__(self.IPAddress, self.Port, *args, **kwargs)
+            self.Alive = True
             self.lock.acquire()
-            self.robot['Alive'] = True
+            self.robot['Alive'] = self.Alive
             self.lock.release()
             self.Robotloop()
     
     def Robotloop(self):
-        self.IOControl()
-        self.CommandControl()
-        self.misc()
+        while self.Alive:
+            self.IOControl()
+            self.CommandControl()
+            self.misc()
+            self.ErrorCatching()
+            self.lock.acquire()
+            self.Alive = self.robot['Alive']
+            self.lock.release()
+
+    def ErrorCatching(self):
+        ##TODO There are statusRegisters for forbidden operation
+        pass
+
+    @lru_cache(maxsize = 16)
+    def _splitdecimals(self, floatval):
+        result = []
+        result.append(int(floatval))
+        result.append(int((floatval-result[0])*100))
+        return result
 
     def misc(self):
-        cpos = self.read_holding_registers(self.addresses['CurrentPositionNumber'])
+        RobotRegister = []
+        for reg in ['CurrentPositionNumber','A','00A','X','00X','Y','00Y','Z','00Z',
+                    'StatusRegister0',  'StatusRegister1',  'StatusRegister2', 
+                    'StatusRegister3',  'StatusRegister4',  'StatusRegister5', 
+                    'StatusRegister6']:
+            RobotRegister.append(self.read_holding_registers(self.addresses[reg]))
         self.lock.acquire()
-        self.robot['currentpos'] = cpos
-
+        self.robot['currentpos'] = RobotRegister[0]
+        A, X = self._splitdecimals(self.robot['A']), self._splitdecimals(self.robot['X'])
+        Y, Z = self._splitdecimals(self.robot['Y']), self._splitdecimals(self.robot['Z'])
+        self.robot['StatusRegister0'] = RobotRegister[9]
+        self.robot['StatusRegister1'] = RobotRegister[10]
+        self.robot['StatusRegister2'] = RobotRegister[11]
+        self.robot['StatusRegister3'] = RobotRegister[12]
+        self.robot['StatusRegister4'] = RobotRegister[13]
+        self.robot['StatusRegister5'] = RobotRegister[14]
+        self.robot['StatusRegister6'] = RobotRegister[15]
         self.lock.release()
-
+        if A[0] != RobotRegister[1]:
+            self.write_registers(self.addresses['A'], RobotRegister[1])
+        if A[1] != RobotRegister[2]:
+            self.write_registers(self.addresses['00A'], RobotRegister[2])
+        if X[0] != RobotRegister[3]:
+            self.write_registers(self.addresses['X'], RobotRegister[3])
+        if X[1] != RobotRegister[4]:
+            self.write_registers(self.addresses['00X'], RobotRegister[4])
+        if Y[0] != RobotRegister[5]:
+            self.write_registers(self.addresses['Y'], RobotRegister[5])
+        if Y[1] != RobotRegister[6]:
+            self.write_registers(self.addresses['00Y'], RobotRegister[6])
+        if Z[0] != RobotRegister[7]:
+            self.write_registers(self.addresses['Z'], RobotRegister[7])
+        if Z[1] != RobotRegister[8]:
+            self.write_registers(self.addresses['00Z'], RobotRegister[8])
 
     def CommandControl(self):
         self.lock.acquire()
@@ -69,8 +115,8 @@ class RobotVG(KawasakiVG, SharedLocker):
 
     def _bits(self, values = [16*False], le = False):
         if isinstance(values, list):
-            if len(values) > 8:
-                values = values[:8]
+            if len(values) > 16:
+                values = values[:16]
             result = 0b0000000000000000
             if le: values = values[::-1]
             for i, val in enumerate(values):
@@ -79,10 +125,10 @@ class RobotVG(KawasakiVG, SharedLocker):
                 print(result)
             return result
         if isinstance(values, int):
-            values &= 0b11111111
+            values &= 0b1111111111111111
             result = []
             for i in range(16):
-                power = pow(2,7-i)
+                power = pow(2,15-i)
                 result.append(bool(values//power))
                 values &= 0b1111111111111111 ^ power
             if not le: result = result[::-1] 
@@ -116,11 +162,15 @@ class RobotVG(KawasakiVG, SharedLocker):
             self.lock.release()
         else:
             outputs = [] 
-            outputs.append(self.read_holding_registers('O1-8'))
-            outputs.append(self.read_holding_registers('O17-24'))
+            outputs.append(self.read_holding_registers('O1-16'))
+            outputs.append(self.read_holding_registers('O17-32'))
             for i, reg in enumerate(outputs):
                 self.lock.acquire()
                 bits = self._bits(reg, le = True)
                 for j in range(16):
-                    self.GPIO['O'+str(i*16+j+1)] = bits[j] 
+                    output = 'O'+str(i*16+j+1)
+                    if self.GPIO[output] != bits[j]:
+                        self.events['OutputChangedByRobot'] = True
+                        self.events['OutputsChangedByRobot'] += outputs + ' '
+                        self.GPIO[output] = bits[j] 
                 self.lock.release()

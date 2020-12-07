@@ -1070,28 +1070,29 @@ class KawasakiRobot(object):
         super().__init__(*args, **kwargs)
         self.status = {
             'StatusRegister0':(0x0030,('int',0),'r'), #dec 48
-            'StatusRegister1':(0x0038,('int',0),'r'), #dec 56
-            'StatusRegister2':(0x0040,('int',0),'r'), #dec 64
-            'StatusRegister3':(0x0048,('int',0),'r'), #dec 72
-            'StatusRegister4':(0x0050,('int',0),'r'), #dec 80
-            'StatusRegister5':(0x0058,('int',0),'r'), #dec 88
-            'StatusRegister6':(0x0060,('int',0),'r'), #dec 96
-            'StatusRegister7':(0x0068,('int',0),'r'), #dec 104
-            'StatusRegister8':(0x0070,('int',0),'r'), #dec 112
-            'StatusRegister9':(0x0078,('int',0),'r'), #dec 120
-            'StatusRegister10':(0x0080,('int',0),'r'), #dec 128
-            'StatusRegister11':(0x0088,('int',0),'r'), #dec 136
-            'StatusRegister12':(0x0090,('int',0),'r'), #dec 144
-            'StatusRegister13':(0x0098,('int',0),'r'), #dec 152
+            'StatusRegister1':(0x0040,('int',0),'r'), #dec 64
+            'StatusRegister2':(0x0050,('int',0),'r'), #dec 80
+            'StatusRegister3':(0x0060,('int',0),'r'), #dec 96
+            'StatusRegister4':(0x0070,('int',0),'r'), #dec 112
+            'StatusRegister5':(0x0080,('int',0),'r'), #dec 128
+            'StatusRegister6':(0x0090,('int',0),'r'), #dec 144
             'StatusRegisterValuesMasks':{
-                "st0":0b00000001,
-                "st1":0b00000010,
-                "st2":0b00000100,
-                "st3":0b00001000,
-                "st4":0b00010000,
-                "st5":0b00100000,
-                "st6":0b01000000,
-                "st7":0b10000000}}
+                "st0":0b0000000000000001,
+                "st1":0b0000000000000010,
+                "st2":0b0000000000000100,
+                "st3":0b0000000000001000,
+                "st4":0b0000000000010000,
+                "st5":0b0000000000100000,
+                "st6":0b0000000001000000,
+                "st7":0b0000000010000000,
+                "st8":0b0000000100000000,
+                "st9":0b0000001000000000,
+                "st10":0b0000010000000000,
+                "st11":0b0000100000000000,
+                "st12":0b0001000000000000,
+                "st13":0b0010000000000000,
+                "st14":0b0100000000000000,
+                "st15":0b1000000000000000}}
         self.position = {
             'CurrentPositionNumber':(0x0FA0,('int',0),'r'), #4000
             'DestinationPositionNumber':(0x0FA8,('int',0),'rw')} #4008

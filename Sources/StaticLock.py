@@ -27,7 +27,14 @@ class SharedLocker(object):
                 'A':0.0,
                 'X':0.0,
                 'Y':0.0,
-                'Z':0.0
+                'Z':0.0,
+                'StatusRegister0':0,
+                'StatusRegister1':0,
+                'StatusRegister2':0,
+                'StatusRegister3':0,
+                'StatusRegister4':0,
+                'StatusRegister5':0,
+                'StatusRegister6':0
 
 
             })
@@ -66,7 +73,9 @@ class SharedLocker(object):
                 'ServoMoving':False,
                 'anyButtonPressed':False,
                 'EstunResetDone':False,
-                'closeApplication':False})
+                'closeApplication':False,
+                'OutputChangedByRobot':False,
+                'OutputsChangedByRobot':''})
         if SharedLocker.errorlevel == None:
             SharedLocker.errorlevel = Manager().dict({
                 0:False,    1:False,    2:False,    3:False,    4:False,    5:False,    6:False,    7:False,    8:False,    9:False,    10:False,   11:False,   12:False,   13:False,   14:False,   15:False, 
