@@ -34,10 +34,7 @@ class SharedLocker(object):
                 'StatusRegister3':0,
                 'StatusRegister4':0,
                 'StatusRegister5':0,
-                'StatusRegister6':0
-
-
-            })
+                'StatusRegister6':0})
         if SharedLocker.GPIO == None:
             SharedLocker.GPIO = Manager().dict({
                 'somethingChaged':False,
@@ -96,8 +93,11 @@ class SharedLocker(object):
                 240:False,  241:False,  242:False,  243:False,  244:False,  245:False,  246:False,  247:False,  248:False,  249:False,  250:False,  251:False,  252:False,  253:False,  254:False,  255:False })
         if SharedLocker.pistons == None:
             SharedLocker.pistons = Manager().dict({
+                'Alive':False,
                 'sealUp':False,
                 'sealDown':False,
+                'sensorSealUp':False,
+                'sensorSealDown':False,
                 'leftPusherFront':False,
                 'leftPusherBack':False,
                 'rightPusherFront':False,

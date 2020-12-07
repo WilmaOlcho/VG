@@ -1,0 +1,47 @@
+<piston>
+	<name>seal</name>
+	<vendor>Metalwork</vendor>
+	<type>double acting</type>
+	<model>nan</model>
+	<valve>
+		<type>5/3</type>
+		<vendor>Metalwork</vendor>
+		<model>nan</model>	
+		<coil>
+			<type>DC</type>
+			<voltage>24</voltage>
+			<address>O0</address>
+			<current>0.2</current>
+			<vendor>Metalwork</vendor>
+			<action>SealDown</action>
+			<nosensor>False</nosensor>
+			<timeout>10</timeout>
+		</coil>
+		<coil>
+			<type>DC</type>
+			<voltage>24</voltage>
+			<address>O1</address>
+			<current>0.2</current>
+			<vendor>Metalwork</vendor>
+			<action>SealUp</action>
+			<nosensor>False</nosensor>
+			<timeout>10</timeout>
+		</coil>
+	</valve>
+	<sensor>
+		<type>reed</type>
+		<voltage>24</voltage>
+		<address>I0</address>
+		<current>0.1</current>
+		<vendor>Metalwork</vendor>
+		<action>SealDown</action>
+	</sensor>
+	<sensor>
+		<type>reed</type>
+		<voltage>24</voltage>
+		<address>I1</address>
+		<current>0.1</current>
+		<vendor>Metalwork</vendor>
+		<action>SealUp</action>
+	</sensor>
+</piston>
