@@ -1061,9 +1061,86 @@ class ParameterIsNotWritable(TypeError, SharedLocker):
         self.shared['Errorlevel'][2] = True #High errorLevel
         self.lock.release()
     
-class SICKGmod(ModbusClient, SharedLocker):
+class FX0GMOD(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.datablocks = {
+            'ReqAllActivatedInputDatasets':(1000,('list',(16,101)),'r'),
+            'ReqInputDataset1':(1100,('list',(25,)),'r'),
+            'ReqInputDataset2':(1200,('list',(16,)),'r'),
+            'ReqInputDataset3':(1300,('list',(30,)),'r'),
+            'ReqInputDataset4':(1400,('list',(30,)),'r'),
+            'WriteAllActivatedOutputDatasets':(2000,('list',(5,25)),'w'),
+            'WriteOutputDataset1':(2100,('list',(5,)),'w'),
+            'WriteOutputDataset2':(2200,('list',(5,)),'w'),
+            'WriteOutputDataset3':(2300,('list',(5,)),'w'),
+            'WriteOutputDataset4':(2400,('list',(5,)),'w'),
+            'WriteOutputDataset5':(2500,('list',(5,)),'w')}
+
+class SICKGmod(FX0GMOD, ModbusClient, SharedLocker):
+    def __init__(self, address = '192.168.255.255', port = 9100, *args, **kwargs):
+        super().__init__(address, port, *args, **kwargs)
+        self.InputDatablock = [4*[]]
+        self.OutputDatablock = [5*[]]
+
+    def read_datablock(self, datablockNumber):
+        datablockToDealWith = self.datablocks['ReqInputDataset'+str(datablockNumber)]
+        RdHandle = self.read_holding_registers(datablockToDealWith[0],datablockToDealWith[1][1][0])
+        self.InputDatablock[datablockNumber - 1] = RdHandle.registers
+    def write_datablock(self, datablockNumber):
+        datablockToDealWith = self.datablocks['WriteOutputDataset'+str(datablockNumber)]
+        outputBlock = self.OutputDatablock[datablockNumber-1]
+        if any(outputBlock):
+            self.write_registers(datablockToDealWith, outputBlock)
+
+    def __bits(self, values = [8*False], le = False):
+        if isinstance(values, list):
+            if len(values) > 8:
+                values = values[:8]
+            result = 0b00000000
+            if le: values = values[::-1]
+            for i, val in enumerate(values):
+                print(i,val)
+                if val: result += pow(2,i)
+                print(result)
+            return result
+        if isinstance(values, int):
+            values &= 0b11111111
+            result = []
+            for i in range(8):
+                power = pow(2,7-i)
+                result.append(bool(values//power))
+                values &= 0b11111111 ^ power
+            if not le: result = result[::-1] 
+            return result
+
+    def read_coils(self, startCoil, numberOfCoils = 1):
+        self.read_datablock(1)
+        datablockToDealWith = self.InputDatablock[0] #GMOD000000 have one input dataset
+        startbyte = startCoil//8
+        endbyte = (startCoil+numberOfCoils)//8
+        startbit = startCoil%8
+        endbit = (startCoil+numberOfCoils)%8
+        result = []
+        for i, byte in enumerate(datablockToDealWith):
+            if i >= startbyte and i <= endbyte:
+                if startbyte==endbyte:
+                    result.append(self.__bits(byte[startbit:-endbit]))
+                else:
+                    if i == startbyte:
+                        result.append(self.__bits(byte[startbit:]))
+                    elif i == endbyte:
+                        result.append(self.__bits(byte[:-endbit]))
+                    else:
+                        result.append(self.__bits(byte))
+        return result
+                    
+
+
+        
+
+
+
 
 class KawasakiRobot(object):
     def __init__(self, *args, **kwargs):
