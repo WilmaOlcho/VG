@@ -94,14 +94,25 @@ class SharedLocker(object):
         if SharedLocker.pistons == None:
             SharedLocker.pistons = Manager().dict({
                 'Alive':False,
-                'sealUp':False,
-                'sealDown':False,
+                'SealUp':False,
+                'SealDown':False,
                 'sensorSealUp':False,
                 'sensorSealDown':False,
-                'leftPusherFront':False,
-                'leftPusherBack':False,
-                'rightPusherFront':False,
-                'rightPusherBack':False})
+                'LeftPusherFront':False,
+                'LeftPusherBack':False,
+                'sensorLeftPusherFront':False,
+                'LsensoreftPusherBack':False,
+                'RightPusherFront':False,
+                'RightPusherBack':False,
+                'sensorRightPusherFront':False,
+                'sensorRightPusherBack':False,
+                'ShieldingGasOk':False,
+                'AirOk':False,
+                'VacuumOk':False,
+                'ShieldingGas':False,
+                'HeadCooling':False,
+                'CrossJet':False
+                })
         if SharedLocker.safety == None:
             SharedLocker.safety = Manager().dict({
                 'EstopArmed':False,

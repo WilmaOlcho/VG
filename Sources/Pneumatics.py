@@ -73,7 +73,7 @@ class Coil(SharedLocker):
         if rstate and not cstate:
             self.GPIO[self.address] = True
             self.GPIO['somethingChaged']
-            if self.timer == None:
+            if not self.nosensor and self.timer == None:
                 self.timer = WDT(errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)
         else:
             self.GPIO[self.address] = False
@@ -100,22 +100,39 @@ class Valve(SharedLocker):
 class PneumaticsVG(SharedLocker):
     def __init__(self, xmlFile, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.tree = ET.parse(xmlFile)
-        self.root = self.tree.getroot()
-        self.parameters = self.tree
-        self.Pistons = []
-        for child in self.root.findall('piston'):
-            self.Pistons.append(Piston(child, self))
-        self.lock.acquire()
-        self.pistons['Alive'] = True
-        self.lock.release()
-        self.Alive = True
-        self.PneumaticsLoop()
+        try:
+            self.tree = ET.parse(xmlFile)
+            self.root = self.tree.getroot()
+            self.parameters = self.tree
+            self.Pistons = []
+            self.Valves = []
+            self.Sensors = []
+            for child in self.root.findall('piston'):
+                self.Pistons.append(Piston(child, self))
+            for child in self.root.findall('valve'):
+                self.Valves.append(Valve(child, self))
+            for child in self.root.findall('sensor'):
+                self.Sensors.append(Sensor(child, self))
+            self.lock.acquire()
+            self.pistons['Alive'] = True
+            self.lock.release()
+            self.Alive = True
+            self.PneumaticsLoop()
+        except Exception as ex:
+            self.lock.acquire()
+            self.events['Error'] = True
+            self.errorlevel[10] = True
+            self.shared['Errors'] += '/nPneumaticsVG init error - Error while parsing config file' + ex.__class__ + ex.
+            self.lock.release()
 
     def PneumaticsLoop(self):
         while self.Alive:
-            for piston in self.pistons:
+            for piston in self.Pistons:
                 piston.controlSequence()
+            for valve in self.Valves:
+                valve.controlSequence()
+            for sensor in self.Sensors:
+                sensor.controlSequence()
             self.lock.acquire()
             self.Alive = self.pistons['Alive']
             self.lock.release()
@@ -130,12 +147,7 @@ class PneumaticsVG(SharedLocker):
     #            for section in Parameters.sections():
     #                if 'piston' in section:
     #                    self.Actuators.append(Piston(self.parameters, section))
-    #        except:
-    #            self.lock.acquire()
-    #            self.events['Error'] = True
-    #            self.errorlevel[10] = True
-    #            self.shared['Errors'] += '/nPneumaticsVG init error - Error while reading config file'
-    #            self.lock.release()
+    #        
     #        finally:
     #            super().__init__(*args, **kwargs)
     #            self.Alive = True

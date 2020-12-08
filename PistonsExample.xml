@@ -1,5 +1,5 @@
 <piston>
-	<name>seal</name>
+	<name>Seal</name>
 	<vendor>Metalwork</vendor>
 	<type>double acting</type>
 	<model>nan</model>
@@ -10,7 +10,7 @@
 		<coil>
 			<type>DC</type>
 			<voltage>24</voltage>
-			<address>O0</address>
+			<address>O7</address>
 			<current>0.2</current>
 			<vendor>Metalwork</vendor>
 			<action>SealDown</action>
@@ -20,7 +20,7 @@
 		<coil>
 			<type>DC</type>
 			<voltage>24</voltage>
-			<address>O1</address>
+			<address>O6</address>
 			<current>0.2</current>
 			<vendor>Metalwork</vendor>
 			<action>SealUp</action>
@@ -31,7 +31,7 @@
 	<sensor>
 		<type>reed</type>
 		<voltage>24</voltage>
-		<address>I0</address>
+		<address>I31</address>
 		<current>0.1</current>
 		<vendor>Metalwork</vendor>
 		<action>SealDown</action>
@@ -39,9 +39,172 @@
 	<sensor>
 		<type>reed</type>
 		<voltage>24</voltage>
-		<address>I1</address>
+		<address>I32</address>
 		<current>0.1</current>
 		<vendor>Metalwork</vendor>
 		<action>SealUp</action>
 	</sensor>
 </piston>
+<piston>
+	<name>LeftPusher</name>
+	<vendor>Metalwork</vendor>
+	<type>double acting</type>
+	<model>nan</model>
+	<valve>
+		<type>5/3OC</type>
+		<vendor>Metalwork</vendor>
+		<model>nan</model>	
+		<coil>
+			<type>DC</type>
+			<voltage>24</voltage>
+			<address>O17</address>
+			<current>0.2</current>
+			<vendor>Metalwork</vendor>
+			<action>LeftPusherFront</action>
+			<nosensor>False</nosensor>
+			<timeout>10</timeout>
+		</coil>
+		<coil>
+			<type>DC</type>
+			<voltage>24</voltage>
+			<address>O18</address>
+			<current>0.2</current>
+			<vendor>Metalwork</vendor>
+			<action>LeftPusherBack</action>
+			<nosensor>False</nosensor>
+			<timeout>10</timeout>
+		</coil>
+	</valve>
+	<sensor>
+		<type>reed</type>
+		<voltage>24</voltage>
+		<address>I24</address>
+		<current>0.1</current>
+		<vendor>Metalwork</vendor>
+		<action>LeftPusherBack</action>
+	</sensor>
+	<sensor>
+		<type>reed</type>
+		<voltage>24</voltage>
+		<address>I23</address>
+		<current>0.1</current>
+		<vendor>Metalwork</vendor>
+		<action>LeftPusherBack</action>
+	</sensor>
+</piston>
+<piston>
+	<name>RightPusher</name>
+	<vendor>Metalwork</vendor>
+	<type>double acting</type>
+	<model>nan</model>
+	<valve>
+		<type>5/3OC</type>
+		<vendor>Metalwork</vendor>
+		<model>nan</model>	
+		<coil>
+			<type>DC</type>
+			<voltage>24</voltage>
+			<address>O17</address>
+			<current>0.2</current>
+			<vendor>Metalwork</vendor>
+			<action>RightPusherFront</action>
+			<nosensor>False</nosensor>
+			<timeout>10</timeout>
+		</coil>
+		<coil>
+			<type>DC</type>
+			<voltage>24</voltage>
+			<address>O18</address>
+			<current>0.2</current>
+			<vendor>Metalwork</vendor>
+			<action>RightPusherBack</action>
+			<nosensor>False</nosensor>
+			<timeout>10</timeout>
+		</coil>
+	</valve>
+	<sensor>
+		<type>reed</type>
+		<voltage>24</voltage>
+		<address>I25</address>
+		<current>0.1</current>
+		<vendor>Metalwork</vendor>
+		<action>RightPusherBack</action>
+	</sensor>
+	<sensor>
+		<type>reed</type>
+		<voltage>24</voltage>
+		<address>I26</address>
+		<current>0.1</current>
+		<vendor>Metalwork</vendor>
+		<action>RightPusherBack</action>
+	</sensor>
+</piston>
+<sensor>
+	<type>Pressureswitch</type>
+	<voltage>24</voltage>
+	<address>I16</address>
+	<current>0.1</current>
+	<vendor>Metalwork</vendor>
+	<action>ShieldingGasOk</action>
+</sensor>
+<sensor>
+	<type>PressureSwitch</type>
+	<voltage>24</voltage>
+	<address>I8</address>
+	<current>0.1</current>
+	<vendor>Metalwork</vendor>
+	<action>AirOk</action>
+</sensor>
+<sensor>
+	<type>VacuumOk</type>
+	<voltage>24</voltage>
+	<address>I15</address>
+	<current>0.1</current>
+	<vendor>Metalwork</vendor>
+	<action>VacuumOk</action>
+</sensor>
+<valve>
+	<type>3/2</type>
+	<vendor>Metalwork</vendor>
+	<model>nan</model>	
+	<coil>
+		<type>DC</type>
+		<voltage>24</voltage>
+		<address>O5</address>
+		<current>0.2</current>
+		<vendor>Metalwork</vendor>
+		<action>ShieldingGas</action>
+		<nosensor>True</nosensor>
+		<timeout>10</timeout>
+	</coil>
+</valve>
+<valve>
+	<type>3/2</type>
+	<vendor>Metalwork</vendor>
+	<model>nan</model>	
+	<coil>
+		<type>DC</type>
+		<voltage>24</voltage>
+		<address>O4</address>
+		<current>0.2</current>
+		<vendor>Metalwork</vendor>
+		<action>HeadCooling</action>
+		<nosensor>True</nosensor>
+		<timeout>10</timeout>
+	</coil>
+</valve>
+<valve>
+	<type>3/2</type>
+	<vendor>Metalwork</vendor>
+	<model>nan</model>	
+	<coil>
+		<type>DC</type>
+		<voltage>24</voltage>
+		<address>O3</address>
+		<current>0.2</current>
+		<vendor>Metalwork</vendor>
+		<action>CrossJet</action>
+		<nosensor>True</nosensor>
+		<timeout>10</timeout>
+	</coil>
+</valve>
