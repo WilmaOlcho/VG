@@ -1,5 +1,5 @@
 from modbusTCPunits import KawasakiVG
-from TactWatchdog import TactWatchdog
+from TactWatchdog import TactWatchdog as WDT
 from StaticLock import SharedLocker
 from functools import lru_cache
 import configparser
@@ -8,6 +8,7 @@ class RobotVG(KawasakiVG, SharedLocker):
     def __init__(self, configFile, *args, **kwargs):
         self.parameters = configparser.ConfigParser()
         self.filefeedback = self.parameters.read(configFile)
+        self.timer = WDT()
         if len(self.filefeedback):
             try:
                 with self.parameters['RobotParameters'] as RobotParameters:
@@ -98,6 +99,7 @@ class RobotVG(KawasakiVG, SharedLocker):
         if not activecommand:
             self.lock.acquire()
             homing, go = self.robot['homing'], self.robot['go']
+            setoffset, goonce = self.robot['setoffset'], self.robot['goonce']
             self.lock.release()
             if homing:
                 self.write_registers(self.addresses['command'], self.addresses['command_values']['homing'])
@@ -105,6 +107,7 @@ class RobotVG(KawasakiVG, SharedLocker):
                 self.robot['activecommand'] = True
                 self.robot['homing'] = False
                 self.lock.release()
+                self.timer = WDT.WDT(errToRaise = self.__class__ + 'RobotVG Homing time exceeded', errorlevel = 30, limitval = 20 )
             if go:
                 self.lock.acquire()
                 spos = self.robot['setpos']
@@ -115,10 +118,26 @@ class RobotVG(KawasakiVG, SharedLocker):
                 self.robot['activecommand'] = True
                 self.robot['go'] = False
                 self.lock.release()
+                self.timer = WDT.WDT(errToRaise = self.__class__ + 'RobotVG moving time exceeded', errorlevel = 30, limitval = 20 )
+            if setoffset:
+                self.write_registers(self.addresses['command'], self.addresses['command_values']['setoffset'])
+                self.lock.acquire()
+                self.robot['activecommand'] = True
+                self.robot['setoffset'] = False
+                self.lock.release()
+                self.timer = WDT.WDT(errToRaise = self.__class__ + 'RobotVG offsetting time exceeded', errorlevel = 30, limitval = 20 )
+            if goonce:
+                self.write_registers(self.addresses['command'], self.addresses['command_values']['goonce'])
+                self.lock.acquire()
+                self.robot['activecommand'] = True
+                self.robot['goonce'] = False
+                self.lock.release()
+                self.timer = WDT.WDT(errToRaise = self.__class__ + 'RobotVG moving once time exceeded', errorlevel = 30, limitval = 20 )
         else:
             if self.read_holding_registers(self.addresses['command']) == 0:
                 self.lock.acquire()
                 self.robot['activecommand'] = False
+                if self.timer.active: self.timer.Destroy()
 
     def _bits(self, values = [16*False], le = False):
         if isinstance(values, list):

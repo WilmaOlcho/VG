@@ -21,6 +21,8 @@ class SharedLocker(object):
                 'homepos':False,
                 'homing':False,
                 'go':False,
+                'setoffset':False,
+                'goonce':False,
                 'setpos':0,
                 'currentpos':0,
                 'activecommand':False,

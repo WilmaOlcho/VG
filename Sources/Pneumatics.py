@@ -55,7 +55,7 @@ class Coil(SharedLocker):
     def __init__(self, branch, parent, *args, **kwargs):
         super().__init__(*args,**kwargs)
         self.parent = parent
-        self.timer = None
+        self.timer = WDT()
         self.root = branch
         self.coilType = self.root.findall('type')[0].text
         self.address = self.root.findall('address')[0].text
@@ -74,10 +74,10 @@ class Coil(SharedLocker):
             self.GPIO[self.address] = True
             self.GPIO['somethingChaged']
             if not self.nosensor and self.timer == None:
-                self.timer = WDT(errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)
+                self.timer = WDT.WDT(errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)
         else:
             self.GPIO[self.address] = False
-            if not isinstance(self.timer,None):
+            if self.timer.active:
                 self.timer.Destruct()
 
 
@@ -122,7 +122,7 @@ class PneumaticsVG(SharedLocker):
             self.lock.acquire()
             self.events['Error'] = True
             self.errorlevel[10] = True
-            self.shared['Errors'] += '/nPneumaticsVG init error - Error while parsing config file' + ex.__class__ + ex.
+            self.shared['Errors'] += '/nPneumaticsVG init error - Error while parsing config file' + ex.__class__
             self.lock.release()
 
     def PneumaticsLoop(self):

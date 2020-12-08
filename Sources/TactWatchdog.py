@@ -20,6 +20,7 @@ class TactWatchdog(SharedLocker):
         self.timePoint = 0
         self.setpoint()
         self.destruct = False
+        self.active = False
 
     def Destruct(self):
         self.destruct = True
@@ -44,6 +45,7 @@ class TactWatchdog(SharedLocker):
         additionalFuncOnStart()
         self.setpoint()
         limitval *= self.scaleMultiplier[scale]
+        self.active = True
         while True:
             additionalFuncOnLoop()
             self.lock.acquire()
@@ -66,6 +68,7 @@ class TactWatchdog(SharedLocker):
                 break
             if self.destruct:
                 break
+        self.active = False
 
     @classmethod
     def WDT(cli,
