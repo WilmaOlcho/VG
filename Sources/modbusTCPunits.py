@@ -1080,24 +1080,25 @@ class FX0GMOD(object):
 class SICKGmod(FX0GMOD, ModbusClient, SharedLocker):
     def __init__(self, address = '192.168.255.255', port = 9100, *args, **kwargs):
         super().__init__(address, port, *args, **kwargs)
-        self.InputDatablock = [4*[]]
-        self.OutputDatablock = [5*[]]
+        self.InputDatablock = [[25*[0]],[16*[0]],[30*[0]],[30*[0]]]
+        self.OutputDatablock = [5*[5*[0]]]
 
-    def read_datablock(self, datablockNumber):
+    def read_datablock(self, datablockNumber): ##TODO errorhandling
         datablockToDealWith = self.datablocks['ReqInputDataset'+str(datablockNumber)]
-        RdHandle = self.read_holding_registers(datablockToDealWith[0],datablockToDealWith[1][1][0])
+        RdHandle = super().read_holding_registers(datablockToDealWith[0],datablockToDealWith[1][1][0])
         self.InputDatablock[datablockNumber - 1] = RdHandle.registers
-    def write_datablock(self, datablockNumber):
+
+    def write_datablock(self, datablockNumber): ##TODO ErrorHandling
         datablockToDealWith = self.datablocks['WriteOutputDataset'+str(datablockNumber)]
         outputBlock = self.OutputDatablock[datablockNumber-1]
         if any(outputBlock):
-            self.write_registers(datablockToDealWith, outputBlock)
+            super().write_registers(datablockToDealWith, outputBlock)
 
-    def __bits(self, values = [8*False], le = False):
+    def __bits(self, values = [16*False], le = False):
         if isinstance(values, list):
-            if len(values) > 8:
-                values = values[:8]
-            result = 0b00000000
+            if len(values) > 16:
+                values = values[:16]
+            result = 0b0000000000000000
             if le: values = values[::-1]
             for i, val in enumerate(values):
                 print(i,val)
@@ -1105,42 +1106,104 @@ class SICKGmod(FX0GMOD, ModbusClient, SharedLocker):
                 print(result)
             return result
         if isinstance(values, int):
-            values &= 0b11111111
+            values &= 0b1111111111111111
             result = []
-            for i in range(8):
-                power = pow(2,7-i)
+            for i in range(16):
+                power = pow(2,15-i)
                 result.append(bool(values//power))
-                values &= 0b11111111 ^ power
+                values &= 0b1111111111111111 ^ power
             if not le: result = result[::-1] 
             return result
 
     def read_coils(self, startCoil, numberOfCoils = 1):
         self.read_datablock(1)
         datablockToDealWith = self.InputDatablock[0] #GMOD000000 have one input dataset
-        startbyte = startCoil//8
-        endbyte = (startCoil+numberOfCoils)//8
-        startbit = startCoil%8
-        endbit = (startCoil+numberOfCoils)%8
+        startword = startCoil//16
+        endword = (startCoil+numberOfCoils)//16
+        startbit = startCoil%16
+        endbit = (startCoil+numberOfCoils)%16
         result = []
-        for i, byte in enumerate(datablockToDealWith):
-            if i >= startbyte and i <= endbyte:
-                if startbyte==endbyte:
-                    result.append(self.__bits(byte[startbit:-endbit]))
+        for i, word in enumerate(datablockToDealWith[startword:len(datablockToDealWith)-1-endword]):
+            bitlist = self.__bits(word)
+            if startword==endword:
+                bits = bitlist[startbit:len(bitlist)-1-endbit]
+            else:
+                if i == startword:
+                    bits = bitlist[startbit:]
+                elif i == endword:
+                    bits = bitlist[:len(bitlist)-1-endbit]
                 else:
-                    if i == startbyte:
-                        result.append(self.__bits(byte[startbit:]))
-                    elif i == endbyte:
-                        result.append(self.__bits(byte[:-endbit]))
-                    else:
-                        result.append(self.__bits(byte))
+                    bits = bitlist
+            for bit in bits: result.append(bit)
+            bits = []
         return result
-                    
+    
+    def __splitWordInHalf(self, word):
+        result = []
+        result.append(word & 0xFF)
+        result.append(((word&0xFF00)//0x100) & 0xFF)
+        return result
+            
+    def read_holding_registers(self, registerToStart, amountOfRegisters = 1):
+        self.read_datablock(1)
+        #All registers are bytes, but they are in words in datablock
+        startWord = registerToStart//2
+        endWord = (registerToStart+amountOfRegisters)//2
+        startbyte = registerToStart%2
+        endbyte = (registerToStart+amountOfRegisters)%2
+        result = []
+        bytelist = []
+        for i, word in enumerate(self.InputDatablock[0][startWord:len(self.InputDatablock[0])-1-endWord]):
+            bytelist = self.__splitWordInHalf(word)
+            if startbyte == endbyte:
+                bytes = bytelist[startbyte:len(bytelist)-1-endbyte]
+            else:
+                if i == startbyte:
+                    bytes = bytelist[startbyte:]
+                elif i == endbyte:
+                    bytes = bytelist[:len(bytelist)-1-endbyte]
+                else:
+                    bytes = bytelist
+            for byte in bytes: result.append(byte)
+            bytes = []
+        return result
 
+    def write_coil(self, coil, value = True):
+        #25words in 5 for datablock
+        bitsPerDatablock = (16*5) #bits per word * words in datablock
+        datablockToDealWith = coil//bitsPerDatablock
+        wordToDealWith = coil//16 #bits per word
+        bitToDealWith = coil%16
+        valueToChange = self.OutputDatablock[datablockToDealWith][wordToDealWith]
+        bitlist = self.__bits(valueToChange)
+        bitlist[bitToDealWith] = value
+        wordToWrite = self.__bits(bitlist)
+        self.OutputDatablock[datablockToDealWith][wordToDealWith] = wordToWrite
+        self.write_datablock(datablockToDealWith+1) #numbers of datablocks in GMOD registers are starting from 1
 
-        
+    def __mergeBytes(self, bytelist = [0,0], le = False):
+        result = 0
+        if le: bytelist = bytelist[::-1]
+        for i, byte in enumerate(bytelist):
+            result += byte * pow(256,i)
+        return result
 
-
-
+    def write_register(self, register, value, byte=True):
+        datablockToDealWith, wordToDealWith = 0,0
+        if byte:
+            datablockToDealWith = register//(5*5*2) #Datablocks * registers per block * bytes per register
+            wordToDealWith = (register//2) - datablockToDealWith #Bytes per word - calculated datablock
+            byteToDealWith = register%2 #Byte in word register
+            wordToChange = self.OutputDatablock[datablockToDealWith][wordToDealWith]
+            bytes = self.__splitWordInHalf(wordToChange)
+            bytes[byteToDealWith] = value
+            wordToChange = self.__mergeBytes(bytes)
+        else:
+            datablockToDealWith = register//(5*5) #Datablocks * registers per block
+            wordToDealWith = register - datablockToDealWith
+            wordToChange = value
+        self.OutputDatablock[datablockToDealWith][wordToDealWith] = wordToChange
+        self.write_datablock(datablockToDealWith+1) #numbers of datablocks in GMOD registers are starting from 1
 
 class KawasakiRobot(object):
     def __init__(self, *args, **kwargs):
