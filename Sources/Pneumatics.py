@@ -1,69 +1,54 @@
 ##Pneumatics.py
 from StaticLock import SharedLocker
 import configparser
-import xml.etree.ElementTree as ET
+import json
 from TactWatchdog import TactWatchdog as WDT
 
-class Piston(SharedLocker):
-    name = ''       #LeftPucher
-    type = ''     #double
-    model = ''      #IV7870
-    vendor = ''     #MetalWork
-    sensors = []    #reed in back, reed in front
-    valve = []      #valve to control
-
+class Pneumatic(object):
     def __init__(self, branch, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.root = branch
         self.parent = parent
-        self.valves = []
-        self.sensors = []
-        for child in self.root.findall('valve'):
-            self.valves.append(Valve(child, self))
-        for child in self.root.findall('sensor'):
-            self.sensors.append(Sensor(child, self))
-        self.name = self.root.findall('name')[0].text
-        self.type = self.root.findall('type')[0].text
-        self.model = self.root.findall('model')[0].text
-        self.vendor = self.root.findall('vendor')[0].text
-
+        self.childobjects = []
+        self.name = self.root['name']
+        self.type = self.root['type']
+        self.model = self.root['model']
+        self.vendor = self.root['vendor']
+        
     def controlSequence(self):
-        for sensor in self.sensors:
-            sensor.controlSequence()
-        for valve in self.valves:
-            valve.controlSequence()
+        for child in self.childobjects:
+            child.controlSequence()
 
-
-class Sensor(SharedLocker):
+class PneumaticActive(Pneumatic):
     def __init__(self, branch, parent, *args, **kwargs):
-        super().__init__(*args,**kwargs)
-        self.parent = parent
-        self.root = branch
-        self.SensorType = self.root.findall('type')[0].text
-        self.address = self.root.findall('address')[0].text
-        self.voltage = self.root.findall('voltage')[0].text
-        self.current = self.root.findall('current')[0].text
-        self.action = self.root.findall('action')[0].text
+        super().__init__(branch, parent, *args, **kwargs)
+        self.address = self.root['address']
+        self.voltage = self.root['voltage']
+        self.current = self.root['current']
+        self.action = self.root['action']
 
+class Piston(Pneumatic, SharedLocker):
+    def __init__(self, branch, parent, *args, **kwargs):
+        super().__init__(branch, parent, *args, **kwargs)
+        for child in self.root['objects']:
+            if child['class'] == 'Valve': Class = Valve
+            elif child['class'] == 'Sensor': Class = Sensor
+            else: continue
+            self.childobjects.append(Class(child, self))
+
+class Sensor(PneumaticActive, SharedLocker):
     def controlSequence(self):
         self.lock.acquire()
         cstate = bool(self.GPIO[self.address])
         self.pistons['sensor'+self.action] = cstate
         self.lock.release()
 
-class Coil(SharedLocker):
+class Coil(PneumaticActive, SharedLocker):
     def __init__(self, branch, parent, *args, **kwargs):
-        super().__init__(*args,**kwargs)
-        self.parent = parent
+        super().__init__(branch, parent, *args,**kwargs)
         self.timer = WDT()
-        self.root = branch
-        self.coilType = self.root.findall('type')[0].text
-        self.address = self.root.findall('address')[0].text
-        self.voltage = self.root.findall('voltage')[0].text
-        self.current = self.root.findall('current')[0].text
-        self.action = self.root.findall('action')[0].text
-        self.nosensor = True if self.root.findall('nosensor')[0].text == 'True' else False
-        self.timeout = int(self.root.findall('timeout')[0].text)
+        self.nosensor = self.root['nosensor']
+        self.timeout = self.root['timeout']
 
     def controlSequence(self):
         self.lock.acquire()
@@ -71,48 +56,41 @@ class Coil(SharedLocker):
         rstate = bool(self.pistons[self.action])
         self.lock.release()
         if rstate and not cstate:
+            self.lock.acquire()
             self.GPIO[self.address] = True
             self.GPIO['somethingChaged']
+            self.lock.release()
             if not self.nosensor and self.timer == None:
                 self.timer = WDT.WDT(errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)
         else:
+            self.lock.acquire()
             self.GPIO[self.address] = False
-            if self.timer.active:
-                self.timer.Destruct()
+            self.lock.release()
+            if self.timer.active: self.timer.Destruct()
 
-
-class Valve(SharedLocker):
-    valveType = ''
-    coils = []
+class Valve(Pneumatic, SharedLocker):
     def __init__(self, branch, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.root = branch
-        for child in self.root.findall('coil'):
-            self.coils.append(Coil(child, self))
-
-    def controlSequence(self):
-        for coil in self.coils:
-            coil.controlSequence()
-
-
-
+        for child in self.root['objects']:
+            if child['class'] == 'Coil':
+                self.childobjects.append(Coil(child, self))
 
 class PneumaticsVG(SharedLocker):
-    def __init__(self, xmlFile, *args, **kwargs):
+    def __init__(self, jsonFile, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            self.tree = ET.parse(xmlFile)
-            self.root = self.tree.getroot()
-            self.parameters = self.tree
-            self.Pistons = []
-            self.Valves = []
-            self.Sensors = []
-            for child in self.root.findall('piston'):
-                self.Pistons.append(Piston(child, self))
-            for child in self.root.findall('valve'):
-                self.Valves.append(Valve(child, self))
-            for child in self.root.findall('sensor'):
-                self.Sensors.append(Sensor(child, self))
+            self.file = open(jsonFile)
+            self.config = self.file.read()
+            self.file.close()
+            self.parameters = json.dumps(self.config)
+            self.childobjects = []
+            for child in self.parameters['objects']:#root.findall('piston'):
+                Class = None
+                if child['class'] == 'Piston': Class = Piston
+                elif child['class'] == 'Valve': Class = Valve
+                elif child['class'] == 'Sensor': Class = Sensor
+                else: continue
+                self.childobjects.append(Class(child, self))
             self.lock.acquire()
             self.pistons['Alive'] = True
             self.lock.release()
@@ -127,37 +105,8 @@ class PneumaticsVG(SharedLocker):
 
     def PneumaticsLoop(self):
         while self.Alive:
-            for piston in self.Pistons:
-                piston.controlSequence()
-            for valve in self.Valves:
-                valve.controlSequence()
-            for sensor in self.Sensors:
-                sensor.controlSequence()
+            for child in self.childobjects:
+                child.controlSequence()
             self.lock.acquire()
             self.Alive = self.pistons['Alive']
             self.lock.release()
-       
-       
-       
-       
-       
-    #   
-    #    if len(self.filefeedback):
-    #        try:
-    #            for section in Parameters.sections():
-    #                if 'piston' in section:
-    #                    self.Actuators.append(Piston(self.parameters, section))
-    #        
-    #        finally:
-    #            super().__init__(*args, **kwargs)
-    #            self.Alive = True
-    #            self.lock.acquire()
-    #            self.pistons['Alive'] = self.Alive
-    #            self.lock.release()
-    #    else:
-    #        self.lock.acquire()
-    #        self.events['Error'] = True
-    #        self.errorlevel[10] = True
-    #        self.shared['Errors'] += '/nPneumaticsVG init error - Config file not found'
-    #        self.lock.release()3
-
