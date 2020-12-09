@@ -79,10 +79,7 @@ class PneumaticsVG(SharedLocker):
     def __init__(self, jsonFile, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            self.file = open(jsonFile)
-            self.config = self.file.read()
-            self.file.close()
-            self.json = json.load(self.config)
+            self.json = json.load(jsonFile)
             self.parameters = self.json.decode()
             self.childobjects = []
             for child in self.parameters['objects']:#root.findall('piston'):
