@@ -1,8 +1,8 @@
 ##Pneumatics.py
-from StaticLock import SharedLocker
+from Sources.StaticLock import SharedLocker
 import configparser
 import json
-from TactWatchdog import TactWatchdog as WDT
+from Sources.TactWatchdog import TactWatchdog as WDT
 
 class Pneumatic(object):
     def __init__(self, branch, parent, *args, **kwargs):
@@ -97,7 +97,7 @@ class PneumaticsVG(SharedLocker):
             self.lock.acquire()
             self.events['Error'] = True
             self.errorlevel[10] = True
-            self.shared['Errors'] += '/nPneumaticsVG init error - Error while parsing config file' + ex.__class__
+            self.shared['Errors'] += '/nPneumaticsVG init error - Error while parsing config file' + str(ex.__class__)
             self.lock.release()
 
     def PneumaticsLoop(self):

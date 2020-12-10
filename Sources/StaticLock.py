@@ -1,5 +1,5 @@
 from multiprocessing import Manager, Lock
-from misc import BlankFunc
+from Sources.misc import BlankFunc
 
 class SharedLocker(object):
     shared = None

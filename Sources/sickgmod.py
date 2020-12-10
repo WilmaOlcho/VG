@@ -1,4 +1,4 @@
-from modbusTCPunits import SICKGmod
+from Sources.modbusTCPunits import SICKGmod
 import json
 import csv
 from xml.etree.ElementTree import ElementTree as ET
@@ -39,7 +39,7 @@ class GMOD(SICKGmod):
         try:
             dictionaryForStaticLock = {}
             for byte in self.IOBonding:
-                if len(byte[1]) and '.' in byte[0]:
+                if byte[1] and '.' in byte[0]:
                     dictionaryForStaticLock[byte[0]] = byte[1]
             if self.SICKGMOD0 == None:
                 SharedLocker.SICKGMOD0 = Manager().dict({**dictionaryForStaticLock,'dict':dictionaryForStaticLock})

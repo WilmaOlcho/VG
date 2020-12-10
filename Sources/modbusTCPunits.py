@@ -1,5 +1,5 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from StaticLock import SharedLocker
+from Sources.StaticLock import SharedLocker
 from functools import wraps, partial
 from pymodbus.transaction import ModbusAsciiFramer
 import re
@@ -16,8 +16,7 @@ class ADAMModule(object):
             'ClearGCLCounterCh5':(0x00306,('bit',0),"w"),
             'ClearGCLCounterCh6':(0x00307,('bit',0),"w"),
             'ClearGCLCounterCh7':(0x00308,('bit',0),"w"),
-            'GCLInternalFlagValue':(0x40305,('int',0),"rw")
-        }
+            'GCLInternalFlagValue':(0x40305,('int',0),"rw")}
         self.ADAM6000GCLInternalCounterValue:{
             'GCLInternalCounterValueCh0':(0x40311,('word',0),"w"),
             'GCLInternalCounterValueCh1':(0x40313,('word',0),"w"),
@@ -26,8 +25,7 @@ class ADAMModule(object):
             'GCLInternalCounterValueCh4':(0x40319,('word',0),"w"),
             'GCLInternalCounterValueCh5':(0x40321,('word',0),"w"),
             'GCLInternalCounterValueCh6':(0x40323,('word',0),"w"),
-            'GCLInternalCounterValueCh7':(0x40325,('word',0),"w")
-        }
+            'GCLInternalCounterValueCh7':(0x40325,('word',0),"w")}
         self.AnalogParameters = {
             'ADAM600AI0-5':{
                 'BurnoutFlagCh0':(0x00121,('bit',0),"r"),
@@ -57,8 +55,7 @@ class ADAMModule(object):
                 'AIStatusCh4':(0x40025,('word',0),"r"),
                 'AIStatusCh5':(0x40026,('word',0),"r"),
                 'TypeCodeCh4':(0x40205,('int',0),"rw"),
-                'TypeCodeCh5':(0x40206,('int',0),"rw")
-            },
+                'TypeCodeCh5':(0x40206,('int',0),"rw")},
             'AI0-3':{
                 'ResetHistoricalMaxCh0':(0x00101,('bit',0),"w"),
                 'ResetHistoricalMaxCh1':(0x00102,('bit',0),"w"),
@@ -111,8 +108,7 @@ class ADAMModule(object):
                 'TypeCodeCh0':(0x40201,('int',0),"rw"),
                 'TypeCodeCh1':(0x40202,('int',0),"rw"),
                 'TypeCodeCh2':(0x40203,('int',0),"rw"),
-                'TypeCodeCh3':(0x40204,('int',0),"rw")
-            },
+                'TypeCodeCh3':(0x40204,('int',0),"rw")},
             'AI4-5':{
                 'ResetHistoricalMaxCh4':(0x00105,('bit',0),"w"),
                 'ResetHistoricalMaxCh5':(0x00106,('bit',0),"w"),
@@ -139,8 +135,7 @@ class ADAMModule(object):
                 'HistoricalMinAIFloatingValueCh4':(0x40079,('word',0),"r"),
                 'HistoricalMinAIFloatingValueCh5':(0x40081,('word',0),"r"),
                 'TypeCodeCh4':(0x40205,('int',0),"rw"),
-                'TypeCodeCh5':(0x40206,('int',0),"rw")
-            },
+                'TypeCodeCh5':(0x40206,('int',0),"rw")},
             'AI4-6':{
                 **self.AnalogParameters['AI4-5'],
                 'ResetHistoricalMaxCh6':(0x00107,('bit',0),"w"),
@@ -155,8 +150,7 @@ class ADAMModule(object):
                 'AIFloatingValueCh6':(0x40043,('word',0),"r"),
                 'HistoricalMaxAIFloatingValueCh6':(0x40063,('word',0),"r"),
                 'HistoricalMinAIFloatingValueCh6':(0x40083,('word',0),"r"),
-                'TypeCodeCh6':(0x40207,('int',0),"rw")
-            },
+                'TypeCodeCh6':(0x40207,('int',0),"rw")},
             'AI4-7':{
                 **self.AnalogParameters['AI4-6'],
                 'ResetHistoricalMaxCh7':(0x00108,('bit',0),"w"),
@@ -171,8 +165,7 @@ class ADAMModule(object):
                 'AIFloatingValueCh7':(0x40045,('word',0),"r"),
                 'HistoricalMaxAIFloatingValueCh7':(0x40065,('word',0),"r"),
                 'HistoricalMinAIFloatingValueCh7':(0x40085,('word',0),"r"),
-                'TypeCodeCh7':(0x40208,('int',0),"rw")
-            },
+                'TypeCodeCh7':(0x40208,('int',0),"rw")},
             'CommonAI':{
                 'AIStatusBitmask':{
                     '0x00000001':'Failed to provide AI value (UART timeout)',
@@ -192,8 +185,7 @@ class ADAMModule(object):
                 'HistoricalMaxAIFloatingValueAvCh0-7':(0x40067,('word',0),"r"),
                 'HistoricalMinAIFloatingValueAvCh0-7':(0x40087,('word',0),"r"),
                 'TypeCodeAvCh0-7':(0x40209,('int',0),"rw"),
-                'AIChannelEnable':(0x40221,('int',0),"rw")
-            },
+                'AIChannelEnable':(0x40221,('int',0),"rw")},
             'ADAM600AO0-1':{
                 'AOValueCh0':(0x40001,('int',0),"rw"),
                 'AOValueCh1':(0x40002,('int',0),"rw"),
@@ -208,8 +200,7 @@ class ADAMModule(object):
                     '0x00040200':'DI triggered to Statup Value',
                     '0x00080200':'AO triggered to Fail Safety Value'},
                     'TypeCodeCh0':(0x40201,('int',0),"rw"), #2bytes
-                    'TypeCodeCh1':(0x40202,('int',0),"rw")
-            },
+                    'TypeCodeCh1':(0x40202,('int',0),"rw")},
             'AO0-1':{
                 'AOValueCh0':(0x40001,('int',0),"rw"),
                 'AOValueCh1':(0x40002,('int',0),"rw"),
@@ -224,25 +215,18 @@ class ADAMModule(object):
                     '0x00040200':'DI triggered to Statup Value',
                     '0x00080200':'AO triggered to Fail Safety Value'},
                     'TypeCodeCh0':(0x40201,('int',0),"rw"), #2bytes
-                    'TypeCodeCh1':(0x40202,('int',0),"rw")
-            },
+                    'TypeCodeCh1':(0x40202,('int',0),"rw")},
             'AO0-3':{
                 **self.AnalogParameters['AO0-1'],
                 'AOValueCh2':(0x40003,('int',0),"rw"),
                 'AOValueCh3':(0x40004,('int',0),"rw"),
                 'AOStatusCh2':(0x40105,('word',0),"r"),
                 'AOStatusCh3':(0x40107,('word',0),"r"),
-                
                 'TypeCodeCh2':(0x40203,('int',0),"rw"),
                 'TypeCodeCh3':(0x40204,('int',0),"rw"),
-                'TypeCodeAvCh0-7':(0x40209,('int',0),"rw"),
-            },
-            'AO4-7':{
-
-            },
-            'CommonAO':{
-
-            },
+                'TypeCodeAvCh0-7':(0x40209,('int',0),"rw"),},
+            'AO4-7':{},
+            'CommonAO':{},
             'Common':{
                 'TypeCode_values':{
                 '0x0143':'+/- 10 V',
@@ -271,26 +255,20 @@ class ADAMModule(object):
                 '0x03E2':'PT1000 -40 ~ 160 C',
                 '0x0300':'Balco500 -30 ~ 120 C',
                 '0x0320':'NI604(518) -80 ~ 100 C',
-                '0x0321':'NI604(518) 0 ~ 100 C'
-                },
-            }
-        }
+                '0x0321':'NI604(518) 0 ~ 100 C'},}}
         self.DigitalParameters = {
             'DI0-1':{
                 'DI0':(0x00001,('bit',0),'r'),
-                'DI1':(0x00002,('bit',0),'r')
-            },
+                'DI1':(0x00002,('bit',0),'r')},
             'DI0-3':{
                 **self.DigitalParameters['DI0-1'],
                 'DI2':(0x00003,('bit',0),'r'),
-                'DI3':(0x00004,('bit',0),'r')
-            },
+                'DI3':(0x00004,('bit',0),'r')},
             'DI4-7':{
                 'DI4':(0x00005,('bit',0),'r'),
                 'DI5':(0x00006,('bit',0),'r'),
                 'DI6':(0x00007,('bit',0),'r'),
-                'DI7':(0x00008,('bit',0),'r')
-            },
+                'DI7':(0x00008,('bit',0),'r')},
             'DI8-15':{
                 'DI8':(0x00009,('bit',0),'r'),
                 'DI9':(0x000010,('bit',0),'r'),
@@ -299,42 +277,34 @@ class ADAMModule(object):
                 'DI12':(0x00013,('bit',0),'r'),
                 'DI13':(0x00014,('bit',0),'r'),
                 'DI14':(0x00015,('bit',0),'r'),
-                'DI15':(0x00016,('bit',0),'r')
-            },
+                'DI15':(0x00016,('bit',0),'r')},
             'CommonDI':{
-                'DIValue':(0x40301,('word',0),"r")
-            },
+                'DIValue':(0x40301,('word',0),"r")},
             'DO0-1':{
                 'DO0':(0x000017,('bit',0),'rw'),
-                'DO1':(0x000018,('bit',0),'rw')
-            },
+                'DO1':(0x000018,('bit',0),'rw')},
             'DO0-3':{
                 **self.DigitalParameters['DO0-1'],
                 'DO2':(0x000019,('bit',0),'rw'),
-                'DO3':(0x000020,('bit',0),'rw')
-            },
+                'DO3':(0x000020,('bit',0),'rw')},
             'DO4-7':{
                 'DO4':(0x000021,('bit',0),'rw'),
                 'DO5':(0x000022,('bit',0),'rw'),
                 'DO6':(0x000023,('bit',0),'rw'),
-                'DO7':(0x000024,('bit',0),'rw')
-            },
+                'DO7':(0x000024,('bit',0),'rw')},
             'DO8-11':{
                 'DO8':(0x00025,('bit',0),'r'),
                 'DO9':(0x00026,('bit',0),'r'),
                 'DO10':(0x00027,('bit',0),'r'),
-                'DO11':(0x00028,('bit',0),'r')
-            },
+                'DO11':(0x00028,('bit',0),'r')},
             'DO8-15':{
                 **self.DigitalParameters['DO8-11'],
                 'DO12':(0x00029,('bit',0),'r'),
                 'DO13':(0x00030,('bit',0),'r'),
                 'DO14':(0x00031,('bit',0),'r'),
-                'DO15':(0x00032,('bit',0),'r')
-            },
+                'DO15':(0x00032,('bit',0),'r')},
             'CommonDO':{
-                'DOValue':(0x40303,('word',0),"rw")
-            },
+                'DOValue':(0x40303,('word',0),"rw")},
             'Counter0-3':{
                 'CounterStartStop0':(0x000033,('bit',0),'rw'),
                 'CounterStartStop1':(0x000034,('bit',0),'rw'),
@@ -348,8 +318,7 @@ class ADAMModule(object):
                 'ClearOverflow1':(0x000042,('bit',0),'rw'),
                 'ClearOverflow2':(0x000043,('bit',0),'rw'),
                 'ClearOverflow3':(0x000044,('bit',0),'rw'),
-                **self.DigitalParameters['Counter/FrequencyValue0-3']
-            },
+                **self.DigitalParameters['Counter/FrequencyValue0-3']},
             'Counter0-7':{
                 'CounterStartStop0':(0x000033,('bit',0),'rw'),
                 'CounterStartStop1':(0x000034,('bit',0),'rw'),
@@ -376,28 +345,24 @@ class ADAMModule(object):
                 'ClearOverflow6':(0x000055,('bit',0),'rw'),
                 'ClearOverflow7':(0x000056,('bit',0),'rw'),
                 **self.DigitalParameters['Counter/FrequencyValue0-3'],
-                **self.DigitalParameters['Counter/FrequencyValue4-7']
-            },
+                **self.DigitalParameters['Counter/FrequencyValue4-7']},
             'Counter/FrequencyValue0-3':{
                 'Counter/FrequencyValue0':(0x40001,('word',0),"r"),
                 'Counter/FrequencyValue1':(0x40003,('word',0),"r"),
                 'Counter/FrequencyValue2':(0x40005,('word',0),"r"),
-                'Counter/FrequencyValue3':(0x40007,('word',0),"r")
-            },
+                'Counter/FrequencyValue3':(0x40007,('word',0),"r")},
             'Counter/FrequencyValue4-7':{
                 'Counter/FrequencyValue4':(0x40009,('word',0),"r"),
                 'Counter/FrequencyValue5':(0x40011,('word',0),"r"),
                 'Counter/FrequencyValue6':(0x40013,('word',0),"r"),
-                'Counter/FrequencyValue7':(0x40015,('word',0),"r")
-            },
+                'Counter/FrequencyValue7':(0x40015,('word',0),"r")},
             'Counter/FrequencyValue0-11':{
                 **self.DigitalParameters['Counter/FrequencyValue0-3'],
                 **self.DigitalParameters['Counter/FrequencyValue4-7'],
                 'Counter/FrequencyValue8':(0x40017,('word',0),"r"),
                 'Counter/FrequencyValue9':(0x40019,('word',0),"r"),
                 'Counter/FrequencyValue10':(0x40021,('word',0),"r"),
-                'Counter/FrequencyValue11':(0x40023,('word',0),"r")
-            },
+                'Counter/FrequencyValue11':(0x40023,('word',0),"r")},
             'PWMOutput0-3':{
                 'PulseOutputLowLevelWidth0':(0x40009,('word',0),"rw"),
                 'PulseOutputLowLevelWidth1':(0x40011,('word',0),"rw"),
@@ -414,8 +379,7 @@ class ADAMModule(object):
                 'SetIncrementalPulse0':(0x40033,('word',0),"rw"),
                 'SetIncrementalPulse1':(0x40035,('word',0),"rw"),
                 'SetIncrementalPulse2':(0x40037,('word',0),"rw"),
-                'SetIncrementalPulse3':(0x40039,('word',0),"rw")
-            },
+                'SetIncrementalPulse3':(0x40039,('word',0),"rw")},
             'ADAM6000PWMOutput0-5':{
                 'PulseOutputLowLevelWidth0':(0x40025,('word',0),"r"),
                 'PulseOutputLowLevelWidth1':(0x40027,('word',0),"r"),
@@ -440,8 +404,7 @@ class ADAMModule(object):
                 'SetIncrementalPulse2':(0x40065,('word',0),"r"),
                 'SetIncrementalPulse3':(0x40067,('word',0),"r"),
                 'SetIncrementalPulse4':(0x40069,('word',0),"r"),
-                'SetIncrementalPulse5':(0x40071,('word',0),"r")
-            },
+                'SetIncrementalPulse5':(0x40071,('word',0),"r")},
             'PWMOutput0-5':{
                 'PulseOutputLowLevelWidth0':(0x40001,('word',0),"rw"),
                 'PulseOutputLowLevelWidth1':(0x40003,('word',0),"rw"),
@@ -466,8 +429,7 @@ class ADAMModule(object):
                 'SetIncrementalPulse2':(0x40041,('word',0),"rw"),
                 'SetIncrementalPulse3':(0x40043,('word',0),"rw"),
                 'SetIncrementalPulse4':(0x40045,('word',0),"rw"),
-                'SetIncrementalPulse5':(0x40047,('word',0),"rw")
-            },
+                'SetIncrementalPulse5':(0x40047,('word',0),"rw")},
             'PWMOutput0-6':{
                 'PulseOutputLowLevelWidth0':(0x40017,('word',0),"rw"),
                 'PulseOutputLowLevelWidth1':(0x40019,('word',0),"rw"),
@@ -496,8 +458,7 @@ class ADAMModule(object):
                 'SetIncrementalPulse3':(0x40065,('word',0),"rw"),
                 'SetIncrementalPulse4':(0x40067,('word',0),"rw"),
                 'SetIncrementalPulse5':(0x40069,('word',0),"rw"),
-                'SetIncrementalPulse6':(0x40071,('word',0),"rw")
-            },
+                'SetIncrementalPulse6':(0x40071,('word',0),"rw")},
             'PWMOutput0-7':{
                 'PulseOutputLowLevelWidth0':(0x40017,('word',0),"rw"),
                 'PulseOutputLowLevelWidth1':(0x40019,('word',0),"rw"),
@@ -530,8 +491,7 @@ class ADAMModule(object):
                 'SetIncrementalPulse4':(0x40073,('word',0),"rw"),
                 'SetIncrementalPulse5':(0x40075,('word',0),"rw"),
                 'SetIncrementalPulse6':(0x40077,('word',0),"rw"),
-                'SetIncrementalPulse7':(0x40079,('word',0),"rw")
-            },
+                'SetIncrementalPulse7':(0x40079,('word',0),"rw")},
             'PWMOutput0-15':{
                 'PulseOutputLowLevelWidth0':(0x40001,('word',0),"rw"),
                 'PulseOutputLowLevelWidth1':(0x40003,('word',0),"rw"),
@@ -596,8 +556,7 @@ class ADAMModule(object):
                 'SetIncrementalPulse12':(0x40121,('word',0),"rw"),
                 'SetIncrementalPulse13':(0x40123,('word',0),"rw"),
                 'SetIncrementalPulse14':(0x40125,('word',0),"rw"),
-                'SetIncrementalPulse15':(0x40127,('word',0),"rw")
-            },
+                'SetIncrementalPulse15':(0x40127,('word',0),"rw")},
             'ADAM6000Counter0-7':{
                 'CounterStartStop0':(0x000033,('bit',0),'rw'),
                 'ClearCounter0':(0x000034,('bit',0),'w'),
@@ -630,8 +589,7 @@ class ADAMModule(object):
                 'CounterStartStop7':(0x000061,('bit',0),'rw'),
                 'ClearCounter7':(0x000062,('bit',0),'w'),
                 'ClearOverflow7':(0x000063,('bit',0),'rw'),
-                'DILatchStatus7':(0x000064,('bit',0),'rw')
-            },
+                'DILatchStatus7':(0x000064,('bit',0),'rw')},
             'ADAM6000Counter0-11':{
                 **self.DigitalParameters['ADAM6000Counter0-7'],
                 'CounterStartStop8':(0x000065,('bit',0),'rw'),
@@ -649,8 +607,7 @@ class ADAMModule(object):
                 'CounterStartStop11':(0x000077,('bit',0),'rw'),
                 'ClearCounter11':(0x000078,('bit',0),'w'),
                 'ClearOverflow11':(0x000079,('bit',0),'rw'),
-                'DILatchStatus11':(0x000080,('bit',0),'rw')
-            },
+                'DILatchStatus11':(0x000080,('bit',0),'rw')},
             'Counter0-15':{
                 'CounterStartStop0':(0x000033,('bit',0),'rw'),
                 'CounterStartStop1':(0x000034,('bit',0),'rw'),
@@ -704,12 +661,8 @@ class ADAMModule(object):
                 'Counter/FrequencyValue12':(0x40025,('word',0),"r"),
                 'Counter/FrequencyValue13':(0x40027,('word',0),"r"),
                 'Counter/FrequencyValue14':(0x40029,('word',0),"r"),
-                'Counter/FrequencyValue15':(0x40031,('word',0),"r")
-            },
-            'Common':{
-                
-            }
-        }
+                'Counter/FrequencyValue15':(0x40031,('word',0),"r")},
+            'Common':{}}
         self.ADAM6250 = {
             **self.DigitalParameters['DI0-3'],
             **self.DigitalParameters['DI4-7'],
@@ -728,8 +681,7 @@ class ADAMModule(object):
             'DILatchStatus4':(0x000061,('bit',0),'rw'),
             'DILatchStatus5':(0x000062,('bit',0),'rw'),
             'DILatchStatus6':(0x000063,('bit',0),'rw'),
-            'DILatchStatus7':(0x000064,('bit',0),'rw')
-        }
+            'DILatchStatus7':(0x000064,('bit',0),'rw')}
         self.ADAM6050 = {
             **self.DigitalParameters['DI0-3'],
             **self.DigitalParameters['DI4-7'],
@@ -743,13 +695,10 @@ class ADAMModule(object):
             **self.ADAM6000GCLInternalCounterValue,
             **self.CommonParameters,
             'ModuleName1':(0x40211,('int',0),'r'),
-            'ModuleName2':(0x40212,('int',0),'r')
-        }
+            'ModuleName2':(0x40212,('int',0),'r')}
         self.ADAM6050D = {
             **self.ADAM6050,
-            'DODiagnosticStatus':(0x40307,('word',0),'r')
-            
-        }
+            'DODiagnosticStatus':(0x40307,('word',0),'r')}
         self.ADAM6051 = {} #TODO
         self.ADAM6052 = {
             **self.DigitalParameters['DI0-3'],
@@ -762,8 +711,7 @@ class ADAMModule(object):
             **self.DigitalParameters['Counter/FrequencyValue4-7'],
             **self.DigitalParameters['ADAM6000Counter0-7'],
             **self.DigitalParameters['PWMOutput0-7'],
-            **self.CommonParameters,
-        }
+            **self.CommonParameters,}
         self.ADAM6051 = {
             **self.DigitalParameters['DI0-3'],
             **self.DigitalParameters['DI4-7'],
@@ -787,8 +735,7 @@ class ADAMModule(object):
             'DILatchStatus12':(0x000093,('bit',0),'rw'),
             'DILatchStatus13':(0x000094,('bit',0),'rw'),
             'DILatchStatus14':(0x000095,('bit',0),'rw'),
-            'DILatchStatus15':(0x000096,('bit',0),'rw')
-        }
+            'DILatchStatus15':(0x000096,('bit',0),'rw')}
         self.ADAM6056 = {
             **self.DigitalParameters['DO0-3'],
             **self.DigitalParameters['DO4-7'],
@@ -796,8 +743,7 @@ class ADAMModule(object):
             **self.DigitalParameters['PWMOutputs0-15'],
             **self.DigitalParameters['CommonDO'],
             **self.DigitalParameters['Common'],
-            **self.CommonParameters
-        }
+            **self.CommonParameters}
         self.ADAM6260 = {
             **self.DigitalParameters['DO0-3'],
             **self.DigitalParameters['PWMOutputs0-5'],
@@ -805,8 +751,7 @@ class ADAMModule(object):
             **self.DigitalParameters['Common'],
             **self.CommonParameters,
             'DO4':(0x000021,('bit',0),'rw'),
-            'DO5':(0x000022,('bit',0),'rw'),
-        }
+            'DO5':(0x000022,('bit',0),'rw'),}
         self.ADAM6266 = {
             **self.DigitalParameters['DO0-3'],
             **self.DigitalParameters['DI0-3'],
@@ -819,8 +764,7 @@ class ADAMModule(object):
             'DILatchStatus0':(0x000045,('bit',0),'rw'),
             'DILatchStatus1':(0x000046,('bit',0),'rw'),
             'DILatchStatus2':(0x000047,('bit',0),'rw'),
-            'DILatchStatus3':(0x000048,('bit',0),'rw'),
-        }
+            'DILatchStatus3':(0x000048,('bit',0),'rw'),}
         self.ADAM6224 = {
             **self.DigitalParameters['DI0-3'],
             **self.DigitalParameters['CommonDI'],
@@ -842,25 +786,21 @@ class ADAMModule(object):
             'DIEventStatusBitmask':{
                     '0x01':'Unreliable DI value (UART timeout)',
                     '0x02':'Safety Value triggered',
-                    '0x04':'Startup Value triggered'}
-        }
+                    '0x04':'Startup Value triggered'}}
         self.ADAM6217 = {
             **self.AnalogParameters['AI0-3'],
             **self.AnalogParameters['AI4-7'],
             **self.AnalogParameters['CommonAI'],
             **self.AnalogParameters['common'],
-            **self.CommonParameters
-        }
+            **self.CommonParameters}
         self.ADAM6017 = {
             **self.ADAM6217,
-            **self.ADAM6000GCLInternalCounterValue
-        }
+            **self.ADAM6000GCLInternalCounterValue}
         self.ADAM6018 = {
             **self.ADAM6217,
             **self.DigitalParameters['DO0-3'],
             **self.DigitalParameters['DO4-7'],
-            **self.DigitalParameters['CommonDO']
-        }
+            **self.DigitalParameters['CommonDO']}
         self.ADAM6024 = {
             **self.DigitalParameters['DI0-1'],
             **self.DigitalParameters['DO0-1'],
@@ -868,8 +808,7 @@ class ADAMModule(object):
             **self.AnalogParameters['ADAM6000DO0-1'],
             **self.DigitalParameters['CommonDI'],
             **self.DigitalParameters['CommonDO']
-            **self.CommonParameters
-        }
+            **self.CommonParameters}
         self.ADAM6015 = {
             **self.AnalogParameters['AI0-3'],
             **self.AnalogParameters['AI4-6'],
@@ -877,8 +816,7 @@ class ADAMModule(object):
             **self.AnalogParameters['common'],
             **self.CommonParameters,
             'ModuleName1':(0x40211,('int',0),'r'),
-            'ModuleName2':(0x40212,('int',0),'r')
-        }
+            'ModuleName2':(0x40212,('int',0),'r')}
         self.ADAM6060 = {} #TODO
         self.ADAM6066 = {} #TODO
 
@@ -1042,7 +980,7 @@ class ParameterDictionaryError(ValueError, SharedLocker):
         self.args = args
         self.lock.acquire()
         self.shared['Errors'] += 'Invalid key for parameter dictionary in ' + ''.join(map(str, *args))
-        self.shared['Errorlevel'][2] = True #High errorLevel
+        self.errorlevel[2] = True #High errorLevel
         self.lock.release()
     
 class ParameterIsNotReadable(TypeError, SharedLocker):
@@ -1050,7 +988,7 @@ class ParameterIsNotReadable(TypeError, SharedLocker):
         self.args = args
         self.lock.acquire()
         self.shared['Errors'] += 'Trying to read from write-only register in ' + ''.join(map(str, *args))
-        self.shared['Errorlevel'][2] = True #High errorLevel
+        self.errorlevel[2] = True #High errorLevel
         self.lock.release()
 
 class ParameterIsNotWritable(TypeError, SharedLocker):
@@ -1058,7 +996,7 @@ class ParameterIsNotWritable(TypeError, SharedLocker):
         self.args = args
         self.lock.acquire()
         self.shared['Errors'] += 'Trying to write to read-only register in ' + ''.join(map(str, *args))
-        self.shared['Errorlevel'][2] = True #High errorLevel
+        self.errorlevel[2] = True #High errorLevel
         self.lock.release()
     
 class FX0GMOD(object):

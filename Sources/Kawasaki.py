@@ -1,6 +1,6 @@
-from modbusTCPunits import KawasakiVG
-from TactWatchdog import TactWatchdog as WDT
-from StaticLock import SharedLocker
+from Sources.modbusTCPunits import KawasakiVG
+from Sources.TactWatchdog import TactWatchdog as WDT
+from Sources.StaticLock import SharedLocker
 from functools import lru_cache
 import configparser
 

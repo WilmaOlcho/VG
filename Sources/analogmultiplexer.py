@@ -1,28 +1,30 @@
-from modbusTCPunits import ADAMDataAcquisitionModule
+from Sources.modbusTCPunits import ADAMDataAcquisitionModule
 import configparser
-from TactWatchdog import TactWatchdog as WDT
-from misc import BlankFunc
-from StaticLock import SharedLocker
+from Sources.TactWatchdog import TactWatchdog as WDT
+from Sources.misc import BlankFunc
+from Sources.StaticLock import SharedLocker
 
 class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
     def __init__(self, settingFilePath, *args, **kwargs):
+        SharedLocker.__init__(self, *args, **kwargs)
+        self.moduleName = "ADAM6052"
         self.config = configparser.ConfigParser()
-        self.parameters = self.config.read(settingFilePath)
+        self.Filefeedback = self.config.read(settingFilePath)
+        self.parameters = self.config
         try:
             with self.parameters['AnalogMultiplexer'] as AmuxParameters:
                 self.IPAddress = AmuxParameters.get('IPAddress')
                 self.moduleName = AmuxParameters.get('moduleName')
                 self.Port = AmuxParameters.getint('Port')
                 self.myOutput = AmuxParameters.getint('BindOutput')
+            super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
+            self.currentState = self.getState()
         except:
             self.lock.acquire()
             self.events['Error'] = True
             self.errorlevel[10] = True
             self.shared['Errors'] += '/nAnalog multiplexer init error - Error while reading config file'
             self.lock.release()
-        finally:
-            super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
-            self.currentState = self.getState()
 
     def __prohibitedBehaviour(self, action = BlankFunc, *args, **kwargs):
         self.getState()
@@ -100,7 +102,7 @@ class MyMultiplexer(AnalogMultiplexer, SharedLocker):
             self.mux['ready'] = self.currentState[2]
         self.lock.release()
         
-    def _acquire(self): 
+    def __acquire(self): 
         if not self.isBusy():
             if self.currentState[self.myOutput]:
                 if self.currentState[2]:
@@ -112,7 +114,7 @@ class MyMultiplexer(AnalogMultiplexer, SharedLocker):
             else:
                 self.setPath()
 
-    def _release(self):
+    def __release(self):
         if self.currentState[self.myOutput]:
             if not self.currentState[2]:
                 if self.currentState[self.myOutput]:
@@ -134,13 +136,13 @@ class MyMultiplexer(AnalogMultiplexer, SharedLocker):
             self.lock.acquire()
             ack, rel = self.mux['acquire'], self.mux['release']
             self.lock.release()
-            if ack: self._acquire()
-            if rel: self._release()
+            if ack: self.__acquire()
+            if rel: self.__release()
 
 class AnalogMultiplexerError(Exception, SharedLocker):
     def __init__(self, *args, **kwargs):
         self.args = args
         self.lock.acquire()
         self.shared['Errors'] += 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
-        self.shared['Error'][2] = True #High errorLevel
+        self.errorlevel[2] = True #High errorLevel
         self.lock.release()

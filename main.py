@@ -19,10 +19,8 @@ class ApplicationManager(SharedLocker):
             Process(target = PneumaticsVG, args=(self.PneumaticsConfigurationFile, *args,))
 
         ]
-        for i in range(len(self.processes)):
-            self.processes[i].start()
-        for i in range(len(self.processes)):
-            self.processes[i].join()
+        for process in self.processes: process.start()
+        for process in self.processes: process.join()
         self.EventLoop(*args, **kwargs)
 
     def EventLoop(self, *args, **kwargs):
@@ -38,6 +36,26 @@ class ApplicationManager(SharedLocker):
                 self.pistons['Alive'] = False
                 self.lock.release()
                 break
+            self.errorcatching()
+
+    def errorcatching(self):
+        self.lock.acquire()
+        erroroccured = self.events['Error']
+        self.lock.release()
+        if erroroccured:
+            self.lock.acquire()
+            print(self.shared['Errors'])
+            for i, err in enumerate(self.errorlevel):
+                if err:
+                    print("errlvl: " + str(i))
+                    self.errorlevel[i] = False
+            self.shared['Errors'] = ''
+            self.lock.release()
+        self.lock.acquire()
+        for err in self.errorlevel:
+            if err: self.events['Error'] = True
+            break
+        self.lock.release()
 
 if __name__=="__main__":
     ApplicationManager()

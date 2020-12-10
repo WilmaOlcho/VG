@@ -1,7 +1,7 @@
 import time
 from threading import Thread
-from misc import BlankFunc, writeInLambda, dictKeyByVal
-from StaticLock import SharedLocker
+from Sources.misc import BlankFunc, writeInLambda, dictKeyByVal
+from Sources.StaticLock import SharedLocker
 
 class TactWatchdog(SharedLocker):
     scaleMultiplier = {

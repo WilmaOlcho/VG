@@ -4,11 +4,11 @@ import configparser
 import sys
 import time
 from functools import lru_cache
-from TactWatchdog import TactWatchdog as WDT
-from pronet_constants import Pronet_constants
-from modbus_constants import Modbus_constants
-from misc import BlankFunc, writeInLambda, dictKeyByVal
-from StaticLock import SharedLocker
+from Sources.TactWatchdog import TactWatchdog as WDT
+from Sources.pronet_constants import Pronet_constants
+from Sources.modbus_constants import Modbus_constants
+from Sources.misc import BlankFunc, writeInLambda, dictKeyByVal
+from Sources.StaticLock import SharedLocker
 
 class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException, SharedLocker):
     def __init__(self,
@@ -204,6 +204,7 @@ class MyEstun(Estun, SharedLocker):
              self.estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])] = self.readParameter(param)
 
     def __init__(self, configFile, *args, **kwargs):
+        SharedLocker.__init__(self)
         self.control_switch = {
             'procedure':{
                 'homing':self.homing,
@@ -216,35 +217,35 @@ class MyEstun(Estun, SharedLocker):
         self.config = configparser.ConfigParser()
         self.servobak = configparser.ConfigParser()
         fileFeedback = self.config.read(configFile)
-        if not any(fileFeedback):
+        if not fileFeedback:
             self.lock.acquire()
             self.shared['configurationError']=True
             self.shared['Errors'] += '/n Servo configuration file not found'
             self.errorlevel[0] = True
             self.estun['Alive'] = True
             self.lock.release()
-
-        self.lock.acquire()
-        self.Alive = self.estun['Alive']
-        self.lock.release()
-        COMSETTINGS = self.config['COMSETTINGS']
-        super().__init__(   comport = COMSETTINGS['comport'],
-                            slaveadress = COMSETTINGS.getint('adress'),
-                            protocol = COMSETTINGS['protocol'],
-                            close_port_after_each_call = COMSETTINGS.getboolean('close_port_after_each_call') == 'True',
-                            debug = COMSETTINGS.getboolean('debug') == 'True',
-                            baud = COMSETTINGS.getint('baudrate'),
-                            stopbits = COMSETTINGS.getint('stopbits'),
-                            parity = COMSETTINGS.get('parity'),
-                            bytesize = COMSETTINGS.getint('bytesize'), *args, **kwargs)
-        while self.Alive:
+        else:
             self.lock.acquire()
-            firstAccess = self.estun['servoModuleFirstAccess']
+            self.Alive = self.estun['Alive']
             self.lock.release()
-            if firstAccess:
-                self.ServoFirstAccess()
-            else:
-                self.ServoLoop()
+            COMSETTINGS = self.config['COMSETTINGS']
+            super().__init__(   comport = COMSETTINGS['comport'],
+                                slaveadress = COMSETTINGS.getint('adress'),
+                                protocol = COMSETTINGS['protocol'],
+                                close_port_after_each_call = COMSETTINGS.getboolean('close_port_after_each_call') == 'True',
+                                debug = COMSETTINGS.getboolean('debug') == 'True',
+                                baud = COMSETTINGS.getint('baudrate'),
+                                stopbits = COMSETTINGS.getint('stopbits'),
+                                parity = COMSETTINGS.get('parity'),
+                                bytesize = COMSETTINGS.getint('bytesize'), *args, **kwargs)
+            while self.Alive:
+                self.lock.acquire()
+                firstAccess = self.estun['servoModuleFirstAccess']
+                self.lock.release()
+                if firstAccess:
+                    self.ServoFirstAccess()
+                else:
+                    self.ServoLoop()
 
     def ServoLoop(self):
         self.lock.acquire()
