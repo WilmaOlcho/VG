@@ -13,6 +13,7 @@ class SharedLocker(object):
     estunModbus = None
     robot = None
     GPIO = None
+    SICKGMOD0 = None
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if SharedLocker.robot == None:
