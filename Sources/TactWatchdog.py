@@ -1,9 +1,9 @@
 import time
 from threading import Thread
 from Sources.misc import BlankFunc, writeInLambda, dictKeyByVal
-from Sources.StaticLock import SharedLocker
+from Sources.StaticLock import SharedLocker, BlankLocker
 
-class TactWatchdog(SharedLocker):
+class TactWatchdog(object):
     scaleMultiplier = {
         'ns':1,
         'us':1000,
@@ -31,7 +31,8 @@ class TactWatchdog(SharedLocker):
     def elapsed(self):
         return time.time_ns() - self.timePoint
 
-    def WDTloop(self, limitval,
+    def WDTloop(self,lockerinstance = BlankLocker,
+                limitval=0,
                 errToRaise = '/n',
                 caption = 'WDTTimer',
                 scale = 'ns',
@@ -48,21 +49,21 @@ class TactWatchdog(SharedLocker):
         self.active = True
         while True:
             additionalFuncOnLoop()
-            self.lock.acquire()
-            self.shared['TactWDT'] = True
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].shared['TactWDT'] = True
             if eventToCatch[0] == '-':
-                event = not(self.events[eventToCatch[1:]])
+                event = not(lockerinstance[0].events[eventToCatch[1:]])
             else:
-                event = self.events[eventToCatch]
-            self.lock.release()
+                event = lockerinstance[0].events[eventToCatch]
+            lockerinstance[0].lock.release()
             if event:
                 additionalFuncOnCatch()
                 break
             if self.elapsed() >= limitval:
-                self.lock.acquire()
-                self.shared['Errors'] += errToRaise
-                self.errorlevel[errorlevel] = True
-                self.lock.release()
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].shared['Errors'] += errToRaise
+                lockerinstance[0].errorlevel[errorlevel] = True
+                lockerinstance[0].lock.release()
                 additionalFuncOnExceed()
                 self.Destruct()
                 break
@@ -72,6 +73,7 @@ class TactWatchdog(SharedLocker):
 
     @classmethod
     def WDT(cli,
+            lockerinstance = BlankLocker,
             limitval = 100,
             errToRaise = 'limit',
             caption = 'Event',
@@ -84,7 +86,8 @@ class TactWatchdog(SharedLocker):
             additionalFuncOnExceed = BlankFunc,
             *args, **kwargs):
         WDT = cli()
-        thread = Thread(target=WDT.WDTloop, args = (limitval,
+        thread = Thread(target=WDT.WDTloop, args = (lockerinstance,
+                                                    limitval,
                                                     errToRaise,
                                                     caption, scale, errorlevel,
                                                     eventToCatch,
@@ -96,33 +99,34 @@ class TactWatchdog(SharedLocker):
         thread.start()
 
 if __name__=='__main__': ##Test
-    SharedLocker()
-    TactWatchdog.WDT(errToRaise = 'ERR1', limitval = 3)
-    TactWatchdog.WDT(caption = 'TACT1EXCEEDED', limitval = 8)
-    TactWatchdog.WDT(errToRaise = 'Servo', limitval = 10000, scale = 'ms', errorlevel = 3)
+    lockerbaseinstance = SharedLocker()
+    locker = {0:lockerbaseinstance}
+    TactWatchdog.WDT(lockerinstance = locker, errToRaise = 'ERR1', limitval = 3)
+    TactWatchdog.WDT(lockerinstance = locker, caption = 'TACT1EXCEEDED', limitval = 8)
+    TactWatchdog.WDT(lockerinstance = locker, errToRaise = 'Servo', limitval = 10000, scale = 'ms', errorlevel = 3)
     def Foo1():
-        TactWatchdog.WDT(limitval=1, errToRaise='CATCH', scale='ms', errorlevel=15)
-    TactWatchdog.WDT(errToRaise = 'Duuupa', caption = 'ESTUN working', limitval = 30, scale = 's',eventToCatch = '-RobotMoving', additionalFuncOnCatch = Foo1)
-    TactWatchdog.WDT(errToRaise = 'ERR2', limitval = 10, scale = 's')
-    TactWatchdog.WDT(limitval = 4, scale = 's')
+        TactWatchdog.WDT(lockerinstance = locker, limitval=1, errToRaise='CATCH', scale='ms', errorlevel=15)
+    TactWatchdog.WDT(lockerinstance = locker, errToRaise = 'Duuupa', caption = 'ESTUN working', limitval = 30, scale = 's',eventToCatch = '-RobotMoving', additionalFuncOnCatch = Foo1)
+    TactWatchdog.WDT(lockerinstance = locker, errToRaise = 'ERR2', limitval = 10, scale = 's')
+    TactWatchdog.WDT(lockerinstance = locker, limitval = 4, scale = 's')
     def Foo2():
-        SharedLocker.lock.acquire()
-        SharedLocker.events['RobotMoving'] = False
-        SharedLocker.lock.release()
-    TactWatchdog.WDT(errToRaise = 'ERR3', limitval = 5, scale = 's', additionalFuncOnExceed = Foo2)
+        locker[0].lock.acquire()
+        locker[0].events['RobotMoving'] = False
+        locker[0].lock.release()
+    TactWatchdog.WDT(lockerinstance = locker, errToRaise = 'ERR3', limitval = 5, scale = 's', additionalFuncOnExceed = Foo2)
     dt = True
     last = ''
     while dt:
-        SharedLocker.lock.acquire()
-        dt = SharedLocker.shared['TactWDT']
-        SharedLocker.shared['TactWDT'] = False
-        news = SharedLocker.shared['Errors']
+        locker[0].lock.acquire()
+        dt = locker[0].shared['TactWDT']
+        locker[0].shared['TactWDT'] = False
+        news = locker[0].shared['Errors']
         if last != news:
             print(news.replace(last,'',1))
-            last = SharedLocker.shared['Errors']
-        SharedLocker.lock.release()
-    SharedLocker.lock.acquire()
-    print(dictKeyByVal(SharedLocker.errorlevel,True))
-    SharedLocker.lock.release()
+            last = locker[0].shared['Errors']
+        locker[0].lock.release()
+    locker[0].lock.acquire()
+    print(dictKeyByVal(locker[0].errorlevel,True))
+    locker[0].lock.release()
 
     

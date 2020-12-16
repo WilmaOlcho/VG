@@ -1,5 +1,5 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-from Sources.StaticLock import SharedLocker
+from Sources.StaticLock import SharedLocker, BlankLocker
 from functools import wraps, partial
 from pymodbus.transaction import ModbusAsciiFramer
 import re
@@ -820,22 +820,22 @@ class ADAMModule(object):
         self.ADAM6060 = {} #TODO
         self.ADAM6066 = {} #TODO
 
-class ADAMDataAcquisitionModule(ModbusClient, SharedLocker):
-    def __init__(self, moduleName = 'ADAM6052', address = '192.168.0.1', port = 502, *args, **kwargs):
+class ADAMDataAcquisitionModule(ModbusClient):
+    def __init__(self, lockerinstance = BlankLocker, moduleName = 'ADAM6052', address = '192.168.0.1', port = 502, *args, **kwargs):
         super().__init__(address, port, *args, **kwargs)
         self.moduleName = moduleName
         try:
             self.addresses = eval('ADAMModule().' + str(moduleName))
         except:
-            raise ParameterDictionaryError('ADAMDataAcquisitionModule.__init__, parameter = ' + str(moduleName))
+            raise ParameterDictionaryError(lockerinstance, 'ADAMDataAcquisitionModule.__init__, parameter = ' + str(moduleName))
 
-    def __getAddress(self, parameterName):
+    def __getAddress(self, lockerinstance = BlankLocker, parameterName=''):
         try:
             return self.addresses[parameterName][0]
         except:
-            raise ParameterDictionaryError(self.moduleName + ' __getAddress, parameter = ' + str(parameterName))
+            raise ParameterDictionaryError(lockerinstance, self.moduleName + ' __getAddress, parameter = ' + str(parameterName))
 
-    def read_coils(self, input = 'DI0', NumberOfCoils = 1, **kwargs):
+    def read_coils(self, lockerinstance = BlankLocker, input = 'DI0', NumberOfCoils = 1, **kwargs):
         access = ''
         if isinstance(input,str):
             if 'I' in input or 'DI' in input:
@@ -843,20 +843,20 @@ class ADAMDataAcquisitionModule(ModbusClient, SharedLocker):
                     with self.addresses['DI' + ''.join(re.findall(r'\d',input))] as ParameterTuple:
                         address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
-                    raise ParameterDictionaryError(self.moduleName + ' read_coils, parameter = ' + str(input))
+                    raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
             else:
-                raise ParameterDictionaryError(self.moduleName + ' read_coils, parameter = ' + str(input))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
         if isinstance(input,int):
             try:
                 with self.addresses['DI' + str(input)] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' read_coils, parameter = ' + str(input))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
         if access == 'w':
-            raise ParameterIsNotReadable(self.moduleName + ' read_coils, parameter = ' + str(input))
+            raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
         return super().read_coils(address, NumberOfCoils, **kwargs)
 
-    def write_coils(self, startCoil = 'DO0', listOfValues = [True], **kwargs):
+    def write_coils(self, lockerinstance = BlankLocker, startCoil = 'DO0', listOfValues = [True], **kwargs):
         access = ''
         if isinstance(startCoil,str):
             if 'O' in startCoil or 'DO' in startCoil:
@@ -864,20 +864,20 @@ class ADAMDataAcquisitionModule(ModbusClient, SharedLocker):
                     with self.addresses['DO' + ''.join(re.findall(r'\d',startCoil))] as ParameterTuple:
                         address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
-                    raise ParameterDictionaryError(self.moduleName + ' write_coils, parameter = ' + str(startCoil))
+                    raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
             else:
-                raise ParameterDictionaryError(self.moduleName + ' write_coils, parameter = ' + str(startCoil))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
         if isinstance(startCoil,int):
             try:
                 with self.addresses['DO' + str(startCoil)] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' write_coils, parameter = ' + str(startCoil))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
         if access == 'r':
-            raise ParameterIsNotWritable(self.moduleName + ' write_coils, parameter = ' + str(startCoil))
+            raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
         return super().write_coils(address, listOfValues, **kwargs)
 
-    def write_coil(self, Coil, value, **kwargs):
+    def write_coil(self, lockerinstance = BlankLocker, Coil='DO0', value=0, **kwargs):
         access = ''
         if isinstance(Coil,str):
             if 'O' in Coil or 'DO' in Coil:
@@ -885,20 +885,20 @@ class ADAMDataAcquisitionModule(ModbusClient, SharedLocker):
                     with self.addresses['DO' + ''.join(re.findall(r'\d',Coil))] as ParameterTuple:
                         address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
-                    raise ParameterDictionaryError(self.moduleName + ' write_coil, parameter = ' + str(Coil))
+                    raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
             else:
-                raise ParameterDictionaryError(self.moduleName + ' write_coil, parameter = ' + str(Coil))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
         if isinstance(Coil,int):
             try:
                 with self.addresses['DO' + str(Coil)] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' write_coil, parameter = ' + str(Coil))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
         if access == 'r':
-            raise ParameterIsNotWritable(self.moduleName + ' write_coil, parameter = ' + str(Coil))
+            raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
         return super().write_coil(address, value, **kwargs)
 
-    def read_discrete_inputs(self, InputToStartFrom = 'DI0', count=1, **kwargs):
+    def read_discrete_inputs(self, lockerinstance = BlankLocker, InputToStartFrom = 'DI0', count=1, **kwargs):
         access = ''
         if isinstance(InputToStartFrom,str):
             if 'I' in InputToStartFrom or 'DI' in InputToStartFrom:
@@ -906,98 +906,98 @@ class ADAMDataAcquisitionModule(ModbusClient, SharedLocker):
                     with self.addresses['DI' + ''.join(re.findall(r'\d',InputToStartFrom))] as ParameterTuple:
                         address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
-                    raise ParameterDictionaryError(self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
+                    raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
             else:
-                raise ParameterDictionaryError(self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
         if isinstance(InputToStartFrom,int):
             try:
                 with self.addresses['DO' + str(InputToStartFrom)] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
         if access == 'w':
-            raise ParameterIsNotReadable(self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
+            raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
         return super().read_discrete_inputs(address, count, **kwargs)
     
-    def read_holding_registers(self, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
+    def read_holding_registers(self, lockerinstance = BlankLocker, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:
                 with self.addresses[registerToStartFrom] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
         else:
-            raise ParameterDictionaryError(self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
         if access == 'w':
-            raise ParameterIsNotReadable(self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
         return super().read_holding_registers(address, count, **kwargs)
 
-    def read_input_registers(self, registerToStartFrom = 'DIvalue', count=1, **kwargs):
+    def read_input_registers(self, lockerinstance = BlankLocker, registerToStartFrom = 'DIvalue', count=1, **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:
                 with self.addresses[registerToStartFrom] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
         else:
-            raise ParameterDictionaryError(self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
         if access == 'w':
-            raise ParameterIsNotReadable(self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
         return super().read_input_registers(address, count, **kwargs)
     
-    def write_register(self, register = '', value = 0xFFFF, **kwargs):
+    def write_register(self, lockerinstance = BlankLocker, register = '', value = 0xFFFF, **kwargs):
         access = ''
         if isinstance(register,str):
             try:
                 with self.addresses[register] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' write_register, parameter = ' + str(register))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_register, parameter = ' + str(register))
         else:
-            raise ParameterDictionaryError(self.moduleName + ' write_register, parameter = ' + str(register))
+            raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_register, parameter = ' + str(register))
         if access == 'r':
-            raise ParameterIsNotWritable(self.moduleName + ' write_register, parameter = ' + str(register))
+            raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_register, parameter = ' + str(register))
         return super().write_registers(address, value, **kwargs)
 
-    def write_registers(self, registerToStartFrom = '', values = [0xFFFF], **kwargs):
+    def write_registers(self, lockerinstance = BlankLocker, registerToStartFrom = '', values = [0xFFFF], **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:
                 with self.addresses[registerToStartFrom] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(self.moduleName + ' write_registers, parameter = ' + str(registerToStartFrom))
+                raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_registers, parameter = ' + str(registerToStartFrom))
         else:
-            raise ParameterDictionaryError(self.moduleName + ' write_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_registers, parameter = ' + str(registerToStartFrom))
         if access == 'r':
-            raise ParameterIsNotWritable(self.moduleName + ' write_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_registers, parameter = ' + str(registerToStartFrom))
         return super().write_registers(address, values, **kwargs)
 
-class ParameterDictionaryError(ValueError, SharedLocker):
-    def __init__(self, *args, **kwargs):
+class ParameterDictionaryError(ValueError):
+    def __init__(self, lockerinstance = BlankLocker, *args, **kwargs):
         self.args = args
-        self.lock.acquire()
-        self.shared['Errors'] += 'Invalid key for parameter dictionary in ' + ''.join(map(str, *args))
-        self.errorlevel[2] = True #High errorLevel
-        self.lock.release()
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].shared['Errors'] += 'Invalid key for parameter dictionary in ' + ''.join(map(str, *args))
+        lockerinstance[0].errorlevel[2] = True #High errorLevel
+        lockerinstance[0].lock.release()
     
-class ParameterIsNotReadable(TypeError, SharedLocker):
-    def __init__(self, *args, **kwargs):
+class ParameterIsNotReadable(TypeError):
+    def __init__(self, lockerinstance = BlankLocker, *args, **kwargs):
         self.args = args
-        self.lock.acquire()
-        self.shared['Errors'] += 'Trying to read from write-only register in ' + ''.join(map(str, *args))
-        self.errorlevel[2] = True #High errorLevel
-        self.lock.release()
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].shared['Errors'] += 'Trying to read from write-only register in ' + ''.join(map(str, *args))
+        lockerinstance[0].errorlevel[2] = True #High errorLevel
+        lockerinstance[0].lock.release()
 
-class ParameterIsNotWritable(TypeError, SharedLocker):
-    def __init__(self, *args, **kwargs):
+class ParameterIsNotWritable(TypeError):
+    def __init__(self, lockerinstance = BlankLocker, *args, **kwargs):
         self.args = args
-        self.lock.acquire()
-        self.shared['Errors'] += 'Trying to write to read-only register in ' + ''.join(map(str, *args))
-        self.errorlevel[2] = True #High errorLevel
-        self.lock.release()
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].shared['Errors'] += 'Trying to write to read-only register in ' + ''.join(map(str, *args))
+        lockerinstance[0].errorlevel[2] = True #High errorLevel
+        lockerinstance[0].lock.release()
     
 class FX0GMOD(object):
     def __init__(self, *args, **kwargs):
@@ -1015,8 +1015,8 @@ class FX0GMOD(object):
             'WriteOutputDataset4':(2400,('list',(5,)),'w'),
             'WriteOutputDataset5':(2500,('list',(5,)),'w')}
 
-class SICKGmod(FX0GMOD, ModbusClient, SharedLocker):
-    def __init__(self, address = '192.168.255.255', port = 9100, *args, **kwargs):
+class SICKGmod(FX0GMOD, ModbusClient):
+    def __init__(self, lockerinstance = BlankLocker, address = '192.168.255.255', port = 9100, *args, **kwargs):
         super().__init__(address, port, *args, **kwargs)
         self.InputDatablock = [[25*[0]],[16*[0]],[30*[0]],[30*[0]]]
         self.OutputDatablock = [5*[5*[0]]]
@@ -1274,18 +1274,18 @@ class KawasakiRobot(object):
             **self.correction,
             **self.status}
         
-class KawasakiVG(ModbusClient, SharedLocker):
-    def __init__(self, address = '192.168.0.1', port = 9200, *args, **kwargs):
+class KawasakiVG(ModbusClient):
+    def __init__(self, lockerinstance = BlankLocker, address = '192.168.0.1', port = 9200, *args, **kwargs):
         super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
         self.addresses = KawasakiRobot().addresses
         
-    def __getAddress(self, parameterName):
+    def __getAddress(self, lockerinstance = BlankLocker, parameterName=''):
         try:
             return self.addresses[parameterName][0]
         except:
-            raise ParameterDictionaryError('KawasakiVG __getAddress, parameter = ' + str(parameterName))
+            raise ParameterDictionaryError(lockerinstance, 'KawasakiVG __getAddress, parameter = ' + str(parameterName))
 
-    def read_coils(self, input = 'I1', NumberOfCoils = 1, **kwargs):
+    def read_coils(self, lockerinstance = BlankLocker, input = 'I1', NumberOfCoils = 1, **kwargs):
         access = ''
         if isinstance(input,str):
             if 'I' in input:
@@ -1293,20 +1293,20 @@ class KawasakiVG(ModbusClient, SharedLocker):
                     with self.addresses['I' + ''.join(re.findall(r'\d',input))] as ParameterTuple:
                         address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
-                    raise ParameterDictionaryError('KawasakiVG read_coils, parameter = ' + input)
+                    raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
             else:
-                raise ParameterDictionaryError('KawasakiVG read_coils, parameter = ' + input)
+                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
         if isinstance(input,int):
             try:
                 with self.addresses['I' + str(input)] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError('KawasakiVG read_coils, parameter = ' + str(input))
+                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
         if access == 'w':
-            raise ParameterIsNotReadable('KawasakiVG read_coils, parameter = ' + str(input))
+            raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
         return super().read_coils(address, NumberOfCoils, **kwargs)
 
-    def write_coil(self, Coil, value, **kwargs):
+    def write_coil(self, lockerinstance = BlankLocker, Coil='DO0', value=0, **kwargs):
         access = ''
         if isinstance(Coil,str):
             if 'O' in Coil:
@@ -1314,45 +1314,45 @@ class KawasakiVG(ModbusClient, SharedLocker):
                     with self.addresses['O' + ''.join(re.findall(r'\d',Coil))] as ParameterTuple:
                         address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
-                    raise ParameterDictionaryError('KawasakiVG write_coil, parameter = ' + str(Coil))
+                    raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
             else:
-                raise ParameterDictionaryError('KawasakiVG write_coil, parameter = ' + str(Coil))
+                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         if isinstance(Coil,int):
             try:
                 with self.addresses['O' + str(Coil)] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError('KawasakiVG write_coil, parameter = ' + str(Coil))
+                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         if access == 'r':
-            raise ParameterIsNotWritable('KawasakiVG write_coil, parameter = ' + str(Coil))
+            raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         return super().write_coil(address, value, **kwargs)
 
-    def read_holding_registers(self, registerToStartFrom = 'command', count=1, **kwargs):
+    def read_holding_registers(self, lockerinstance = BlankLocker, registerToStartFrom = 'command', count=1, **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:
                 with self.addresses[registerToStartFrom] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError('KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         else:
-            raise ParameterDictionaryError('KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         if access == 'w':
-            raise ParameterIsNotReadable('KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         return super().read_holding_registers(address, count, **kwargs)
 
-    def write_register(self, register = '', value = 0xFFFF, **kwargs):
+    def write_register(self, lockerinstance = BlankLocker, register = '', value = 0xFFFF, **kwargs):
         access = ''
         if isinstance(register,str):
             try:
                 with self.addresses[register] as ParameterTuple:
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError('KawasakiVG write_register, parameter = ' + str(register))
+                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         else:
-            raise ParameterDictionaryError('KawasakiVG write_register, parameter = ' + str(register))
+            raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         if access == 'r':
-            raise ParameterIsNotWritable('KawasakiVG write_register, parameter = ' + str(register))
+            raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         return super().write_registers(address, value, **kwargs)
 
 

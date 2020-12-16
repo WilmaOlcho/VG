@@ -2,11 +2,10 @@ from Sources.modbusTCPunits import ADAMDataAcquisitionModule
 import configparser
 from Sources.TactWatchdog import TactWatchdog as WDT
 from Sources.misc import BlankFunc
-from Sources.StaticLock import SharedLocker
+from Sources.StaticLock import BlankLocker
 
-class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
-    def __init__(self, settingFilePath, *args, **kwargs):
-        SharedLocker.__init__(self, *args, **kwargs)
+class AnalogMultiplexer(ADAMDataAcquisitionModule):
+    def __init__(self, lockerinstance = BlankLocker, settingFilePath = '', *args, **kwargs):
         self.moduleName = "ADAM6052"
         self.config = configparser.ConfigParser()
         self.Filefeedback = self.config.read(settingFilePath)
@@ -20,14 +19,14 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
             super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
             self.currentState = self.getState()
         except:
-            self.lock.acquire()
-            self.events['Error'] = True
-            self.errorlevel[10] = True
-            self.shared['Errors'] += '/nAnalog multiplexer init error - Error while reading config file'
-            self.lock.release()
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].events['Error'] = True
+            lockerinstance[0].errorlevel[10] = True
+            lockerinstance[0].shared['Errors'] += '/nAnalog multiplexer init error - Error while reading config file'
+            lockerinstance[0].lock.release()
 
-    def __prohibitedBehaviour(self, action = BlankFunc, *args, **kwargs):
-        self.getState()
+    def __prohibitedBehaviour(self, lockerinstance = BlankLocker, action = BlankFunc, *args, **kwargs):
+        self.getState(lockerinstance)
         prohibited = False
         if action == self.write_coil:
             if not self.currentState[2]:
@@ -42,12 +41,15 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
                     prohibited = True
         return prohibited  
     
-    def getState(self):
-        self.currentState = self.read_coils('DO0',3)
-        return self.currentState
+    def getState(self, lockerinstance = BlankLocker):
+        try:
+            self.currentState = self.read_coils(lockerinstance = lockerinstance, input = 'DO0', NumberOfCoils = 3)
+            return self.currentState
+        except:
+            return -1
 
-    def isBusy(self):
-        self.getState()
+    def isBusy(self, lockerinstance = BlankLocker):
+        self.getState(lockerinstance)
         if self.currentState[2]:
             return True
         if self.currentState[self.myOutput] or not any(self.currentState):
@@ -55,94 +57,109 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule, SharedLocker):
         else:
             return True
 
-    def setPath(self):
-        if not self.isBusy() and not self.__prohibitedBehaviour(self.write_coil,'DO'+str(self.myOutput), True):
-            self.write_coil('DO'+str(self.myOutput), True)
+    def setPath(self, lockerinstance = BlankLocker):
+        if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance = lockerinstance, action = self.write_coil, args = ('DO'+str(self.myOutput), True)):
+            try:
+                self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(self.myOutput), value = True)
+            except:
+                pass
         else:
-            raise AnalogMultiplexerError('setPath() ', 'DO'+str(self.myOutput), ' is prohibited')
+            raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('setPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
-    def resetPath(self):
-        if self.getState()[self.myOutput] and not self.isBusy():
-            self.write_coil('DO'+str(self.myOutput), False)
+    def resetPath(self, lockerinstance = BlankLocker):
+        if self.getState(lockerinstance)[self.myOutput] and not self.isBusy(lockerinstance):
+            try:
+                self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(self.myOutput), value = False)
+            except:
+                pass
         else:
-            raise AnalogMultiplexerError('resetPath() ', 'DO'+str(self.myOutput), ' is prohibited')
+            raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('resetPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
-    def activatePath(self):
-        if not self.isBusy() and not self.__prohibitedBehaviour(self.write_coil,'DO'+str(2), True):
-            self.write_coil('DO'+str(2), True)
+    def activatePath(self, lockerinstance = BlankLocker):
+        if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance = lockerinstance, action = self.write_coil, args = ('DO'+str(2), True)):
+            try:
+                self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(2), value = True)
+            except:
+                pass
         else:
-            raise AnalogMultiplexerError('activatePath() ', 'DO'+str(self.myOutput), ' is prohibited')
+            raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('activatePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
-    def releasePath(self):
-        if not self.isBusy() and not self.__prohibitedBehaviour(self.write_coil,'DO'+str(2), False):
-            self.write_coil('DO'+str(2), False)
+    def releasePath(self, lockerinstance = BlankLocker):
+        if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance = lockerinstance, action = self.write_coil, args = ('DO'+str(2), False)):
+            try:
+                self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(2), value = False)
+            except:
+                pass
         else:
-            raise AnalogMultiplexerError('releasePath() ', 'DO'+str(self.myOutput), ' is prohibited')
+            raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('releasePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
-class MyMultiplexer(AnalogMultiplexer, SharedLocker):
-    def __init__(self, settingFilePath, *args, **kwargs):
-        super().__init__(settingFilePath, *args, **kwargs)
-        self.lock.acquire()
-        self.mux['Alive'] = True
-        self.lock.release()
-        self.MUXloop()
+class MyMultiplexer(AnalogMultiplexer):
+    def __init__(self, lockerinstance = BlankLocker, settingFilePath = '', *args, **kwargs):
+        super().__init__(lockerinstance = lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].mux['Alive'] = True
+        lockerinstance[0].lock.release()
+        lockerinstance[0].muxloop(lockerinstance)
 
-    def isBusy(self):
-        result = super().isBusy() 
-        self.lock.acquire()
-        self.mux['busy'] = result
-        self.lock.release()
+    def isBusy(self, lockerinstance = BlankLocker):
+        result = super().isBusy(lockerinstance) 
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].mux['busy'] = result
+        lockerinstance[0].lock.release()
         return result
 
-    def getState(self):
-        self.currentState = super().getState()
-        self.lock.acquire()
-        self.mux['onpath'] = self.currentState[self.myOutput]
-        if self.mux['onpath']:
-            self.mux['ready'] = self.currentState[2]
-        self.lock.release()
+    def getState(self, lockerinstance = BlankLocker):
+        self.currentState = super().getState(lockerinstance)
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].mux['onpath'] = self.currentState[self.myOutput]
+        if lockerinstance[0].mux['onpath']:
+            lockerinstance[0].mux['ready'] = self.currentState[2]
+        lockerinstance[0].lock.release()
         
-    def __acquire(self): 
-        if not self.isBusy():
+    def __acquire(self, lockerinstance = BlankLocker): 
+        if not self.isBusy(lockerinstance):
             if self.currentState[self.myOutput]:
                 if self.currentState[2]:
-                    self.lock.acquire()
-                    self.mux['acquire'] = False
-                    self.lock.release()
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].mux['acquire'] = False
+                    lockerinstance[0].lock.release()
                 else:
-                    self.activatePath()
+                    self.activatePath(lockerinstance)
             else:
-                self.setPath()
+                self.setPath(lockerinstance)
 
-    def __release(self):
+    def __release(self, lockerinstance = BlankLocker):
         if self.currentState[self.myOutput]:
             if not self.currentState[2]:
                 if self.currentState[self.myOutput]:
-                    self.resetPath()
+                    self.resetPath(lockerinstance)
                 else:
-                    self.lock.acquire()
-                    self.mux['release'] = False
-                    self.lock.release()
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].mux['release'] = False
+                    lockerinstance[0].lock.release()
             else:
-                self.releasePath()
+                self.releasePath(lockerinstance)
 
-    def MUXloop(self, *args, **kwargs):
+    def MUXloop(self, lockerinstance = BlankLocker, *args, **kwargs):
         while True:
-            self.lock.acquire()
-            self.Alive = self.mux['Alive']
-            self.lock.release()
+            lockerinstance[0].lock.acquire()
+            self.Alive = lockerinstance[0].mux['Alive']
+            lockerinstance[0].lock.release()
             if not self.Alive: break
-            self.getState()
-            self.lock.acquire()
-            ack, rel = self.mux['acquire'], self.mux['release']
-            self.lock.release()
-            if ack: self.__acquire()
-            if rel: self.__release()
+            try:
+                self.getState(lockerinstance)
+            except:
+                pass
+            lockerinstance[0].lock.acquire()
+            ack, rel = lockerinstance[0].mux['acquire'], lockerinstance[0].mux['release']
+            lockerinstance[0].lock.release()
+            if ack: self.__acquire(lockerinstance)
+            if rel: self.__release(lockerinstance)
 
-class AnalogMultiplexerError(Exception, SharedLocker):
-    def __init__(self, *args, **kwargs):
+class AnalogMultiplexerError(Exception):
+    def __init__(self, lockerinstance = BlankLocker, *args, **kwargs):
         self.args = args
-        self.lock.acquire()
-        self.shared['Errors'] += 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
-        self.errorlevel[2] = True #High errorLevel
-        self.lock.release()
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].shared['Errors'] += 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
+        lockerinstance[0].errorlevel[2] = True #High errorLevel
+        lockerinstance[0].lock.release()
