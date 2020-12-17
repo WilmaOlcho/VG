@@ -1,4 +1,4 @@
-from multiprocessing import Manager, Lock, Array
+from multiprocessing import Manager, Lock, Array, Value
 from Sources.misc import BlankFunc
 
 class BlankLocker(object):
@@ -24,6 +24,7 @@ class SharedLocker(object):
                 'configurationError':False,
                 'TactWDT':False})
         self.lock = Lock()
+        self.attempts = Value('i',4)
         self.events = Manager().dict({
                 'ack':False,
                 'Error':False,

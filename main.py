@@ -4,9 +4,9 @@ if True:
     from multiprocessing import Process
     #from Sources.Estun import MyEstun
     from Sources.StaticLock import SharedLocker
-    #from Sources.analogmultiplexer import MyMultiplexer
+    from Sources.analogmultiplexer import MyMultiplexer
     from Sources.Kawasaki import RobotVG
-    #from Sources.Pneumatics import PneumaticsVG
+    from Sources.Pneumatics import PneumaticsVG
     from gui import console
 
 
@@ -16,21 +16,21 @@ if True:
             super().__init__(*args, **kwargs)
             locker = SharedLocker()
             self.lock = {0:locker}
-            self.ServoConfigurationFile = 'servo.ini'
-            self.AmuxConfigurationFile = 'multiplexer.ini'
-            self.RobotConfigurationFile = 'robot.ini'
-            self.PneumaticsConfigurationFile = 'PistonsExample.xml'
+            path = 'C:/users/operator/documents/python/vg/'
+            self.ServoConfigurationFile = path + 'servo.ini'
+            self.AmuxConfigurationFile = path + 'amuxConfiguration.json'
+            self.RobotConfigurationFile = path + 'robotConfiguration.json'
+            self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
             self.processes = [
                 Process(target = console, args=(self.lock,) ),
-                Process(target = console, args=(self.lock,) )
                 #Process(target = MyEstun, args=(self.ServoConfigurationFile,*args,)),
-                #Process(target = MyMultiplexer, args=(self.AmuxConfigurationFile, *args,)),
-                #Process(target = RobotVG, args=(self.RobotConfigurationFile, *args,)),
-                #Process(target = PneumaticsVG, args=(self.PneumaticsConfigurationFile, *args,))
+                Process(target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile, *args,)),
+                Process(target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
+                Process(target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile, *args,))
 
             ]   
-            for process in self.processes: process.start()
-            for process in self.processes: process.join()
+            for process in self.processes: 
+                process.start()
             self.EventLoop(*args, **kwargs)
 
         def EventLoop(self, *args, **kwargs):
@@ -46,6 +46,8 @@ if True:
                     self.lock[0].pistons['Alive'] = False
                     self.lock[0].console['Alive'] = False
                     self.lock[0].lock.release()
+                    for process in self.processes: 
+                        process.join()
                     break
                 #self.errorcatching()
 

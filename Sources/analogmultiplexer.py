@@ -1,21 +1,17 @@
 from Sources.modbusTCPunits import ADAMDataAcquisitionModule
-import configparser
+import json
 from Sources.TactWatchdog import TactWatchdog as WDT
 from Sources.misc import BlankFunc
-from Sources.StaticLock import BlankLocker
 
 class AnalogMultiplexer(ADAMDataAcquisitionModule):
-    def __init__(self, lockerinstance = BlankLocker, settingFilePath = '', *args, **kwargs):
-        self.moduleName = "ADAM6052"
-        self.config = configparser.ConfigParser()
-        self.Filefeedback = self.config.read(settingFilePath)
-        self.parameters = self.config
+    def __init__(self, lockerinstance = {}, settingFilePath = '', *args, **kwargs):
         try:
+            self.parameters = json.load(open(settingFilePath))
             with self.parameters['AnalogMultiplexer'] as AmuxParameters:
-                self.IPAddress = AmuxParameters.get('IPAddress')
-                self.moduleName = AmuxParameters.get('moduleName')
-                self.Port = AmuxParameters.getint('Port')
-                self.myOutput = AmuxParameters.getint('BindOutput')
+                self.IPAddress = AmuxParameters['IPAddress']
+                self.moduleName = AmuxParameters['moduleName']
+                self.Port = AmuxParameters['Port']
+                self.myOutput = AmuxParameters['BindOutput']
             super().__init__(self.moduleName, self.IPAddress, self.Port, *args, **kwargs)
             self.currentState = self.getState()
         except:
@@ -25,7 +21,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
             lockerinstance[0].shared['Errors'] += '/nAnalog multiplexer init error - Error while reading config file'
             lockerinstance[0].lock.release()
 
-    def __prohibitedBehaviour(self, lockerinstance = BlankLocker, action = BlankFunc, *args, **kwargs):
+    def __prohibitedBehaviour(self, lockerinstance = {}, action = BlankFunc, *args, **kwargs):
         self.getState(lockerinstance)
         prohibited = False
         if action == self.write_coil:
@@ -41,14 +37,14 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
                     prohibited = True
         return prohibited  
     
-    def getState(self, lockerinstance = BlankLocker):
+    def getState(self, lockerinstance = {}):
         try:
             self.currentState = self.read_coils(lockerinstance = lockerinstance, input = 'DO0', NumberOfCoils = 3)
             return self.currentState
         except:
             return -1
 
-    def isBusy(self, lockerinstance = BlankLocker):
+    def isBusy(self, lockerinstance = {}):
         self.getState(lockerinstance)
         if self.currentState[2]:
             return True
@@ -57,7 +53,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         else:
             return True
 
-    def setPath(self, lockerinstance = BlankLocker):
+    def setPath(self, lockerinstance = {}):
         if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance = lockerinstance, action = self.write_coil, args = ('DO'+str(self.myOutput), True)):
             try:
                 self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(self.myOutput), value = True)
@@ -66,7 +62,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         else:
             raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('setPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
-    def resetPath(self, lockerinstance = BlankLocker):
+    def resetPath(self, lockerinstance = {}):
         if self.getState(lockerinstance)[self.myOutput] and not self.isBusy(lockerinstance):
             try:
                 self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(self.myOutput), value = False)
@@ -75,7 +71,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         else:
             raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('resetPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
-    def activatePath(self, lockerinstance = BlankLocker):
+    def activatePath(self, lockerinstance = {}):
         if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance = lockerinstance, action = self.write_coil, args = ('DO'+str(2), True)):
             try:
                 self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(2), value = True)
@@ -84,7 +80,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         else:
             raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('activatePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
-    def releasePath(self, lockerinstance = BlankLocker):
+    def releasePath(self, lockerinstance = {}):
         if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance = lockerinstance, action = self.write_coil, args = ('DO'+str(2), False)):
             try:
                 self.write_coil(lockerinstance = lockerinstance, coil = 'DO'+str(2), value = False)
@@ -94,21 +90,21 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
             raise AnalogMultiplexerError(lockerinstance = lockerinstance, args = ('releasePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
 class MyMultiplexer(AnalogMultiplexer):
-    def __init__(self, lockerinstance = BlankLocker, settingFilePath = '', *args, **kwargs):
+    def __init__(self, lockerinstance = {}, settingFilePath = '', *args, **kwargs):
         super().__init__(lockerinstance = lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
         lockerinstance[0].lock.acquire()
         lockerinstance[0].mux['Alive'] = True
         lockerinstance[0].lock.release()
-        lockerinstance[0].muxloop(lockerinstance)
+        self.MUXloop(lockerinstance)
 
-    def isBusy(self, lockerinstance = BlankLocker):
+    def isBusy(self, lockerinstance = {}):
         result = super().isBusy(lockerinstance) 
         lockerinstance[0].lock.acquire()
         lockerinstance[0].mux['busy'] = result
         lockerinstance[0].lock.release()
         return result
 
-    def getState(self, lockerinstance = BlankLocker):
+    def getState(self, lockerinstance = {}):
         self.currentState = super().getState(lockerinstance)
         lockerinstance[0].lock.acquire()
         lockerinstance[0].mux['onpath'] = self.currentState[self.myOutput]
@@ -116,7 +112,7 @@ class MyMultiplexer(AnalogMultiplexer):
             lockerinstance[0].mux['ready'] = self.currentState[2]
         lockerinstance[0].lock.release()
         
-    def __acquire(self, lockerinstance = BlankLocker): 
+    def __acquire(self, lockerinstance = {}): 
         if not self.isBusy(lockerinstance):
             if self.currentState[self.myOutput]:
                 if self.currentState[2]:
@@ -128,7 +124,7 @@ class MyMultiplexer(AnalogMultiplexer):
             else:
                 self.setPath(lockerinstance)
 
-    def __release(self, lockerinstance = BlankLocker):
+    def __release(self, lockerinstance = {}):
         if self.currentState[self.myOutput]:
             if not self.currentState[2]:
                 if self.currentState[self.myOutput]:
@@ -140,7 +136,7 @@ class MyMultiplexer(AnalogMultiplexer):
             else:
                 self.releasePath(lockerinstance)
 
-    def MUXloop(self, lockerinstance = BlankLocker, *args, **kwargs):
+    def MUXloop(self, lockerinstance = {}, *args, **kwargs):
         while True:
             lockerinstance[0].lock.acquire()
             self.Alive = lockerinstance[0].mux['Alive']
@@ -157,7 +153,7 @@ class MyMultiplexer(AnalogMultiplexer):
             if rel: self.__release(lockerinstance)
 
 class AnalogMultiplexerError(Exception):
-    def __init__(self, lockerinstance = BlankLocker, *args, **kwargs):
+    def __init__(self, lockerinstance = {}, *args, **kwargs):
         self.args = args
         lockerinstance[0].lock.acquire()
         lockerinstance[0].shared['Errors'] += 'Analog multiplexer Error:\n' + ''.join(map(str, *args))

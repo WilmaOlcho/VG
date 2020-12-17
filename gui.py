@@ -49,7 +49,7 @@ class console(object):
             for key in bar.elements.keys():
                 if not self.locker[0].GPIO[key] == bar.elements[key].get():
                     bar.elements[key].set(self.locker[0].GPIO[key])
-        self.textbox.delete(INSERT,END)
+        self.textbox.delete('1.0',END)
         self.textbox.insert(INSERT,self.locker[0].shared['Errors'])
         self.locker[0].lock.release()
         self.root.after(100,self.timerloop)

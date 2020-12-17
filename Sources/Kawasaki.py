@@ -1,41 +1,37 @@
 from Sources.modbusTCPunits import KawasakiVG
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources.StaticLock import BlankLocker
 from functools import lru_cache
-import configparser
+import json
 
 class RobotVG(KawasakiVG):
-    def __init__(self, lockerinstance = BlankLocker, configFile='', *args, **kwargs):
-        self.parameters = configparser.ConfigParser()
-        self.filefeedback = self.parameters.read(configFile)
-        self.timer = WDT()
-        if len(self.filefeedback):
-            try:
-                with self.parameters['RobotParameters'] as RobotParameters:
-                    self.IPAddress = RobotParameters.get('IPAddress')
-                    self.Port = RobotParameters.getint('Port')
-                    self.myOutput = RobotParameters.getint('BindOutput')
-            except:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events['Error'] = True
-                lockerinstance[0].errorlevel[10] = True
-                lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Error while reading config file'
-                lockerinstance[0].lock.release()
-            finally:
-                super().__init__(self.IPAddress, self.Port, *args, **kwargs)
-                self.Alive = True
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].robot['Alive'] = self.Alive
-                lockerinstance[0].lock.release()
-                lockerinstance[0].robotloop()
-        else:
+    def __init__(self, lockerinstance = {}, configFile='', *args, **kwargs):
+        try:
+            self.parameters = json.load(open(configFile))
+        except:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].events['Error'] = True
             lockerinstance[0].errorlevel[10] = True
             lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Config file not found'
             lockerinstance[0].lock.release()
-    
-    def Robotloop(self, lockerinstance = BlankLocker):
+        self.timer = WDT()
+        try:
+            self.IPAddress = self.parameters['RobotParameters']['IPAddress']
+            self.Port = self.parameters['RobotParameters']['Port']
+        except:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].events['Error'] = True
+            lockerinstance[0].errorlevel[10] = True
+            lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Error while reading config file'
+            lockerinstance[0].lock.release()
+        else:
+            super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
+            self.Alive = True
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['Alive'] = self.Alive
+            lockerinstance[0].lock.release()
+            self.Robotloop(lockerinstance)
+
+    def Robotloop(self, lockerinstance = {}):
         while self.Alive:
             self.IOControl(lockerinstance)
             self.CommandControl(lockerinstance)
@@ -45,7 +41,7 @@ class RobotVG(KawasakiVG):
             self.Alive = lockerinstance[0].robot['Alive']
             lockerinstance[0].lock.release()
 
-    def ErrorCatching(self, lockerinstance = BlankLocker):
+    def ErrorCatching(self, lockerinstance = {}):
         ##TODO There are statusRegisters for forbidden operation
         pass
 
@@ -56,7 +52,7 @@ class RobotVG(KawasakiVG):
         result.append(int((floatval-result[0])*100))
         return result
 
-    def misc(self, lockerinstance = BlankLocker):
+    def misc(self, lockerinstance = {}):
         RobotRegister = []
         for reg in ['CurrentPositionNumber','A','00A','X','00X','Y','00Y','Z','00Z',
                     'StatusRegister0',  'StatusRegister1',  'StatusRegister2', 
@@ -92,7 +88,7 @@ class RobotVG(KawasakiVG):
         if Z[1] != RobotRegister[8]:
             self.write_register(lockerinstance = lockerinstance, register = self.addresses['00Z'], value = RobotRegister[8])
 
-    def CommandControl(self, lockerinstance = BlankLocker()):
+    def CommandControl(self, lockerinstance = {}):
         lockerinstance[0].lock.acquire()
         activecommand = lockerinstance[0].robot['activecommand']
         lockerinstance[0].lock.release()
@@ -160,7 +156,7 @@ class RobotVG(KawasakiVG):
             if not le: result = result[::-1] 
             return result
 
-    def IOControl(self, lockerinstance = BlankLocker):
+    def IOControl(self, lockerinstance = {}):
         inputs = [] 
         inputs.extend(self.read_holding_registers(lockerinstance = lockerinstance, registerToStartFrom = 'I1-16'))
         inputs.extend(self.read_holding_registers(lockerinstance = lockerinstance, registerToStartFrom = 'I17-32'))
