@@ -1461,11 +1461,12 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
         try:
             result = super().read_coils(address, NumberOfCoils, **kwargs)
-        except:
-            errstring = result
+        except Exception as e:
+            errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
+            return []
         else:
             return result
 
@@ -1491,8 +1492,8 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         try:
             result = super().write_coil(address, value, **kwargs)
-        except:
-            errstring = result
+        except Exception as e:
+            errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
@@ -1514,11 +1515,12 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         try:
             result = super().read_holding_registers(address, count, **kwargs)
-        except:
-            errstring = result
+        except Exception as e:
+            errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
+            return []
         else:
             return result
 
@@ -1537,8 +1539,8 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         try:
             result = super().write_registers(address, value, **kwargs)
-        except:
-            errstring = result
+        except Exception as e:
+            errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()

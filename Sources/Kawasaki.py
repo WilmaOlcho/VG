@@ -144,7 +144,7 @@ class RobotVG(KawasakiVG):
             for i, val in enumerate(values):
                 print(i,val)
                 if val: result += pow(2,i)
-                print(result)
+                print(bin(result))
             return result
         if isinstance(values, int):
             values &= 0b1111111111111111
@@ -167,7 +167,7 @@ class RobotVG(KawasakiVG):
                 lockerinstance[0].GPIO['I'+str(i*16+j+1)] = bits[j] 
             lockerinstance[0].lock.release()
         lockerinstance[0].lock.acquire()
-        somethingchanged = lockerinstance[0].robot['somethingChaged']
+        somethingchanged = lockerinstance[0].GPIO['somethingChanged']
         lockerinstance[0].lock.release()
         def GPIOeights(startpoint):
             output = []
@@ -180,12 +180,12 @@ class RobotVG(KawasakiVG):
             for i, reg in enumerate(['O1-16', 'O17-32']):
                 self.write_register(lockerinstance, register = reg, value = self._bits(GPIOeights(i*16+1), le = True))
             lockerinstance[0].lock.acquire()
-            lockerinstance[0].robot['somethingChaged'] = False
+            lockerinstance[0].GPIO['somethingChanged'] = False
             lockerinstance[0].lock.release()
         else:
             outputs = [] 
-            outputs.append(self.read_holding_registers(lockerinstance, registerToStartFrom = 'O1-16'))
-            outputs.append(self.read_holding_registers(lockerinstance, registerToStartFrom = 'O17-32'))
+            outputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'O1-16'))
+            outputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'O17-32'))
             for i, reg in enumerate(outputs):
                 lockerinstance[0].lock.acquire()
                 bits = self._bits(reg, le = True)

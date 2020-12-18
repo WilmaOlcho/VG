@@ -127,7 +127,7 @@ class SharedLocker(object):
                 'Alive':False
             })
         self.GPIO = Manager().dict({
-                'somethingChaged':False,
+                'somethingChanged':False,
                 'I1':False, 'I2':False, 'I3':False, 'I4':False,
                 'I5':False, 'I6':False, 'I7':False, 'I8':False,
                 'I9':False, 'I10':False, 'I11':False, 'I12':False,

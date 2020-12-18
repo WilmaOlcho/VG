@@ -64,7 +64,7 @@ class console(object):
         self.variables = {}
         self.lastact = ''
         self.root.wm_title('debug window')
-        self.textbox = Text(self.root, width = 80, height=10)
+        self.textbox = Text(self.root, width = 90, height=10)
         self.textbox.pack(side = BOTTOM)
         self.bars = [
             IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))[:16]), master = self.root),

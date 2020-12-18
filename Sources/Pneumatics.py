@@ -58,15 +58,15 @@ class Coil(PneumaticActive):
 
     def controlSequence(self, lockerinstance):
         lockerinstance[0].lock.acquire()
-        cstate = bool(lockerinstance[0].pistons['sensor'+self.action])
-        rstate = bool(lockerinstance[0].pistons[self.action])
+        cstate = lockerinstance[0].pistons['sensor'+self.action] if not self.nosensor else False
+        rstate = lockerinstance[0].pistons[self.action]
         lockerinstance[0].lock.release()
         if rstate and not cstate:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO[self.address] = True
             lockerinstance[0].GPIO['somethingChaged']
             lockerinstance[0].lock.release()
-            if not self.nosensor and self.timer == None:
+            if not self.nosensor and self.timer is None:
                 self.timer = WDT.WDT(lockerinstance, errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)
         else:
             lockerinstance[0].lock.acquire()
