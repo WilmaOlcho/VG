@@ -1,7 +1,7 @@
 from tkinter import *
 
 class IOBar(Frame):
-    def __init__(self, lockerinstance = {}, elements = {}, side = LEFT, anchor = W, master=None):
+    def __init__(self, lockerinstance, elements = {}, side = LEFT, anchor = W, master=None):
         self.master = master
         super().__init__(self.master)
         self.elements = elements.copy()
@@ -28,7 +28,7 @@ class IOBar(Frame):
     #    self.after(1000,self.timerloop)
 
 class PistonBar(Frame):
-    def __init__(self, lockerinstance = {}, anchor = W, master=None):
+    def __init__(self, lockerinstance, anchor = W, master=None):
         self.master = master
         super().__init__(self.master)
         self.locker = {**lockerinstance}
@@ -52,7 +52,7 @@ class console(object):
         self.textbox.delete('1.0',END)
         self.textbox.insert(INSERT,self.locker[0].shared['Errors'])
         self.locker[0].lock.release()
-        self.root.after(100,self.timerloop)
+        self.root.after(300,self.timerloop)
 
     def __init__(self, locker, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,11 +67,11 @@ class console(object):
         self.textbox = Text(self.root, width = 80, height=10)
         self.textbox.pack(side = BOTTOM)
         self.bars = [
-            IOBar(lockerinstance = self.locker, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))[:16]), master = self.root),
-            IOBar(lockerinstance = self.locker, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))[16:]), master = self.root),
-            IOBar(lockerinstance = self.locker, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))[:16]), master = self.root),
-            IOBar(lockerinstance = self.locker, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))[16:]), master = self.root),
-            IOBar(lockerinstance = self.locker, elements = dict(list(filter((lambda item: True if 'ged' in item[0] else False), self.locker[0].GPIO.items()))), master = self.root)
+            IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))[:16]), master = self.root),
+            IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))[16:]), master = self.root),
+            IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))[:16]), master = self.root),
+            IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))[16:]), master = self.root),
+            IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'ged' in item[0] else False), self.locker[0].GPIO.items()))), master = self.root)
 
         ]
         for bar in self.bars:

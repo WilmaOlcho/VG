@@ -17,7 +17,7 @@ class ADAMModule(object):
             'ClearGCLCounterCh6':(0x00307,('bit',0),"w"),
             'ClearGCLCounterCh7':(0x00308,('bit',0),"w"),
             'GCLInternalFlagValue':(0x40305,('int',0),"rw")}
-        self.ADAM6000GCLInternalCounterValue:{
+        self.ADAM6000GCLInternalCounterValue = {
             'GCLInternalCounterValueCh0':(0x40311,('word',0),"w"),
             'GCLInternalCounterValueCh1':(0x40313,('word',0),"w"),
             'GCLInternalCounterValueCh2':(0x40315,('word',0),"w"),
@@ -137,7 +137,32 @@ class ADAMModule(object):
                 'TypeCodeCh4':(0x40205,('int',0),"rw"),
                 'TypeCodeCh5':(0x40206,('int',0),"rw")},
             'AI4-6':{
-                **self.AnalogParameters['AI4-5'],
+                'ResetHistoricalMaxCh4':(0x00105,('bit',0),"w"),
+                'ResetHistoricalMaxCh5':(0x00106,('bit',0),"w"),
+                'ResetHistoricalMinCh4':(0x00115,('bit',0),"w"),
+                'ResetHistoricalMinCh5':(0x00116,('bit',0),"w"),
+                'BurnoutFlagCh4':(0x00125,('bit',0),"r"),
+                'BurnoutFlagCh5':(0x00126,('bit',0),"r"),
+                'HighAlarmFlagCh4':(0x00135,('bit',0),"r"),
+                'HighAlarmFlagCh5':(0x00136,('bit',0),"r"),
+                'LowAlarmFlagCh4':(0x00145,('bit',0),"r"),
+                'LowAlarmFlagCh5':(0x00146,('bit',0),"r"),
+                'AIValueCh4':(0x40005,('int',0),"r"),
+                'AIValueCh5':(0x40006,('int',0),"r"),
+                'HistoricalMaxAIValueCh4':(0x40015,('int',0),"r"),
+                'HistoricalMaxAIValueCh5':(0x40016,('int',0),"r"),
+                'HistoricalMinAIValueCh4':(0x40025,('int',0),"r"),
+                'HistoricalMinAIValueCh5':(0x40026,('int',0),"r"),
+                'AIStatusCh4':(0x40109,('word',0),"r"),
+                'AIStatusCh5':(0x40111,('word',0),"r"),
+                'AIFloatingValueCh4':(0x40039,('word',0),"r"),
+                'AIFloatingValueCh5':(0x40041,('word',0),"r"),
+                'HistoricalMaxAIFloatingValueCh4':(0x40059,('word',0),"r"),
+                'HistoricalMaxAIFloatingValueCh5':(0x40061,('word',0),"r"),
+                'HistoricalMinAIFloatingValueCh4':(0x40079,('word',0),"r"),
+                'HistoricalMinAIFloatingValueCh5':(0x40081,('word',0),"r"),
+                'TypeCodeCh4':(0x40205,('int',0),"rw"),
+                'TypeCodeCh5':(0x40206,('int',0),"rw"),
                 'ResetHistoricalMaxCh6':(0x00107,('bit',0),"w"),
                 'ResetHistoricalMinCh6':(0x00117,('bit',0),"w"),
                 'BurnoutFlagCh6':(0x00127,('bit',0),"r"),
@@ -152,7 +177,45 @@ class ADAMModule(object):
                 'HistoricalMinAIFloatingValueCh6':(0x40083,('word',0),"r"),
                 'TypeCodeCh6':(0x40207,('int',0),"rw")},
             'AI4-7':{
-                **self.AnalogParameters['AI4-6'],
+                'ResetHistoricalMaxCh4':(0x00105,('bit',0),"w"),
+                'ResetHistoricalMaxCh5':(0x00106,('bit',0),"w"),
+                'ResetHistoricalMinCh4':(0x00115,('bit',0),"w"),
+                'ResetHistoricalMinCh5':(0x00116,('bit',0),"w"),
+                'BurnoutFlagCh4':(0x00125,('bit',0),"r"),
+                'BurnoutFlagCh5':(0x00126,('bit',0),"r"),
+                'HighAlarmFlagCh4':(0x00135,('bit',0),"r"),
+                'HighAlarmFlagCh5':(0x00136,('bit',0),"r"),
+                'LowAlarmFlagCh4':(0x00145,('bit',0),"r"),
+                'LowAlarmFlagCh5':(0x00146,('bit',0),"r"),
+                'AIValueCh4':(0x40005,('int',0),"r"),
+                'AIValueCh5':(0x40006,('int',0),"r"),
+                'HistoricalMaxAIValueCh4':(0x40015,('int',0),"r"),
+                'HistoricalMaxAIValueCh5':(0x40016,('int',0),"r"),
+                'HistoricalMinAIValueCh4':(0x40025,('int',0),"r"),
+                'HistoricalMinAIValueCh5':(0x40026,('int',0),"r"),
+                'AIStatusCh4':(0x40109,('word',0),"r"),
+                'AIStatusCh5':(0x40111,('word',0),"r"),
+                'AIFloatingValueCh4':(0x40039,('word',0),"r"),
+                'AIFloatingValueCh5':(0x40041,('word',0),"r"),
+                'HistoricalMaxAIFloatingValueCh4':(0x40059,('word',0),"r"),
+                'HistoricalMaxAIFloatingValueCh5':(0x40061,('word',0),"r"),
+                'HistoricalMinAIFloatingValueCh4':(0x40079,('word',0),"r"),
+                'HistoricalMinAIFloatingValueCh5':(0x40081,('word',0),"r"),
+                'TypeCodeCh4':(0x40205,('int',0),"rw"),
+                'TypeCodeCh5':(0x40206,('int',0),"rw"),
+                'ResetHistoricalMaxCh6':(0x00107,('bit',0),"w"),
+                'ResetHistoricalMinCh6':(0x00117,('bit',0),"w"),
+                'BurnoutFlagCh6':(0x00127,('bit',0),"r"),
+                'HighAlarmFlagCh6':(0x00137,('bit',0),"r"),
+                'LowAlarmFlagCh6':(0x00147,('bit',0),"r"),
+                'AIValueCh6':(0x40007,('int',0),"r"),
+                'HistoricalMaxAIValueCh6':(0x40017,('int',0),"r"),
+                'HistoricalMinAIValueCh6':(0x40027,('int',0),"r"),
+                'AIStatusCh6':(0x40113,('word',0),"r"),
+                'AIFloatingValueCh6':(0x40043,('word',0),"r"),
+                'HistoricalMaxAIFloatingValueCh6':(0x40063,('word',0),"r"),
+                'HistoricalMinAIFloatingValueCh6':(0x40083,('word',0),"r"),
+                'TypeCodeCh6':(0x40207,('int',0),"rw"),
                 'ResetHistoricalMaxCh7':(0x00108,('bit',0),"w"),
                 'ResetHistoricalMinCh7':(0x00118,('bit',0),"w"),
                 'BurnoutFlagCh7':(0x00128,('bit',0),"r"),
@@ -205,28 +268,31 @@ class ADAMModule(object):
                 'AOValueCh0':(0x40001,('int',0),"rw"),
                 'AOValueCh1':(0x40002,('int',0),"rw"),
                 'AOStatusCh0':(0x40101,('word',0),"r"), #4bytes
-                'AOStatusCh1':(0x40103,('word',0),"r"),
-                'AOStatusBitmask':{
-                    '0x00000001':'Failed to provide AO value (UART timeout)',
-                    '0x00000004':'No Output Current',
-                    '0x00000080':'AD Converter failed',
-                    '0x00000200':'Zero/Span Calibration Error',
-                    '0x00010000':'DI triggered to Safety Value',
-                    '0x00040200':'DI triggered to Statup Value',
-                    '0x00080200':'AO triggered to Fail Safety Value'},
-                    'TypeCodeCh0':(0x40201,('int',0),"rw"), #2bytes
-                    'TypeCodeCh1':(0x40202,('int',0),"rw")},
+                'AOStatusCh1':(0x40103,('word',0),"r")},
             'AO0-3':{
-                **self.AnalogParameters['AO0-1'],
+                'AOValueCh0':(0x40001,('int',0),"rw"),
+                'AOValueCh1':(0x40002,('int',0),"rw"),
+                'AOStatusCh0':(0x40101,('word',0),"r"), #4bytes
+                'AOStatusCh1':(0x40103,('word',0),"r"),
                 'AOValueCh2':(0x40003,('int',0),"rw"),
                 'AOValueCh3':(0x40004,('int',0),"rw"),
                 'AOStatusCh2':(0x40105,('word',0),"r"),
                 'AOStatusCh3':(0x40107,('word',0),"r"),
                 'TypeCodeCh2':(0x40203,('int',0),"rw"),
                 'TypeCodeCh3':(0x40204,('int',0),"rw"),
-                'TypeCodeAvCh0-7':(0x40209,('int',0),"rw"),},
+                'TypeCodeAvCh0-7':(0x40209,('int',0),"rw")},
             'AO4-7':{},
-            'CommonAO':{},
+            'CommonAO':{
+                'AOStatusBitmask':{
+                '0x00000001':'Failed to provide AO value (UART timeout)',
+                '0x00000004':'No Output Current',
+                '0x00000080':'AD Converter failed',
+                '0x00000200':'Zero/Span Calibration Error',
+                '0x00010000':'DI triggered to Safety Value',
+                '0x00040200':'DI triggered to Statup Value',
+                '0x00080200':'AO triggered to Fail Safety Value'},
+                'TypeCodeCh0':(0x40201,('int',0),"rw"), #2bytes
+                'TypeCodeCh1':(0x40202,('int',0),"rw")},
             'Common':{
                 'TypeCode_values':{
                 '0x0143':'+/- 10 V',
@@ -261,7 +327,8 @@ class ADAMModule(object):
                 'DI0':(0x00001,('bit',0),'r'),
                 'DI1':(0x00002,('bit',0),'r')},
             'DI0-3':{
-                **self.DigitalParameters['DI0-1'],
+                'DI0':(0x00001,('bit',0),'r'),
+                'DI1':(0x00002,('bit',0),'r'),
                 'DI2':(0x00003,('bit',0),'r'),
                 'DI3':(0x00004,('bit',0),'r')},
             'DI4-7':{
@@ -269,6 +336,11 @@ class ADAMModule(object):
                 'DI5':(0x00006,('bit',0),'r'),
                 'DI6':(0x00007,('bit',0),'r'),
                 'DI7':(0x00008,('bit',0),'r')},
+            'DI8-11':{
+                'DI8':(0x00009,('bit',0),'r'),
+                'DI9':(0x000010,('bit',0),'r'),
+                'DI10':(0x00011,('bit',0),'r'),
+                'DI11':(0x00012,('bit',0),'r')},
             'DI8-15':{
                 'DI8':(0x00009,('bit',0),'r'),
                 'DI9':(0x000010,('bit',0),'r'),
@@ -284,9 +356,13 @@ class ADAMModule(object):
                 'DO0':(0x000017,('bit',0),'rw'),
                 'DO1':(0x000018,('bit',0),'rw')},
             'DO0-3':{
-                **self.DigitalParameters['DO0-1'],
+                'DO0':(0x000017,('bit',0),'rw'),
+                'DO1':(0x000018,('bit',0),'rw'),
                 'DO2':(0x000019,('bit',0),'rw'),
                 'DO3':(0x000020,('bit',0),'rw')},
+            'DO4-5':{
+                'DO4':(0x000021,('bit',0),'rw'),
+                'DO5':(0x000022,('bit',0),'rw')},
             'DO4-7':{
                 'DO4':(0x000021,('bit',0),'rw'),
                 'DO5':(0x000022,('bit',0),'rw'),
@@ -298,7 +374,10 @@ class ADAMModule(object):
                 'DO10':(0x00027,('bit',0),'r'),
                 'DO11':(0x00028,('bit',0),'r')},
             'DO8-15':{
-                **self.DigitalParameters['DO8-11'],
+                'DO8':(0x00025,('bit',0),'r'),
+                'DO9':(0x00026,('bit',0),'r'),
+                'DO10':(0x00027,('bit',0),'r'),
+                'DO11':(0x00028,('bit',0),'r'),
                 'DO12':(0x00029,('bit',0),'r'),
                 'DO13':(0x00030,('bit',0),'r'),
                 'DO14':(0x00031,('bit',0),'r'),
@@ -318,7 +397,10 @@ class ADAMModule(object):
                 'ClearOverflow1':(0x000042,('bit',0),'rw'),
                 'ClearOverflow2':(0x000043,('bit',0),'rw'),
                 'ClearOverflow3':(0x000044,('bit',0),'rw'),
-                **self.DigitalParameters['Counter/FrequencyValue0-3']},
+                'Counter/FrequencyValue0':(0x40001,('word',0),"r"),
+                'Counter/FrequencyValue1':(0x40003,('word',0),"r"),
+                'Counter/FrequencyValue2':(0x40005,('word',0),"r"),
+                'Counter/FrequencyValue3':(0x40007,('word',0),"r")},
             'Counter0-7':{
                 'CounterStartStop0':(0x000033,('bit',0),'rw'),
                 'CounterStartStop1':(0x000034,('bit',0),'rw'),
@@ -344,8 +426,14 @@ class ADAMModule(object):
                 'ClearOverflow5':(0x000054,('bit',0),'rw'),
                 'ClearOverflow6':(0x000055,('bit',0),'rw'),
                 'ClearOverflow7':(0x000056,('bit',0),'rw'),
-                **self.DigitalParameters['Counter/FrequencyValue0-3'],
-                **self.DigitalParameters['Counter/FrequencyValue4-7']},
+                'Counter/FrequencyValue0':(0x40001,('word',0),"r"),
+                'Counter/FrequencyValue1':(0x40003,('word',0),"r"),
+                'Counter/FrequencyValue2':(0x40005,('word',0),"r"),
+                'Counter/FrequencyValue3':(0x40007,('word',0),"r"),
+                'Counter/FrequencyValue4':(0x40009,('word',0),"r"),
+                'Counter/FrequencyValue5':(0x40011,('word',0),"r"),
+                'Counter/FrequencyValue6':(0x40013,('word',0),"r"),
+                'Counter/FrequencyValue7':(0x40015,('word',0),"r")},
             'Counter/FrequencyValue0-3':{
                 'Counter/FrequencyValue0':(0x40001,('word',0),"r"),
                 'Counter/FrequencyValue1':(0x40003,('word',0),"r"),
@@ -357,8 +445,14 @@ class ADAMModule(object):
                 'Counter/FrequencyValue6':(0x40013,('word',0),"r"),
                 'Counter/FrequencyValue7':(0x40015,('word',0),"r")},
             'Counter/FrequencyValue0-11':{
-                **self.DigitalParameters['Counter/FrequencyValue0-3'],
-                **self.DigitalParameters['Counter/FrequencyValue4-7'],
+                'Counter/FrequencyValue0':(0x40001,('word',0),"r"),
+                'Counter/FrequencyValue1':(0x40003,('word',0),"r"),
+                'Counter/FrequencyValue2':(0x40005,('word',0),"r"),
+                'Counter/FrequencyValue3':(0x40007,('word',0),"r"),
+                'Counter/FrequencyValue4':(0x40009,('word',0),"r"),
+                'Counter/FrequencyValue5':(0x40011,('word',0),"r"),
+                'Counter/FrequencyValue6':(0x40013,('word',0),"r"),
+                'Counter/FrequencyValue7':(0x40015,('word',0),"r"),
                 'Counter/FrequencyValue8':(0x40017,('word',0),"r"),
                 'Counter/FrequencyValue9':(0x40019,('word',0),"r"),
                 'Counter/FrequencyValue10':(0x40021,('word',0),"r"),
@@ -591,7 +685,38 @@ class ADAMModule(object):
                 'ClearOverflow7':(0x000063,('bit',0),'rw'),
                 'DILatchStatus7':(0x000064,('bit',0),'rw')},
             'ADAM6000Counter0-11':{
-                **self.DigitalParameters['ADAM6000Counter0-7'],
+                'CounterStartStop0':(0x000033,('bit',0),'rw'),
+                'ClearCounter0':(0x000034,('bit',0),'w'),
+                'ClearOverflow0':(0x000035,('bit',0),'rw'),
+                'DILatchStatus0':(0x000036,('bit',0),'rw'),
+                'CounterStartStop1':(0x000037,('bit',0),'rw'),
+                'ClearCounter1':(0x000038,('bit',0),'w'),
+                'ClearOverflow1':(0x000039,('bit',0),'rw'),
+                'DILatchStatus1':(0x000040,('bit',0),'rw'),
+                'CounterStartStop2':(0x000041,('bit',0),'rw'),
+                'ClearCounter2':(0x000042,('bit',0),'w'),
+                'ClearOverflow2':(0x000043,('bit',0),'rw'),
+                'DILatchStatus2':(0x000044,('bit',0),'rw'),
+                'CounterStartStop3':(0x000045,('bit',0),'rw'),
+                'ClearCounter3':(0x000046,('bit',0),'w'),
+                'ClearOverflow3':(0x000047,('bit',0),'rw'),
+                'DILatchStatus3':(0x000048,('bit',0),'rw'),
+                'CounterStartStop4':(0x000049,('bit',0),'rw'),
+                'ClearCounter4':(0x000050,('bit',0),'w'),
+                'ClearOverflow4':(0x000051,('bit',0),'rw'),
+                'DILatchStatus4':(0x000052,('bit',0),'rw'),
+                'CounterStartStop5':(0x000053,('bit',0),'rw'),
+                'ClearCounter5':(0x000054,('bit',0),'w'),
+                'ClearOverflow5':(0x000055,('bit',0),'rw'),
+                'DILatchStatus5':(0x000056,('bit',0),'rw'),
+                'CounterStartStop6':(0x000057,('bit',0),'rw'),
+                'ClearCounter6':(0x000058,('bit',0),'w'),
+                'ClearOverflow6':(0x000059,('bit',0),'rw'),
+                'DILatchStatus6':(0x000060,('bit',0),'rw'),
+                'CounterStartStop7':(0x000061,('bit',0),'rw'),
+                'ClearCounter7':(0x000062,('bit',0),'w'),
+                'ClearOverflow7':(0x000063,('bit',0),'rw'),
+                'DILatchStatus7':(0x000064,('bit',0),'rw'),
                 'CounterStartStop8':(0x000065,('bit',0),'rw'),
                 'ClearCounter8':(0x000066,('bit',0),'w'),
                 'ClearOverflow8':(0x000067,('bit',0),'rw'),
@@ -657,7 +782,18 @@ class ADAMModule(object):
                 'ClearOverflow13':(0x000078,('bit',0),'rw'),
                 'ClearOverflow14':(0x000079,('bit',0),'rw'),
                 'ClearOverflow15':(0x000080,('bit',0),'rw'),
-                **self.DigitalParameters['Counter/FrequencyValue0-11'],
+                'Counter/FrequencyValue0':(0x40001,('word',0),"r"),
+                'Counter/FrequencyValue1':(0x40003,('word',0),"r"),
+                'Counter/FrequencyValue2':(0x40005,('word',0),"r"),
+                'Counter/FrequencyValue3':(0x40007,('word',0),"r"),
+                'Counter/FrequencyValue4':(0x40009,('word',0),"r"),
+                'Counter/FrequencyValue5':(0x40011,('word',0),"r"),
+                'Counter/FrequencyValue6':(0x40013,('word',0),"r"),
+                'Counter/FrequencyValue7':(0x40015,('word',0),"r"),
+                'Counter/FrequencyValue8':(0x40017,('word',0),"r"),
+                'Counter/FrequencyValue9':(0x40019,('word',0),"r"),
+                'Counter/FrequencyValue10':(0x40021,('word',0),"r"),
+                'Counter/FrequencyValue11':(0x40023,('word',0),"r"),
                 'Counter/FrequencyValue12':(0x40025,('word',0),"r"),
                 'Counter/FrequencyValue13':(0x40027,('word',0),"r"),
                 'Counter/FrequencyValue14':(0x40029,('word',0),"r"),
@@ -715,10 +851,10 @@ class ADAMModule(object):
         self.ADAM6051 = {
             **self.DigitalParameters['DI0-3'],
             **self.DigitalParameters['DI4-7'],
-            **self.DigitalParameters['DI8-15']
+            **self.DigitalParameters['DI8-15'],
             **self.DigitalParameters['CommonDI'],
             **self.DigitalParameters['Common'],
-            **self.DigitalParameters['Counter'],
+            #*self.DigitalParameters['Counter'], #TODO read the documentation again and make this key
             **self.CommonParameters,
             'DILatchStatus0':(0x000081,('bit',0),'rw'),
             'DILatchStatus1':(0x000082,('bit',0),'rw'),
@@ -740,13 +876,13 @@ class ADAMModule(object):
             **self.DigitalParameters['DO0-3'],
             **self.DigitalParameters['DO4-7'],
             **self.DigitalParameters['DO8-15'],
-            **self.DigitalParameters['PWMOutputs0-15'],
+            **self.DigitalParameters['PWMOutput0-15'],
             **self.DigitalParameters['CommonDO'],
             **self.DigitalParameters['Common'],
             **self.CommonParameters}
         self.ADAM6260 = {
             **self.DigitalParameters['DO0-3'],
-            **self.DigitalParameters['PWMOutputs0-5'],
+            **self.DigitalParameters['PWMOutput0-5'],
             **self.DigitalParameters['CommonDO'],
             **self.DigitalParameters['Common'],
             **self.CommonParameters,
@@ -756,7 +892,7 @@ class ADAMModule(object):
             **self.DigitalParameters['DO0-3'],
             **self.DigitalParameters['DI0-3'],
             **self.DigitalParameters['Counter0-3'],
-            **self.DigitalParameters['PWMOutputs0-3'],
+            **self.DigitalParameters['PWMOutput0-3'],
             **self.DigitalParameters['CommonDI'],
             **self.DigitalParameters['CommonDO'],
             **self.DigitalParameters['Common'],
@@ -791,7 +927,7 @@ class ADAMModule(object):
             **self.AnalogParameters['AI0-3'],
             **self.AnalogParameters['AI4-7'],
             **self.AnalogParameters['CommonAI'],
-            **self.AnalogParameters['common'],
+            **self.AnalogParameters['Common'],
             **self.CommonParameters}
         self.ADAM6017 = {
             **self.ADAM6217,
@@ -801,19 +937,19 @@ class ADAMModule(object):
             **self.DigitalParameters['DO0-3'],
             **self.DigitalParameters['DO4-7'],
             **self.DigitalParameters['CommonDO']}
-        self.ADAM6024 = {
-            **self.DigitalParameters['DI0-1'],
-            **self.DigitalParameters['DO0-1'],
-            **self.AnalogParameters['ADAM6000DI0-5'],
-            **self.AnalogParameters['ADAM6000DO0-1'],
-            **self.DigitalParameters['CommonDI'],
-            **self.DigitalParameters['CommonDO']
-            **self.CommonParameters}
+        #self.ADAM6024 = { #TODO
+        #    **self.DigitalParameters['DI0-1'],
+        #    **self.DigitalParameters['DO0-1'],
+        #    **self.AnalogParameters['ADAM6000DI0-5'],
+        #    **self.AnalogParameters['ADAM6000DO0-1'],
+        #    **self.DigitalParameters['CommonDI'],
+        #    **self.DigitalParameters['CommonDO']
+        #    **self.CommonParameters}
         self.ADAM6015 = {
             **self.AnalogParameters['AI0-3'],
             **self.AnalogParameters['AI4-6'],
             **self.AnalogParameters['CommonAI'],
-            **self.AnalogParameters['common'],
+            **self.AnalogParameters['Common'],
             **self.CommonParameters,
             'ModuleName1':(0x40211,('int',0),'r'),
             'ModuleName2':(0x40212,('int',0),'r')}
@@ -821,110 +957,118 @@ class ADAMModule(object):
         self.ADAM6066 = {} #TODO
 
 class ADAMDataAcquisitionModule(ModbusClient):
-    def __init__(self, lockerinstance = {}, moduleName = 'ADAM6052', address = '192.168.0.1', port = 502, *args, **kwargs):
+    def __init__(self, lockerinstance, moduleName = 'ADAM6052', address = '192.168.0.1', port = 502, *args, **kwargs):
         super().__init__(address, port, *args, **kwargs)
         self.moduleName = moduleName
+        stringtoeval = 'ADAMModule().' + self.moduleName
         try:
-            self.addresses = eval('ADAMModule().' + str(moduleName))
+            self.addresses = eval(stringtoeval)
         except:
             raise ParameterDictionaryError(lockerinstance, 'ADAMDataAcquisitionModule.__init__, parameter = ' + str(moduleName))
 
-    def __getAddress(self, lockerinstance = {}, parameterName=''):
+    def __getAddress(self, lockerinstance, parameterName=''):
         try:
             return self.addresses[parameterName][0]
         except:
             raise ParameterDictionaryError(lockerinstance, self.moduleName + ' __getAddress, parameter = ' + str(parameterName))
 
-    def read_coils(self, lockerinstance = {}, input = 'DI0', NumberOfCoils = 1, **kwargs):
+    def read_coils(self, lockerinstance, input = 'DI0', NumberOfCoils = 1, **kwargs):
         access = ''
         if isinstance(input,str):
             if 'I' in input or 'DI' in input:
                 try:
-                    with self.addresses['DI' + ''.join(re.findall(r'\d',input))] as ParameterTuple:
-                        address, access = ParameterTuple[::len(ParameterTuple)-1]
+                    ParameterTuple = self.addresses['DI' + ''.join(re.findall(r'\d',input))]
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                except:
+                    raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
+            elif 'O' in input or 'DO' in input:
+                try:
+                    ParameterTuple = self.addresses['DO' + ''.join(re.findall(r'\d',input))]
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
                     raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
             else:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
+        
         if isinstance(input,int):
             try:
-                with self.addresses['DI' + str(input)] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses['DI' + str(input)]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
         if access == 'w':
             raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
         return super().read_coils(address, NumberOfCoils, **kwargs)
 
-    def write_coils(self, lockerinstance = {}, startCoil = 'DO0', listOfValues = [True], **kwargs):
+    def write_coils(self, lockerinstance, startCoil = 'DO0', listOfValues = [True], **kwargs):
         access = ''
         if isinstance(startCoil,str):
             if 'O' in startCoil or 'DO' in startCoil:
                 try:
-                    with self.addresses['DO' + ''.join(re.findall(r'\d',startCoil))] as ParameterTuple:
-                        address, access = ParameterTuple[::len(ParameterTuple)-1]
+                    ParameterTuple = self.addresses['DO' + ''.join(re.findall(r'\d',startCoil))]
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
                     raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
             else:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
         if isinstance(startCoil,int):
             try:
-                with self.addresses['DO' + str(startCoil)] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses['DO' + str(startCoil)]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
         if access == 'r':
             raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
         return super().write_coils(address, listOfValues, **kwargs)
 
-    def write_coil(self, lockerinstance = {}, Coil='DO0', value=0, **kwargs):
+    def write_coil(self, lockerinstance, Coil='DO0', value=0, **kwargs):
         access = ''
         if isinstance(Coil,str):
             if 'O' in Coil or 'DO' in Coil:
                 try:
-                    with self.addresses['DO' + ''.join(re.findall(r'\d',Coil))] as ParameterTuple:
-                        address, access = ParameterTuple[::len(ParameterTuple)-1]
+                    ParameterTuple = self.addresses['DO' + ''.join(re.findall(r'\d',Coil))]
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
                     raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
             else:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
         if isinstance(Coil,int):
             try:
-                with self.addresses['DO' + str(Coil)] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses['DO' + str(Coil)]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
         if access == 'r':
             raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
         return super().write_coil(address, value, **kwargs)
 
-    def read_discrete_inputs(self, lockerinstance = {}, InputToStartFrom = 'DI0', count=1, **kwargs):
+    def read_discrete_inputs(self, lockerinstance, InputToStartFrom = 'DI0', count=1, **kwargs):
         access = ''
         if isinstance(InputToStartFrom,str):
             if 'I' in InputToStartFrom or 'DI' in InputToStartFrom:
                 try:
-                    with self.addresses['DI' + ''.join(re.findall(r'\d',InputToStartFrom))] as ParameterTuple:
-                        address, access = ParameterTuple[::len(ParameterTuple)-1]
+                    ParameterTuple = self.addresses['DI' + ''.join(re.findall(r'\d',InputToStartFrom))]
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
                     raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
             else:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
         if isinstance(InputToStartFrom,int):
             try:
-                with self.addresses['DO' + str(InputToStartFrom)] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses['DO' + str(InputToStartFrom)]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
         if access == 'w':
             raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
         return super().read_discrete_inputs(address, count, **kwargs)
     
-    def read_holding_registers(self, lockerinstance = {}, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
+    def read_holding_registers(self, lockerinstance, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:
-                with self.addresses[registerToStartFrom] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses[registerToStartFrom]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
         else:
@@ -933,12 +1077,12 @@ class ADAMDataAcquisitionModule(ModbusClient):
             raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_holding_registers, parameter = ' + str(registerToStartFrom))
         return super().read_holding_registers(address, count, **kwargs)
 
-    def read_input_registers(self, lockerinstance = {}, registerToStartFrom = 'DIvalue', count=1, **kwargs):
+    def read_input_registers(self, lockerinstance, registerToStartFrom = 'DIvalue', count=1, **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:
-                with self.addresses[registerToStartFrom] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses[registerToStartFrom]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
         else:
@@ -947,12 +1091,12 @@ class ADAMDataAcquisitionModule(ModbusClient):
             raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_input_registers, parameter = ' + str(registerToStartFrom))
         return super().read_input_registers(address, count, **kwargs)
     
-    def write_register(self, lockerinstance = {}, register = '', value = 0xFFFF, **kwargs):
+    def write_register(self, lockerinstance, register = '', value = 0xFFFF, **kwargs):
         access = ''
         if isinstance(register,str):
             try:
-                with self.addresses[register] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses[register]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_register, parameter = ' + str(register))
         else:
@@ -961,12 +1105,12 @@ class ADAMDataAcquisitionModule(ModbusClient):
             raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_register, parameter = ' + str(register))
         return super().write_registers(address, value, **kwargs)
 
-    def write_registers(self, lockerinstance = {}, registerToStartFrom = '', values = [0xFFFF], **kwargs):
+    def write_registers(self, lockerinstance, registerToStartFrom = '', values = [0xFFFF], **kwargs):
         access = ''
         if isinstance(registerToStartFrom,str):
             try:
-                with self.addresses[registerToStartFrom] as ParameterTuple:
-                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                ParameterTuple = self.addresses[registerToStartFrom]
+                address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_registers, parameter = ' + str(registerToStartFrom))
         else:
@@ -976,26 +1120,29 @@ class ADAMDataAcquisitionModule(ModbusClient):
         return super().write_registers(address, values, **kwargs)
 
 class ParameterDictionaryError(ValueError):
-    def __init__(self, lockerinstance = {}, *args, **kwargs):
+    def __init__(self, lockerinstance, *args, **kwargs):
         self.args = args
+        errstring = '\nInvalid key for parameter dictionary in ' + ''.join(map(str, *args))
         lockerinstance[0].lock.acquire()
-        lockerinstance[0].shared['Errors'] += 'Invalid key for parameter dictionary in ' + ''.join(map(str, *args))
+        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
         lockerinstance[0].errorlevel[2] = True #High errorLevel
         lockerinstance[0].lock.release()
     
 class ParameterIsNotReadable(TypeError):
-    def __init__(self, lockerinstance = {}, *args, **kwargs):
+    def __init__(self, lockerinstance, *args, **kwargs):
         self.args = args
+        errstring = '\nTrying to read from write-only register in ' + ''.join(map(str, *args))
         lockerinstance[0].lock.acquire()
-        lockerinstance[0].shared['Errors'] += 'Trying to read from write-only register in ' + ''.join(map(str, *args))
+        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
         lockerinstance[0].errorlevel[2] = True #High errorLevel
         lockerinstance[0].lock.release()
 
 class ParameterIsNotWritable(TypeError):
-    def __init__(self, lockerinstance = {}, *args, **kwargs):
+    def __init__(self, lockerinstance, *args, **kwargs):
+        errstring = '\nTrying to write to read-only register in ' + ''.join(map(str, *args))
         self.args = args
         lockerinstance[0].lock.acquire()
-        lockerinstance[0].shared['Errors'] += 'Trying to write to read-only register in ' + ''.join(map(str, *args))
+        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
         lockerinstance[0].errorlevel[2] = True #High errorLevel
         lockerinstance[0].lock.release()
     
@@ -1016,7 +1163,7 @@ class FX0GMOD(object):
             'WriteOutputDataset5':(2500,('list',(5,)),'w')}
 
 class SICKGmod(FX0GMOD, ModbusClient):
-    def __init__(self, lockerinstance = {}, address = '192.168.255.255', port = 9100, *args, **kwargs):
+    def __init__(self, lockerinstance, address = '192.168.255.255', port = 9100, *args, **kwargs):
         super().__init__(address, *args, **kwargs)
         self.InputDatablock = [[25*[0]],[16*[0]],[30*[0]],[30*[0]]]
         self.OutputDatablock = [5*[5*[0]]]
@@ -1275,23 +1422,30 @@ class KawasakiRobot(object):
             **self.status}
         
 class KawasakiVG(ModbusClient):
-    def __init__(self, lockerinstance = {}, address = '192.168.0.1', port = 9200, *args, **kwargs):
+    def __init__(self, lockerinstance, address = '192.168.0.1', port = 9200, *args, **kwargs):
         super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
         self.params = KawasakiRobot()
         self.addresses = self.params.addresses
         
-    def __getAddress(self, lockerinstance = {}, parameterName=''):
+    def __getAddress(self, lockerinstance, parameterName=''):
         try:
             return self.addresses[parameterName][0]
         except:
             raise ParameterDictionaryError(lockerinstance, 'KawasakiVG __getAddress, parameter = ' + str(parameterName))
 
-    def read_coils(self, lockerinstance = {}, input = 'I1', NumberOfCoils = 1, **kwargs):
+    def read_coils(self, lockerinstance, input = 'I1', NumberOfCoils = 1, **kwargs):
         access = ''
+        result = ''
         if isinstance(input,str):
             if 'I' in input:
                 try:
                     ParameterTuple = self.addresses['I' + ''.join(re.findall(r'\d',input))]
+                    address, access = ParameterTuple[::len(ParameterTuple)-1]
+                except:
+                    raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
+            elif 'O' in input:
+                try:
+                    ParameterTuple = self.addresses['O' + ''.join(re.findall(r'\d',input))]
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
                     raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
@@ -1303,24 +1457,21 @@ class KawasakiVG(ModbusClient):
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
-        if access == 'w':
+        if 'r' not in access:
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
-        result = None
-        for attempt in range(lockerinstance[0].attempts.value):
-            try:
-                super().read_coils(address, NumberOfCoils, **kwargs)
-            except:
-                if attempt == lockerinstance[0].attempts.value -1:
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].errorlevel[5] = True
-                    lockerinstance[0].shared['Errors'] += "Attempts exceeded: " + str(attempt) 
-                    lockerinstance[0].lock.release()
-                raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input) + 'MODBUS Error')
-            
-        return result
+        try:
+            result = super().read_coils(address, NumberOfCoils, **kwargs)
+        except:
+            errstring = result
+            lockerinstance[0].lock.acquire()
+            if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+            lockerinstance[0].lock.release()
+        else:
+            return result
 
-    def write_coil(self, lockerinstance = {}, Coil='DO0', value=0, **kwargs):
+    def write_coil(self, lockerinstance, Coil='DO0', value=0, **kwargs):
         access = ''
+        result = ''
         if isinstance(Coil,str):
             if 'O' in Coil:
                 try:
@@ -1338,24 +1489,42 @@ class KawasakiVG(ModbusClient):
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         if access == 'r':
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
-        return super().write_coil(address, value, **kwargs)
+        try:
+            result = super().write_coil(address, value, **kwargs)
+        except:
+            errstring = result
+            lockerinstance[0].lock.acquire()
+            if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+            lockerinstance[0].lock.release()
+        else:
+            return result
 
-    def read_holding_registers(self, lockerinstance = {}, registerToStartFrom = 'command', count=1, **kwargs):
+    def read_holding_registers(self, lockerinstance, registerToStartFrom = 'command', count=1, **kwargs):
         access = ''
+        result = ''
         if isinstance(registerToStartFrom,str):
             try:
                 ParameterTuple = self.addresses[registerToStartFrom]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
-                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + registerToStartFrom)
         else:
             raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         if access == 'w':
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
-        return super().read_holding_registers(address, count, **kwargs)
+        try:
+            result = super().read_holding_registers(address, count, **kwargs)
+        except:
+            errstring = result
+            lockerinstance[0].lock.acquire()
+            if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+            lockerinstance[0].lock.release()
+        else:
+            return result
 
-    def write_register(self, lockerinstance = {}, register = '', value = 0xFFFF, **kwargs):
+    def write_register(self, lockerinstance, register = '', value = 0xFFFF, **kwargs):
         access = ''
+        result = ''
         if isinstance(register,str):
             try:
                 ParameterTuple = self.addresses[register]
@@ -1366,8 +1535,15 @@ class KawasakiVG(ModbusClient):
             raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         if access == 'r':
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
-        return super().write_registers(address, value, **kwargs)
-
+        try:
+            result = super().write_registers(address, value, **kwargs)
+        except:
+            errstring = result
+            lockerinstance[0].lock.acquire()
+            if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+            lockerinstance[0].lock.release()
+        else:
+            return result
 
 
 

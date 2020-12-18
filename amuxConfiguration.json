@@ -1,6 +1,6 @@
 {
     "AnalogMultiplexer":{
-        "IPAddress":"10.0.24.52",
+        "IPAddress":"192.168.4.20",
         "moduleName":"ADAM6052",
         "Port":9100,
         "__comment__":"port is disabled in modbusTCPunits SICKGmod.__init__() super().__init__(...) is without port value",

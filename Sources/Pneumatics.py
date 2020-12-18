@@ -1,13 +1,11 @@
 ##Pneumatics.py
-from Sources.StaticLock import SharedLocker
-import configparser
 import json
 from Sources.TactWatchdog import TactWatchdog as WDT
 
 class Pneumatic(object):
-    def __init__(self, branch, parent, *args, **kwargs):
+    def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.root = branch
+        self.root = {**branch}
         self.parent = parent
         self.childobjects = []
         self.name = self.root['name']
@@ -15,71 +13,96 @@ class Pneumatic(object):
         self.model = self.root['model']
         self.vendor = self.root['vendor']
         
-    def controlSequence(self):
+    def controlSequence(self, lockerinstance):
         for child in self.childobjects:
-            child.controlSequence()
+            child.controlSequence(lockerinstance)
 
 class PneumaticActive(Pneumatic):
-    def __init__(self, branch, parent, *args, **kwargs):
-        super().__init__(branch, parent, *args, **kwargs)
+    def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
+        super().__init__(lockerinstance, branch, parent, *args, **kwargs)
         self.address = self.root['address']
         self.voltage = self.root['voltage']
         self.current = self.root['current']
         self.action = self.root['action']
 
-class Piston(Pneumatic, SharedLocker):
-    def __init__(self, branch, parent, *args, **kwargs):
-        super().__init__(branch, parent, *args, **kwargs)
+class Piston(Pneumatic):
+    def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
+        super().__init__(lockerinstance, branch, parent, *args, **kwargs)
         for child in self.root['objects']:
             if child['class'] == 'Valve': Class = Valve
             elif child['class'] == 'Sensor': Class = Sensor
             else: continue
-            self.childobjects.append(Class(child, self))
+            try:
+                self.childobjects.append(Class(lockerinstance, child, self))
+            except:
+                errstring = ('\nPiston init error - Error while creating subobject: ' + str(child['class'])) if Class is not None else ('\nParent = ' + str(self))
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].events['Error'] = True
+                lockerinstance[0].errorlevel[10] = True
+                if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+                lockerinstance[0].lock.release()
 
-class Sensor(PneumaticActive, SharedLocker):
-    def controlSequence(self):
-        self.lock.acquire()
-        cstate = bool(self.GPIO[self.address])
-        self.pistons['sensor'+self.action] = cstate
-        self.lock.release()
+class Sensor(PneumaticActive):
+    def controlSequence(self, lockerinstance):
+        lockerinstance[0].lock.acquire()
+        cstate = bool(lockerinstance[0].GPIO[self.address])
+        lockerinstance[0].pistons['sensor'+self.action] = cstate
+        lockerinstance[0].lock.release()
 
-class Coil(PneumaticActive, SharedLocker):
-    def __init__(self, branch, parent, *args, **kwargs):
-        super().__init__(branch, parent, *args,**kwargs)
+class Coil(PneumaticActive):
+    def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
+        super().__init__(lockerinstance, branch, parent, *args,**kwargs)
         self.timer = WDT()
         self.nosensor = self.root['nosensor']
         self.timeout = self.root['timeout']
 
-    def controlSequence(self):
-        self.lock.acquire()
-        cstate = bool(self.pistons['sensor'+self.action])
-        rstate = bool(self.pistons[self.action])
-        self.lock.release()
+    def controlSequence(self, lockerinstance):
+        lockerinstance[0].lock.acquire()
+        cstate = bool(lockerinstance[0].pistons['sensor'+self.action])
+        rstate = bool(lockerinstance[0].pistons[self.action])
+        lockerinstance[0].lock.release()
         if rstate and not cstate:
-            self.lock.acquire()
-            self.GPIO[self.address] = True
-            self.GPIO['somethingChaged']
-            self.lock.release()
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].GPIO[self.address] = True
+            lockerinstance[0].GPIO['somethingChaged']
+            lockerinstance[0].lock.release()
             if not self.nosensor and self.timer == None:
-                self.timer = WDT.WDT(errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)
+                self.timer = WDT.WDT(lockerinstance, errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)
         else:
-            self.lock.acquire()
-            self.GPIO[self.address] = False
-            self.lock.release()
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].GPIO[self.address] = False
+            lockerinstance[0].lock.release()
             if self.timer.active: self.timer.Destruct()
 
-class Valve(Pneumatic, SharedLocker):
-    def __init__(self, branch, parent, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Valve(Pneumatic):
+    def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
+        super().__init__(lockerinstance, branch, parent, *args, **kwargs)
         for child in self.root['objects']:
-            if child['class'] == 'Coil':
-                self.childobjects.append(Coil(child, self))
+            Class = None
+            if child['class'] == 'Coil': Class = Coil
+            try:
+                self.childobjects.append(Class(lockerinstance, child, self))
+            except:
+                errstring = ('\nValve init error - Error while creating subobject: ' + str(child['class'])) if Class is not None else ('\nParent = ' + str(self))
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].events['Error'] = True
+                lockerinstance[0].errorlevel[10] = True
+                if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+                lockerinstance[0].lock.release()
 
-class PneumaticsVG(SharedLocker):
-    def __init__(self, jsonFile, *args, **kwargs):
+class PneumaticsVG(object):
+    def __init__(self, lockerinstance, jsonFile, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             self.parameters = json.load(open(jsonFile))
+        except:
+            errstring = '\nPneumaticsVG init error - Error while parsing config file'
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].events['Error'] = True
+            lockerinstance[0].errorlevel[10] = True
+            if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+            lockerinstance[0].lock.release()
+        else:
             self.childobjects = []
             for child in self.parameters['objects']:#root.findall('piston'):
                 Class = None
@@ -87,23 +110,26 @@ class PneumaticsVG(SharedLocker):
                 elif child['class'] == 'Valve': Class = Valve
                 elif child['class'] == 'Sensor': Class = Sensor
                 else: continue
-                self.childobjects.append(Class(child, self))
-            self.lock.acquire()
-            self.pistons['Alive'] = True
-            self.lock.release()
+                try:
+                    self.childobjects.append(Class(lockerinstance, child, self))
+                except:
+                    errstring = ('\nPneumaticsVG init error - Error while creating subobject: ' + str(child['class'])) if Class is not None else ('\nParent = ' + str(self))
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].events['Error'] = True
+                    lockerinstance[0].errorlevel[10] = True
+                    if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
+                    lockerinstance[0].lock.release()
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].pistons['Alive'] = True
+            lockerinstance[0].lock.release()
             self.Alive = True
-            self.PneumaticsLoop()
-        except Exception as ex:
-            self.lock.acquire()
-            self.events['Error'] = True
-            self.errorlevel[10] = True
-            self.shared['Errors'] += '/nPneumaticsVG init error - Error while parsing config file' + str(ex.__class__)
-            self.lock.release()
+            self.PneumaticsLoop(lockerinstance)
 
-    def PneumaticsLoop(self):
+
+    def PneumaticsLoop(self, lockerinstance):
         while self.Alive:
             for child in self.childobjects:
-                child.controlSequence()
-            self.lock.acquire()
-            self.Alive = self.pistons['Alive']
-            self.lock.release()
+                child.controlSequence(lockerinstance)
+            lockerinstance[0].lock.acquire()
+            self.Alive = lockerinstance[0].pistons['Alive']
+            lockerinstance[0].lock.release()
