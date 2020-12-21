@@ -1461,17 +1461,19 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
         try:
             result = super().read_coils(address, NumberOfCoils, **kwargs)
+            assert (not isinstance(result,Exception))
         except Exception as e:
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
-            return []
-        return result
+            result = []
+        finally:
+            return result
 
     def write_coil(self, lockerinstance, Coil='DO0', value=0, **kwargs):
         access = ''
-        result = ''
+        result = []
         if isinstance(Coil,str):
             if 'O' in Coil:
                 try:
@@ -1491,12 +1493,15 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         try:
             result = super().write_coil(address, value, **kwargs)
+            assert (not isinstance(result,Exception))
         except Exception as e:
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
-        return result
+            result = []
+        finally:
+            return result
 
     def read_holding_registers(self, lockerinstance, registerToStartFrom = 'command', count=1, **kwargs):
         access = ''
@@ -1513,13 +1518,15 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         try:
             result = super().read_holding_registers(address, count, **kwargs)
+            assert (not isinstance(result,Exception))
         except Exception as e:
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
-            return []
-        return result
+            result = []
+        finally:
+            return result
 
     def write_register(self, lockerinstance, register = '', value = 0xFFFF, **kwargs):
         access = ''
@@ -1536,12 +1543,15 @@ class KawasakiVG(ModbusClient):
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         try:
             result = super().write_registers(address, value, **kwargs)
+            assert (not isinstance(result,Exception))
         except Exception as e:
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
-        return result
+            result = []
+        finally:
+            return result
 
 
 
