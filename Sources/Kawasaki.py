@@ -58,7 +58,7 @@ class RobotVG(KawasakiVG):
                     'StatusRegister0',  'StatusRegister1',  'StatusRegister2', 
                     'StatusRegister3',  'StatusRegister4',  'StatusRegister5', 
                     'StatusRegister6']:
-            RobotRegister.append(self.read_holding_registers(lockerinstance, registerToStartFrom = reg))
+            RobotRegister.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = reg))
         lockerinstance[0].lock.acquire()
         lockerinstance[0].robot['currentpos'] = RobotRegister[0]
         A, X = self._splitdecimals(lockerinstance[0].robot['A']), self._splitdecimals(lockerinstance[0].robot['X'])
@@ -142,9 +142,9 @@ class RobotVG(KawasakiVG):
             result = 0b0000000000000000
             if le: values = values[::-1]
             for i, val in enumerate(values):
-                print(i,val)
+                #print(i,val)
                 if val: result += pow(2,i)
-                print(bin(result))
+                #print(bin(result))
             return result
         if isinstance(values, int):
             values &= 0b1111111111111111

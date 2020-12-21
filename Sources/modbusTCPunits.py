@@ -958,7 +958,7 @@ class ADAMModule(object):
 
 class ADAMDataAcquisitionModule(ModbusClient):
     def __init__(self, lockerinstance, moduleName = 'ADAM6052', address = '192.168.0.1', port = 502, *args, **kwargs):
-        super().__init__(address, port, *args, **kwargs)
+        super().__init__(address, *args, **kwargs)
         self.moduleName = moduleName
         stringtoeval = 'ADAMModule().' + self.moduleName
         try:
@@ -1467,8 +1467,7 @@ class KawasakiVG(ModbusClient):
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
             return []
-        else:
-            return result
+        return result
 
     def write_coil(self, lockerinstance, Coil='DO0', value=0, **kwargs):
         access = ''
@@ -1497,8 +1496,7 @@ class KawasakiVG(ModbusClient):
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
-        else:
-            return result
+        return result
 
     def read_holding_registers(self, lockerinstance, registerToStartFrom = 'command', count=1, **kwargs):
         access = ''
@@ -1521,8 +1519,7 @@ class KawasakiVG(ModbusClient):
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
             return []
-        else:
-            return result
+        return result
 
     def write_register(self, lockerinstance, register = '', value = 0xFFFF, **kwargs):
         access = ''
@@ -1544,8 +1541,7 @@ class KawasakiVG(ModbusClient):
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
             lockerinstance[0].lock.release()
-        else:
-            return result
+        return result
 
 
 

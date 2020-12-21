@@ -87,7 +87,7 @@ class SharedLocker(object):
                 'step':False,
                 'DOG':False,
                 'reset':False,
-                'servoModuleFirstAccess':True,
+                'servoModuleFirstAccess':False,
                 'Alive':True})
         self.mux = Manager().dict({
                 'busy':False,

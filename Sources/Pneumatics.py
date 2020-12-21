@@ -62,9 +62,10 @@ class Coil(PneumaticActive):
         rstate = lockerinstance[0].pistons[self.action]
         lockerinstance[0].lock.release()
         if rstate and not cstate:
+            #print(self.action)
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO[self.address] = True
-            lockerinstance[0].GPIO['somethingChaged']
+            lockerinstance[0].GPIO['somethingChanged'] = True
             lockerinstance[0].lock.release()
             if not self.nosensor and self.timer is None:
                 self.timer = WDT.WDT(lockerinstance, errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', errorlevel = 30, limitval = self.timeout)

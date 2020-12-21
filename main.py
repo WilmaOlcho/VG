@@ -2,7 +2,7 @@
 if True:
 
     from multiprocessing import Process
-    #from Sources.Estun import MyEstun
+    from Sources.Estun import MyEstun
     from Sources.StaticLock import SharedLocker
     from Sources.analogmultiplexer import MyMultiplexer
     from Sources.Kawasaki import RobotVG
@@ -17,13 +17,13 @@ if True:
             locker = SharedLocker()
             self.lock = {0:locker}
             path = 'C:/users/operator/documents/python/vg/'
-            self.ServoConfigurationFile = path + 'servo.ini'
+            self.ServoConfigurationFile = path + 'servoEstun.ini'
             self.AmuxConfigurationFile = path + 'amuxConfiguration.json'
             self.RobotConfigurationFile = path + 'robotConfiguration.json'
             self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
             self.processes = [
                 Process(target = console, args=(self.lock,)),
-                #Process(target = MyEstun, args=(self.ServoConfigurationFile,*args,)),
+                Process(target = MyEstun, args=(self.lock, self.ServoConfigurationFile,*args,)),
                 Process(target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile, *args,)),
                 Process(target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
                 Process(target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile, *args,))

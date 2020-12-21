@@ -3,7 +3,7 @@
         "IPAddress":"192.168.4.20",
         "moduleName":"ADAM6052",
         "Port":9100,
-        "__comment__":"port is disabled in modbusTCPunits SICKGmod.__init__() super().__init__(...) is without port value",
+        "__comment0":"port is deleted from modbusTCPunits.ADAMDataAcquisitionModule.__init__(... /port =/ ...)",
         "BindOutput":0
     }
 
