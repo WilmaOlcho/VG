@@ -201,7 +201,7 @@ class MyEstun(Estun):
                         self.BusCtrlInputNode1_39,self.BusCtrlInputNode1_40,
                         self.BusCtrlInputNode1_41,self.BusCtrlInputNode1_42]
         for n, param in enumerate(self.dterminalTypes[:8]):
-            if self.config[buscontrol[n][0]] & self.invertedReducedMask(lockerinstance, buscontrol[n]):
+            if self.config['SERVOPARAMETERS'][buscontrol[n][0]] & self.invertedReducedMask(lockerinstance, buscontrol[n]):
                 self.setParameter(param,lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])])
             else:
                 lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])] = self.readParameter(lockerinstance, param)
@@ -261,9 +261,9 @@ class MyEstun(Estun):
             if step: self.control_switch['step'](lockerinstance)
             if reset: self.control_switch['reset'](lockerinstance)
             if Dog: self.control_switch['DOG'](lockerinstance)
-            self.control_switch['DOGIOControl'](lockerinstance)
+            self.IOControl(lockerinstance)
         except Exception as e:
-            errmessage = '\nEstun error: Homing = {}\nStep = {}\nReset = {}\nDOG = {}\n'.format(homing, step, reset, Dog) + str(e)
+            errmessage = '\nEstun error:\n Homing = {}\nStep = {}\nReset = {}\nDOG = {}\n'.format(homing, step, reset, Dog) + repr(e)
             lockerinstance[0].lock.acquire()
             if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
             lockerinstance[0].lock.release()
