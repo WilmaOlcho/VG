@@ -1,23 +1,9 @@
 from multiprocessing import Manager, Lock, Array, Value
 from Sources.misc import BlankFunc
 
-class BlankLocker(object):
-    shared = {}
-    lock = {}
-    events = {}
-    errorlevel = []
-    pistons = {}
-    safety = {}
-    estun = {}
-    mux = {}
-    estunModbus = {}
-    robot = {}
-    console = {}
-    GPIO = {}
-    SICKGMOD = {}
-
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
+        self.ModbusASCIIViaTCPInterval = Value('i',500)
         self.shared = Manager().dict({
                 'Errors':'',
                 'servoModuleFirstAccess':True,
@@ -26,6 +12,7 @@ class SharedLocker(object):
         self.lock = Lock()
         self.attempts = Value('i',4)
         self.events = Manager().dict({
+                'MAVT':False,
                 'ack':False,
                 'Error':False,
                 'RobotMoving':True,

@@ -104,7 +104,7 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
 class MyEstun(Estun):
     def homing(self, lockerinstance):
         if self.timerhoming == None:
-            self.timerhoming = WDT.WDT(scale = 's',limitval = 30, errToRaise='Servo Homing Time exceeded', errorlevel=10)
+            self.timerhoming = WDT.WDT(lockerinstance, scale = 's',limitval = 30, errToRaise='Servo Homing Time exceeded', errorlevel=10)
         if self.readDOG(lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].estun['homing'] = False
@@ -122,7 +122,7 @@ class MyEstun(Estun):
 
     def step(self, lockerinstance):
         if self.timerstep == None:
-            self.timerstep = WDT.WDT(scale = 's',limitval = 10, errToRaise='Servo Step Time exceeded', errorlevel=10)
+            self.timerstep = WDT.WDT(lockerinstance, scale = 's',limitval = 10, errToRaise='Servo Step Time exceeded', errorlevel=10)
             lockerinstance[0].lock.acquire()
             lockerinstance[0].estunModbus['PCON'] = False if lockerinstance[0].estunModbus['TGON'] else True
             if lockerinstance[0].estunModbus['COIN']:
@@ -257,7 +257,7 @@ class MyEstun(Estun):
             if Dog: self.control_switch['DOG'](lockerinstance)
             self.control_switch['DOGIOControl'](lockerinstance)
         except Exception as e:
-            errmessage = "\nEstun error " + 'Homing = {}\nStep = {}\nReset = {}\nDOG = {}\n'.format(homing, step, reset, Dog) + str(e)
+            errmessage = '\nEstun error: Homing = {}\nStep = {}\nReset = {}\nDOG = {}\n'.format(homing, step, reset, Dog) + str(e)
             lockerinstance[0].lock.acquire()
             if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
             lockerinstance[0].lock.release()
