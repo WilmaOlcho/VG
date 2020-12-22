@@ -166,7 +166,7 @@ class RobotVG(KawasakiVG):
         inputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'I17-32'))
         for i, reg in enumerate(inputs):
             lockerinstance[0].lock.acquire()
-            bits = self._bits(reg, le = True)
+            bits = self._bits(reg)
             for j in range(16):
                 lockerinstance[0].GPIO['I'+str(i*16+j+1)] = bits[j] 
             lockerinstance[0].lock.release()
@@ -192,7 +192,7 @@ class RobotVG(KawasakiVG):
             outputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'O17-32'))
             for i, reg in enumerate(outputs):
                 lockerinstance[0].lock.acquire()
-                bits = self._bits(reg, le = True)
+                bits = self._bits(reg)
                 for j in range(16):
                     output = 'O'+str(i*16+j+1)
                     if lockerinstance[0].GPIO[output] != bits[j]:

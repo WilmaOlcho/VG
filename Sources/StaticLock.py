@@ -3,7 +3,7 @@ from Sources.misc import BlankFunc
 
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
-        self.ModbusASCIIViaTCPInterval = Value('i',500)
+        self.ModbusASCIIViaTCPInterval = Value('i',0)
         self.shared = Manager().dict({
                 'Errors':'',
                 'servoModuleFirstAccess':True,
