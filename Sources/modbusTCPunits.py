@@ -1,6 +1,7 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from functools import wraps, partial
 from pymodbus.transaction import ModbusAsciiFramer
+from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from Sources.TactWatchdog import TactWatchdog as WDT
 import json
 import re
@@ -1556,6 +1557,7 @@ class KawasakiVG(ModbusClient):
             result = []
         finally:
             self.timer = WDT.WDT(lockerinstance, limitval = self.interval, scale = 'ms', additionalFuncOnStart = lambda a = lockerinstance, b=self: b.__WDTEventRaise(a), additionalFuncOnExceed = lambda a = lockerinstance, b=self: b.__WDTEventExceed(a), noerror = True)
+            if isinstance(result,ReadHoldingRegistersResponse): result = result.registers
             return result
 
     def write_register(self, lockerinstance, register = '', value = 0xFFFF, **kwargs):
@@ -1574,7 +1576,7 @@ class KawasakiVG(ModbusClient):
         if access == 'r':
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         try:
-            result = super().write_registers(address, value, **kwargs)
+            result = super().write_register(address, value, **kwargs)
             assert (not isinstance(result,Exception))
         except Exception as e:
             errstring = str(e)

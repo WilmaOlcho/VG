@@ -34,8 +34,11 @@ class RobotVG(KawasakiVG):
     def Robotloop(self, lockerinstance):
         while self.Alive:
             self.IOControl(lockerinstance)
-            self.CommandControl(lockerinstance)
-            self.misc(lockerinstance)
+            lockerinstance[0].lock.acquire()
+            positioncontrol, commandcontrol = lockerinstance[0].robot['PositionControl'], lockerinstance[0].robot['CommandControl']
+            lockerinstance[0].lock.release()
+            if positioncontrol: self.misc(lockerinstance)
+            if commandcontrol: self.CommandControl(lockerinstance)
             self.ErrorCatching(lockerinstance)
             lockerinstance[0].lock.acquire()
             self.Alive = lockerinstance[0].robot['Alive']
@@ -59,34 +62,35 @@ class RobotVG(KawasakiVG):
                     'StatusRegister3',  'StatusRegister4',  'StatusRegister5', 
                     'StatusRegister6']:
             RobotRegister.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = reg))
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].robot['currentpos'] = RobotRegister[0]
-        A, X = self._splitdecimals(lockerinstance[0].robot['A']), self._splitdecimals(lockerinstance[0].robot['X'])
-        Y, Z = self._splitdecimals(lockerinstance[0].robot['Y']), self._splitdecimals(lockerinstance[0].robot['Z'])
-        lockerinstance[0].robot['StatusRegister0'] = RobotRegister[9]
-        lockerinstance[0].robot['StatusRegister1'] = RobotRegister[10]
-        lockerinstance[0].robot['StatusRegister2'] = RobotRegister[11]
-        lockerinstance[0].robot['StatusRegister3'] = RobotRegister[12]
-        lockerinstance[0].robot['StatusRegister4'] = RobotRegister[13]
-        lockerinstance[0].robot['StatusRegister5'] = RobotRegister[14]
-        lockerinstance[0].robot['StatusRegister6'] = RobotRegister[15]
-        lockerinstance[0].lock.release()
-        if A[0] != RobotRegister[1]:
-            self.write_register(lockerinstance, register = 'A', value = RobotRegister[1])
-        if A[1] != RobotRegister[2]:
-            self.write_register(lockerinstance, register = '00A', value = RobotRegister[2])
-        if X[0] != RobotRegister[3]:
-            self.write_register(lockerinstance, register = 'X', value = RobotRegister[3])
-        if X[1] != RobotRegister[4]:
-            self.write_register(lockerinstance, register = '00X', value = RobotRegister[4])
-        if Y[0] != RobotRegister[5]:
-            self.write_register(lockerinstance, register = 'Y', value = RobotRegister[5])
-        if Y[1] != RobotRegister[6]:
-            self.write_register(lockerinstance, register = '00Y', value = RobotRegister[6])
-        if Z[0] != RobotRegister[7]:
-            self.write_register(lockerinstance, register = 'Z', value = RobotRegister[7])
-        if Z[1] != RobotRegister[8]:
-            self.write_register(lockerinstance, register = '00Z', value = RobotRegister[8])
+        if len(RobotRegister) == 16:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['currentpos'] = RobotRegister[0]
+            A, X = self._splitdecimals(lockerinstance[0].robot['A']), self._splitdecimals(lockerinstance[0].robot['X'])
+            Y, Z = self._splitdecimals(lockerinstance[0].robot['Y']), self._splitdecimals(lockerinstance[0].robot['Z'])
+            lockerinstance[0].robot['StatusRegister0'] = RobotRegister[9]
+            lockerinstance[0].robot['StatusRegister1'] = RobotRegister[10]
+            lockerinstance[0].robot['StatusRegister2'] = RobotRegister[11]
+            lockerinstance[0].robot['StatusRegister3'] = RobotRegister[12]
+            lockerinstance[0].robot['StatusRegister4'] = RobotRegister[13]
+            lockerinstance[0].robot['StatusRegister5'] = RobotRegister[14]
+            lockerinstance[0].robot['StatusRegister6'] = RobotRegister[15]
+            lockerinstance[0].lock.release()
+            if A[0] != RobotRegister[1]:
+                self.write_register(lockerinstance, register = 'A', value = RobotRegister[1])
+            if A[1] != RobotRegister[2]:
+                self.write_register(lockerinstance, register = '00A', value = RobotRegister[2])
+            if X[0] != RobotRegister[3]:
+                self.write_register(lockerinstance, register = 'X', value = RobotRegister[3])
+            if X[1] != RobotRegister[4]:
+                self.write_register(lockerinstance, register = '00X', value = RobotRegister[4])
+            if Y[0] != RobotRegister[5]:
+                self.write_register(lockerinstance, register = 'Y', value = RobotRegister[5])
+            if Y[1] != RobotRegister[6]:
+                self.write_register(lockerinstance, register = '00Y', value = RobotRegister[6])
+            if Z[0] != RobotRegister[7]:
+                self.write_register(lockerinstance, register = 'Z', value = RobotRegister[7])
+            if Z[1] != RobotRegister[8]:
+                self.write_register(lockerinstance, register = '00Z', value = RobotRegister[8])
 
     def CommandControl(self, lockerinstance):
         lockerinstance[0].lock.acquire()
@@ -193,6 +197,6 @@ class RobotVG(KawasakiVG):
                     output = 'O'+str(i*16+j+1)
                     if lockerinstance[0].GPIO[output] != bits[j]:
                         lockerinstance[0].events['OutputChangedByRobot'] = True
-                        lockerinstance[0].events['OutputsChangedByRobot'] += outputs + ' '
+                        lockerinstance[0].events['OutputsChangedByRobot'] += output + ' '
                         lockerinstance[0].GPIO[output] = bits[j] 
                 lockerinstance[0].lock.release()

@@ -23,12 +23,18 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
             *args, **kwargs):
         super().__init__(self)
         #Pronet_constants.__init__(self)
-        self.RTU = minimalmodbus.Instrument(comport,slaveadress,protocol,close_port_after_each_call,debug)
-        self.RTU.serial.baudrate = baud
-        self.RTU.serial.bytesize = bytesize 
-        self.RTU.serial.stopbits = stopbits
-        self.RTU.serial.parity = parity
-        self.RTU.serial.timeout = 1
+        try:
+            self.RTU = minimalmodbus.Instrument(comport,slaveadress,protocol,close_port_after_each_call,debug)
+            self.RTU.serial.baudrate = baud
+            self.RTU.serial.bytesize = bytesize 
+            self.RTU.serial.stopbits = stopbits
+            self.RTU.serial.parity = parity
+            self.RTU.serial.timeout = 1
+        except Exception as e:
+            errormessage = 'Estun communication error: ' + str(e)
+            lockerinstance[0].lock.acquire()
+            if not errormessage in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errormessage
+            lockerinstance[0].lock.release()
 
     def sendRegister(self, lockerinstance, address, value):
         try:

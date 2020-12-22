@@ -77,11 +77,20 @@ class console(object):
         self.locker[0].lock.release()
         self.root.after(300,self.timerloop)
 
+    def Wclose(self):
+        self.locker[0].lock.acquire()
+        self.locker[0].events['closeApplication'] = True
+        self.locker[0].lock.release()
+
     def __init__(self, locker, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.locker = {**locker}
         self.Alive = True
+        self.locker[0].lock.acquire()
+        self.locker[0].console['Alive'] = self.Alive
+        self.locker[0].lock.release()
         self.root = Tk()
+        self.root.protocol('WM_DELETE_WINDOW', self.Wclose)
         self.locker[0].lock.acquire()
         self.checkbuttons = []
         self.variables = {}
@@ -110,4 +119,10 @@ class console(object):
         
         self.locker[0].lock.release()
         self.root.after(100,self.timerloop)
-        self.root.mainloop()
+
+        while self.Alive:
+            self.locker[0].lock.acquire()
+            self.Alive = self.locker[0].console['Alive']
+            self.locker[0].lock.release()
+            self.root.update()
+        #self.root.mainloop()

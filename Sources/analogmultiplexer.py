@@ -107,7 +107,7 @@ class MyMultiplexer(AnalogMultiplexer):
 
     def getState(self, lockerinstance):
         self.currentState = super().getState(lockerinstance)
-        if self.currentState == -1:
+        if isinstance(self.currentState,int):
             errstring = "\nMyMultiplexer.getState cant get state: returned -1"
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring

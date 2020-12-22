@@ -90,6 +90,8 @@ class SharedLocker(object):
                 'COIN':False
             })
         self.robot = Manager().dict({
+                'CommandControl':False,
+                'PositionControl':False,
                 'Alive':False,
                 'homepos':False,
                 'homing':False,
