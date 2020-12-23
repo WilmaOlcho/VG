@@ -5,31 +5,38 @@ import json
 
 class RobotVG(KawasakiVG):
     def __init__(self, lockerinstance, configFile='', *args, **kwargs):
-        try:
-            self.parameters = json.load(open(configFile))
-        except:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].events['Error'] = True
-            lockerinstance[0].errorlevel[10] = True
-            lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Config file not found'
-            lockerinstance[0].lock.release()
-        self.timer = WDT()
-        try:
-            self.IPAddress = self.parameters['RobotParameters']['IPAddress']
-            self.Port = self.parameters['RobotParameters']['Port']
-        except:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].events['Error'] = True
-            lockerinstance[0].errorlevel[10] = True
-            lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Error while reading config file'
-            lockerinstance[0].lock.release()
-        else:
-            super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
-            self.Alive = True
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].robot['Alive'] = self.Alive
-            lockerinstance[0].lock.release()
-            self.Robotloop(lockerinstance)
+        while True:
+            try:
+                self.parameters = json.load(open(configFile))
+            except:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].events['Error'] = True
+                lockerinstance[0].errorlevel[10] = True
+                lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Config file not found'
+                lockerinstance[0].lock.release()
+            self.timer = WDT()
+            try:
+                self.IPAddress = self.parameters['RobotParameters']['IPAddress']
+                self.Port = self.parameters['RobotParameters']['Port']
+            except:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].events['Error'] = True
+                lockerinstance[0].errorlevel[10] = True
+                lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Error while reading config file'
+                lockerinstance[0].lock.release()
+            else:
+                super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
+                self.Alive = True
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].robot['Alive'] = self.Alive
+                lockerinstance[0].lock.release()
+                self.Robotloop(lockerinstance)
+                break
+            finally:
+                lockerinstance[0].lock.acquire()
+                letdie = lockerinstance[0].events['closeApplication']
+                lockerinstance[0].lock.release()
+                if letdie: break
 
     def Robotloop(self, lockerinstance):
         while self.Alive:
@@ -181,8 +188,14 @@ class RobotVG(KawasakiVG):
             lockerinstance[0].lock.release()
             return output
         if somethingchanged:
-            for i, reg in enumerate(['O1-16', 'O17-32']):
-                self.write_register(lockerinstance, register = reg, value = self._bits(GPIOeights(i*16+1), le = True))
+            if False: #switch to change sending format
+                for i, reg in enumerate(['O1-16', 'O17-32']):
+                    self.write_register(lockerinstance, register = reg, value = self._bits(GPIOeights(i*16+1), le = True))
+            else:
+                for i, reg in enumerate(['O1-16', 'O17-32']):
+                    values = GPIOeights(i*16+1)
+                    for j, val in enumerate(values):
+                        self.write_coil(lockerinstance, Coil= 'O' + str(1+j+16*i), value = val)
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO['somethingChanged'] = False
             lockerinstance[0].lock.release()

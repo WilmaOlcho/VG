@@ -1,7 +1,7 @@
 
 
 
-class Modbus_constants():
+class Modbus_constants(object):
     def __init__(self, *args, **kwargs):
         self.functionCodes = {
             'Read Coil Status':1,
@@ -24,4 +24,4 @@ class Modbus_constants():
         self.WRITE_REGISTER = 6
         self.LOOPBACK_DIAGNOSIS = 8
         self.MASKED_REGISTER = 22
-        super().__init__(self, *args, **kwargs)
+        super().__init__()

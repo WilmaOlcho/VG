@@ -7,10 +7,19 @@ class IOBar(Frame):
         self.elements = elements.copy()
         self.locker = {**lockerinstance}
         for key in self.elements.keys():
-            self.elements[key] = BooleanVar()
+            if 'I' in key:
+                self.elements[key] =  Canvas(self, bg='black', width = 15, height = 15)
+                lblval = StringVar()
+                lblval.set(key)
+                lbl = Label(self, textvariable = lblval, width = 3)
+                self.elements[key].pack(side = side, anchor = anchor, expand = YES, fill=BOTH)
+                lbl.pack(side = side, anchor = anchor, expand = YES, fill=BOTH)
+            else:
+                self.elements[key] = BooleanVar()
         for key in self.elements.keys():
-            chk = Checkbutton(self, text = key, variable = self.elements[key], command = self.click)
-            chk.pack(side = side, anchor = anchor, expand = YES, fill=BOTH)
+            if not 'I' in key:
+                chk = Checkbutton(self, text = key, width = 3 if not 'Changed' in key else 20, variable = self.elements[key], command = self.click)
+                chk.pack(side = side, anchor = anchor, expand = YES, fill=BOTH)
             
     def click(self):
         for key in self.elements.keys():
@@ -70,6 +79,8 @@ class console(object):
                         bar.elements[key].configure(bg='green' if self.locker[0].pistons['sensor'+key] else 'black')
                 elif isinstance(bar, EstunBar):
                     pass
+                elif 'I' in key:
+                        bar.elements[key].configure(bg='green' if self.locker[0].GPIO[key] else 'black')
                 elif not self.locker[0].GPIO[key] == bar.elements[key].get():
                     bar.elements[key].set(self.locker[0].GPIO[key])
         self.textbox.delete('1.0',END)
@@ -110,11 +121,11 @@ class console(object):
         for item in estuncommands:
             self.bars.append(EstunBar(self.locker, side= LEFT, elements = {item:None}, master = self.root))
         for i, bar in enumerate(filter(lambda item:isinstance(item,PistonBar),self.bars)):
-            bar.grid(column = 3, row = i )
+            bar.grid(column = 3, row = i, sticky = W)
         for i, bar in enumerate(filter(lambda item:isinstance(item,EstunBar),self.bars)):
-            bar.grid(column = 4, row = i )
+            bar.grid(column = 4, row = i, sticky = W)
         for i, bar in enumerate(filter(lambda item:isinstance(item,IOBar),self.bars)):
-            bar.grid(column = 0, row = i )
+            bar.grid(column = 0, row = i, sticky = W)
         self.textbox.grid(column = 0)
         
         self.locker[0].lock.release()

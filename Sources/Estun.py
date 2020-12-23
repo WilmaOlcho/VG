@@ -7,12 +7,12 @@ from functools import lru_cache
 from Sources.TactWatchdog import TactWatchdog as WDT
 from Sources.pronet_constants import Pronet_constants
 from Sources.modbus_constants import Modbus_constants
-from Sources.misc import BlankFunc, writeInLambda, dictKeyByVal
+from Sources.misc import BlankFunc, writeInLambda, dictKeyByVal, ErrorEventWrite
 
-class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
+class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
     def __init__(self, lockerinstance,
             comport = "COM1",
-            slaveadress = 1,
+            slaveaddress = 1,
             protocol = ascii,
             close_port_after_each_call = False,
             debug = False,
@@ -21,32 +21,29 @@ class Estun(Pronet_constants, Modbus_constants, minimalmodbus.ModbusException):
             parity = "N",
             bytesize = 7,
             *args, **kwargs):
-        super().__init__(self)
-        #Pronet_constants.__init__(self)
         try:
-            self.RTU = minimalmodbus.Instrument(comport,slaveadress,protocol,close_port_after_each_call,debug)
-            self.RTU.serial.baudrate = baud
-            self.RTU.serial.bytesize = bytesize 
-            self.RTU.serial.stopbits = stopbits
-            self.RTU.serial.parity = parity
-            self.RTU.serial.timeout = 1
+            Pronet_constants.__init__(self)
+            Modbus_constants.__init__(self)
+            minimalmodbus.Instrument.__init__(self, comport,slaveaddress,mode = protocol,close_port_after_each_call=close_port_after_each_call,debug=debug,*args, **kwargs)
+            self.serial.baudrate = baud
+            self.serial.bytesize = bytesize 
+            self.serial.stopbits = stopbits
+            self.serial.parity = parity
+            self.serial.timeout = 1
         except Exception as e:
-            errormessage = 'Estun communication error: ' + str(e)
-            lockerinstance[0].lock.acquire()
-            if not errormessage in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errormessage
-            lockerinstance[0].lock.release()
+            errormessage = 'Estun communication error: ' + repr(e)
+            ErrorEventWrite(lockerinstance, errormessage)
 
     def sendRegister(self, lockerinstance, address, value):
         try:
-            return self.RTU.write_register(address,value,0,self.WRITE_REGISTER,False)
-        except:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].shared['Errors'] += sys.exc_info()[0]
-            lockerinstance[0].lock.release()
+            return self.write_register(address,value,0,self.WRITE_REGISTER,False)
+        except Exception as e:
+            errormessage = 'Estun sendRegister Error: ' + repr(e)
+            ErrorEventWrite(lockerinstance, errormessage)
             return None
 
     def readRegister(self, lockerinstance, address):
-        return self.RTU.read_register(address,0,self.READ_HOLDING_REGISTERS,False)
+        return self.read_register(address,0,self.READ_HOLDING_REGISTERS,False)
 
     def parameterType(self, lockerinstance, parameter = (None,(None,None),None)):
         return parameter[2]
@@ -201,7 +198,7 @@ class MyEstun(Estun):
                         self.BusCtrlInputNode1_39,self.BusCtrlInputNode1_40,
                         self.BusCtrlInputNode1_41,self.BusCtrlInputNode1_42]
         for n, param in enumerate(self.dterminalTypes[:8]):
-            if self.config['SERVOPARAMETERS'][buscontrol[n][0]] & self.invertedReducedMask(lockerinstance, buscontrol[n]):
+            if self.config['SERVOPARAMETERS'][str(buscontrol[n][0])] & self.invertedReducedMask(lockerinstance, buscontrol[n]):
                 self.setParameter(param,lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])])
             else:
                 lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])] = self.readParameter(lockerinstance, param)
@@ -226,47 +223,80 @@ class MyEstun(Estun):
             lockerinstance[0].shared['configurationError']=True
             lockerinstance[0].shared['Errors'] += '\n Servo configuration file not found'
             lockerinstance[0].errorlevel[0] = True
-            lockerinstance[0].estun['Alive'] = True
             lockerinstance[0].lock.release()
         else:
-            lockerinstance[0].lock.acquire()
-            self.Alive = lockerinstance[0].estun['Alive']
-            lockerinstance[0].lock.release()
             COMSETTINGS = self.config['COMSETTINGS']
-            super().__init__(   lockerinstance,
-                                comport = COMSETTINGS['comport'],
-                                slaveadress = COMSETTINGS.getint('adress'),
-                                protocol = COMSETTINGS['protocol'],
-                                close_port_after_each_call = COMSETTINGS.getboolean('close_port_after_each_call') == 'True',
-                                debug = COMSETTINGS.getboolean('debug') == 'True',
-                                baud = COMSETTINGS.getint('baudrate'),
-                                stopbits = COMSETTINGS.getint('stopbits'),
-                                parity = COMSETTINGS.get('parity'),
-                                bytesize = COMSETTINGS.getint('bytesize'), *args, **kwargs)
-            while self.Alive:
-                lockerinstance[0].lock.acquire()
-                firstAccess = lockerinstance[0].estun['servoModuleFirstAccess']
-                lockerinstance[0].lock.release()
-                if firstAccess:
-                    self.ServoFirstAccess(lockerinstance)
+            while True:
+                try:
+                    skwargs = { 'comport':COMSETTINGS['comport'],
+                                'slaveaddress':COMSETTINGS.getint('adress'),
+                                'protocol':COMSETTINGS['protocol'],
+                                'close_port_after_each_call':COMSETTINGS.getboolean('close_port_after_each_call') == 'True',
+                                'debug':COMSETTINGS.getboolean('debug') == 'True',
+                                'baud':COMSETTINGS.getint('baudrate'),
+                                'stopbits':COMSETTINGS.getint('stopbits'),
+                                'parity':COMSETTINGS.get('parity'),
+                                'bytesize':COMSETTINGS.getint('bytesize')}
+                    super().__init__(   lockerinstance, **skwargs, **kwargs)
+                    if self.serial is None: raise Exception('Serial is not open: ' + str(skwargs.items()))
+                except Exception as e:
+                    errmessage = '\nEstun init error:\n' + repr(e)
+                    ErrorEventWrite(lockerinstance, errmessage)
                 else:
+                    lockerinstance[0].lock.acquire()
+                    firstAccess = lockerinstance[0].estun['servoModuleFirstAccess']
+                    lockerinstance[0].estun['Alive'] = True
+                    self.Alive = True
+                    lockerinstance[0].lock.release()
+                    if firstAccess: self.ServoFirstAccess(lockerinstance)
                     self.ServoLoop(lockerinstance)
+                    break
+                finally:
+                    lockerinstance[0].lock.acquire()
+                    letdie = lockerinstance[0].events['closeApplication']
+                    lockerinstance[0].lock.release()
+                    if letdie: break
 
     def ServoLoop(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        homing, step, reset, Dog = lockerinstance[0].estun['homing'], lockerinstance[0].estun['step'], lockerinstance[0].estun['reset'], lockerinstance[0].estun['DOG']
-        lockerinstance[0].lock.release()
-        try:
-            if homing: self.control_switch['homing'](lockerinstance)
-            if step: self.control_switch['step'](lockerinstance)
-            if reset: self.control_switch['reset'](lockerinstance)
-            if Dog: self.control_switch['DOG'](lockerinstance)
-            self.IOControl(lockerinstance)
-        except Exception as e:
-            errmessage = '\nEstun error:\n Homing = {}\nStep = {}\nReset = {}\nDOG = {}\n'.format(homing, step, reset, Dog) + repr(e)
+        while self.Alive:
             lockerinstance[0].lock.acquire()
-            if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
+            homing, step, reset, Dog = lockerinstance[0].estun['homing'], lockerinstance[0].estun['step'], lockerinstance[0].estun['reset'], lockerinstance[0].estun['DOG']
             lockerinstance[0].lock.release()
+            try:
+                if homing: self.control_switch['homing'](lockerinstance)
+            except Exception as e:
+                errmessage = '\nEstun homing error:\n' + repr(e)
+                lockerinstance[0].lock.acquire()
+                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
+                lockerinstance[0].lock.release()
+            try:
+                if step: self.control_switch['step'](lockerinstance)
+            except Exception as e:
+                errmessage = '\nEstun step error:\n' + repr(e)
+                lockerinstance[0].lock.acquire()
+                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
+                lockerinstance[0].lock.release()
+            try:
+                if reset: self.control_switch['reset'](lockerinstance)
+            except Exception as e:
+                errmessage = '\nEstun reset error:\n' + repr(e)
+                lockerinstance[0].lock.acquire()
+                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
+                lockerinstance[0].lock.release()
+            try:
+                if Dog: self.control_switch['DOG'](lockerinstance)
+            except Exception as e:
+                errmessage = '\nEstun DOG error:\n' + repr(e)
+                lockerinstance[0].lock.acquire()
+                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
+                lockerinstance[0].lock.release()
+            try:
+                self.IOControl(lockerinstance)
+            except Exception as e:
+                errmessage = '\nEstun IOControl error:\n' + repr(e)
+                lockerinstance[0].lock.acquire()
+                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
+                lockerinstance[0].lock.release()
 
     def ServoFirstAccess(self, lockerinstance):
         bakparams = {'SERVOPARAMS':{}}
@@ -276,12 +306,12 @@ class MyEstun(Estun):
                 bakparams['SERVOPARAMS'][str(n)] = data
         self.servobak.read_dict(bakparams)
         self.servobak.write('servobak'+ time.time() +'.ini')
-        with self.config['SERVOPARAMETERS'] as SERVOPARAMETERS:
-            for n, param in enumerate(SERVOPARAMETERS):
-                self.sendRegister(lockerinstance, address=int(param),value=int(SERVOPARAMETERS[param]))
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].estun['servoModuleFirstAccess'] = False
-                lockerinstance[0].lock.release()
+        #SERVOPARAMETERS = self.config['SERVOPARAMETERS']
+        #for n, param in enumerate(SERVOPARAMETERS):
+        #    self.sendRegister(lockerinstance, address=int(param),value=int(SERVOPARAMETERS[param]))
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].estun['servoModuleFirstAccess'] = False
+        lockerinstance[0].lock.release()
 
 
     

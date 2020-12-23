@@ -1,7 +1,7 @@
 from Sources.modbusTCPunits import ADAMDataAcquisitionModule
 import json
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources.misc import BlankFunc
+from Sources.misc import BlankFunc, ErrorEventWrite
 
 class AnalogMultiplexer(ADAMDataAcquisitionModule):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
@@ -14,12 +14,9 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
             self.myOutput = AmuxParameters['BindOutput']
             super().__init__(lockerinstance, moduleName =  self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
             self.currentState = self.getState(lockerinstance)
-        except:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].events['Error'] = True
-            lockerinstance[0].errorlevel[10] = True
-            lockerinstance[0].shared['Errors'] += '/nAnalog multiplexer init error - Error while reading config file'
-            lockerinstance[0].lock.release()
+        except Exception as e:
+            errmessage = '\nAnalog multiplexer init error - Error while reading config file\n' + repr(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def __prohibitedBehaviour(self, lockerinstance, action = BlankFunc, *args, **kwargs):
         self.getState(lockerinstance)
@@ -91,13 +88,25 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
 
 class MyMultiplexer(AnalogMultiplexer):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
-        super().__init__(lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].mux['Alive'] = True
-        lockerinstance[0].lock.release()
-        self.Alive = True
-        self.MUXloop(lockerinstance)
-
+        while True:
+            try:
+                super().__init__(lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
+            except Exception as e:
+                errstring = "\nMyMultiplexer init error" + repr(e)
+                ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
+            else:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].mux['Alive'] = True
+                lockerinstance[0].lock.release()
+                self.Alive = True
+                self.MUXloop(lockerinstance)
+                break
+            finally:
+                lockerinstance[0].lock.acquire()
+                letdie = lockerinstance[0].events['closeApplication']
+                lockerinstance[0].lock.release()
+                if letdie: break
+        
     def isBusy(self, lockerinstance):
         result = super().isBusy(lockerinstance) 
         lockerinstance[0].lock.acquire()
@@ -109,9 +118,7 @@ class MyMultiplexer(AnalogMultiplexer):
         self.currentState = super().getState(lockerinstance)
         if isinstance(self.currentState,int):
             errstring = "\nMyMultiplexer.getState cant get state: returned -1"
-            lockerinstance[0].lock.acquire()
-            if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-            lockerinstance[0].lock.release()
+            ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
         else:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].mux['onpath'] = self.currentState[self.myOutput]
@@ -159,18 +166,18 @@ class MyMultiplexer(AnalogMultiplexer):
             if ack: 
                 try:
                     self.__acquire(lockerinstance)
-                except:
-                    pass
+                except Exception as e:
+                    errstring = repr(e)
+                    ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             if rel:
                 try:
                     self.__release(lockerinstance)
-                except:
-                    pass
+                except Exception as e:
+                    errstring = repr(e)
+                    ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
 
 class AnalogMultiplexerError(Exception):
     def __init__(self, lockerinstance, *args, **kwargs):
         self.args = args
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].shared['Errors'] += 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
-        lockerinstance[0].errorlevel[2] = True #High errorLevel
-        lockerinstance[0].lock.release()
+        errstring = 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
+        ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
