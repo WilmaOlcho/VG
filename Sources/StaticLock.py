@@ -31,7 +31,7 @@ class SharedLocker(object):
                 'Alive':False,
                 'SealUp':False,
                 'SealDown':False,
-                'sensorSealUp':False,
+                'sensorSealUp':True,
                 'sensorSealDown':False,
                 'LeftPusherFront':False,
                 'LeftPusherBack':False,
@@ -43,7 +43,7 @@ class SharedLocker(object):
                 'sensorRightPusherBack':False,
                 'sensorShieldingGasOk':False,
                 'sensorAirOk':False,
-                'sensorVacuumOk':False,
+                'sensorVacuumOk':True,
                 'ShieldingGas':False,
                 'HeadCooling':False,
                 'CrossJet':False

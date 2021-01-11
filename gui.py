@@ -1,4 +1,5 @@
 from tkinter import *
+import tkinter as tk
 
 class IOBar(Frame):
     def __init__(self, lockerinstance, elements = {}, relief=GROOVE, bd=2, side = LEFT, anchor = W, master=None):
@@ -27,28 +28,138 @@ class IOBar(Frame):
             if not self.locker[0].GPIO[key] == self.elements[key].get() and not 'I' in key:
                 self.locker[0].GPIO[key] = self.elements[key].get()
             self.locker[0].lock.release()
-    
-class PistonBar(Frame):
-    def __init__(self, lockerinstance, elements = {}, relief=GROOVE, bd=2, anchor = W, side =LEFT, master=None):
+
+    def Update(self):
+        for key in self.elements.keys():
+            self.locker[0].lock.acquire()
+            if 'I' in key:
+                self.elements[key].configure(bg='green' if self.locker[0].GPIO[key] else 'black')
+            elif not self.locker[0].GPIO[key] == self.elements[key].get():
+                self.elements[key].set(self.locker[0].GPIO[key])
+            self.locker[0].lock.release()
+
+class PistonControl(Frame):
+    def __init__(self, lockerinstance, elements = {}, relief=GROOVE, bd=2, anchor = NW, side =TOP, master=None):
+        self.locker = lockerinstance
+        self.elements = elements
         self.master = master
         super().__init__(self.master)
-        self.locker = {**lockerinstance}
-        self.elements = elements
-        self.frame={}
-        for key in self.elements.keys():
-            self.frame[key]=Frame(self)
-            self.elements[key] = Canvas(self.frame[key], bg='black', width = 15, height = 15)
-            btn = Button(self.frame[key], text=key, command = lambda k = key: self.click(k))
-            self.elements[key].pack(side = LEFT, expand = YES)
-            btn.pack(expand = YES, side=LEFT)
-            self.frame[key].pack(expand = YES, anchor = anchor, side = side)
-
-    def click(self, button):
-        def toggle(boolvar):
-            return not boolvar
+        if 'Left' in self.elements.keys():
+            self.buttonLeft = tk.Button(self)
+            self.buttonLeft.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', justify='center', text='<--')
+            self.buttonLeft.place(anchor='nw', height='30', width='30', x='0', y='0')
+            self.buttonLeft.configure(command=self.Left)
+        if 'Right' in self.elements.keys():
+            self.buttonRight = tk.Button(self)
+            self.buttonRight.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', justify='left', text='-->')
+            self.buttonRight.place(anchor='nw', height='30', width='30', x='80', y='0')
+            self.buttonRight.configure(command=self.Right)
+        if 'Center' in self.elements.keys():
+            self.buttonCenter = tk.Button(self)
+            self.buttonCenter.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', text=self.elements['Center']['name'])
+            self.buttonCenter.place(anchor='nw', height='30', width='50', x='30', y='0')
+            self.buttonCenter.configure(command=self.Center)
+        self.config(height='30', width='110')
+    
+    def Left(self):
         self.locker[0].lock.acquire()
-        self.locker[0].pistons[button] = toggle(self.locker[0].pistons[button])
+        self.locker[0].pistons[self.elements['Left']['coil']] = not self.locker[0].pistons[self.elements['Left']['coil']]
         self.locker[0].lock.release()
+
+    def Right(self):
+        self.locker[0].lock.acquire()
+        self.locker[0].pistons[self.elements['Right']['coil']] = not self.locker[0].pistons[self.elements['Right']['coil']]
+        self.locker[0].lock.release()
+
+    def Center(self):
+        self.locker[0].lock.acquire()
+        if 'Right' in self.elements:
+            if 'sensor' in self.elements['Right']: 
+                self.locker[0].pistons[self.elements['Right']['coil']] = False
+        if 'Left' in self.elements:
+            if 'sensor' in self.elements['Left']: 
+                self.locker[0].pistons[self.elements['Left']['coil']] = False
+        self.locker[0].lock.release()
+
+
+    def Update(self):
+        self.locker[0].lock.acquire()
+        if 'Left' in self.elements.keys():
+            color = '#84bdac'
+            if 'coil' in self.elements['Left']:
+                if self.locker[0].pistons[self.elements['Left']['coil']]: color = '#f2fc45'
+            if 'sensor' in self.elements['Left']:
+                if self.locker[0].pistons[self.elements['Left']['sensor']]: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
+            self.buttonLeft.configure(background = color)
+        if 'Right' in self.elements.keys():
+            color = '#84bdac'
+            if 'coil' in self.elements['Right']:
+                if self.locker[0].pistons[self.elements['Right']['coil']]: color = '#f2fc45'
+            if 'sensor' in self.elements['Right']:
+                if self.locker[0].pistons[self.elements['Right']['sensor']]: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
+            self.buttonRight.configure(background = color)
+
+        if 'Center' in self.elements.keys():
+            if 'sensor' in self.elements['Center']:
+                self.buttonCenter.configure(background = '#84ffac' if self.locker[0].pistons[self.elements['Center']['sensor']] else '#84bdac')
+        self.locker[0].lock.release()
+
+class PistonBar(Frame):
+    def __init__(self, lockerinstance, elements = [], relief=GROOVE, bd=2, anchor = W, side =LEFT, master=None):
+        self.master = master
+        super().__init__(self.master)
+        self.locker = lockerinstance
+        self.controls = []
+        self.elements = {}
+        for item in elements:
+            self.locker[0].lock.acquire()
+            if item in self.locker[0].pistons.keys():
+                if not item in self.elements:
+                    self.elements[item] = {}
+                self.elements[item]['Center'] = {'name':item}
+                self.elements[item]['Right'] = {
+                    'coil':item,
+                    'sensor':item}
+            if item + 'Up' in self.locker[0].pistons.keys():
+                if not item in self.elements:
+                    self.elements[item] = {}
+                self.elements[item]['Center'] = {'name':item}
+                self.elements[item]['Right'] = {
+                    'coil':item + 'Up',
+                    'sensor':'sensor' + item + 'Up'}
+            if item + 'Down' in self.locker[0].pistons.keys():
+                if not item in self.elements:
+                    self.elements[item] = {}
+                self.elements[item]['Center'] = {'name':item}
+                self.elements[item]['Left'] = {
+                    'coil':item + 'Down',
+                    'sensor':'sensor' + item + 'Down'}
+            if item + 'Front' in self.locker[0].pistons.keys():
+                if not item in self.elements:
+                    self.elements[item] = {}
+                self.elements[item]['Center'] = {'name':item}
+                self.elements[item]['Right'] = {
+                    'coil':item + 'Front',
+                    'sensor':'sensor' + item + 'Front'}
+            if item + 'Back' in self.locker[0].pistons.keys():
+                if not item in self.elements:
+                    self.elements[item] = {}
+                self.elements[item]['Center'] = {'name':item}
+                self.elements[item]['Left'] = {
+                    'coil':item + 'Back',
+                    'sensor':'sensor' + item + 'Back'}
+            if 'sensor' + item + 'Ok'in self.locker[0].pistons.keys():
+                if not item in self.elements:
+                    self.elements[item] = {}
+                self.elements[item]['Center'] = {'sensor': 'sensor' + item + 'Ok', 'name' : item}
+            self.locker[0].lock.release()
+            if item in self.elements.keys():
+                self.controls.append(PistonControl(lockerinstance, elements = self.elements[item], master = self))
+        for piston in self.controls:
+            piston.pack()
+
+    def Update(self):
+        for piston in self.controls: piston.Update()
 
 class EstunBar(Frame):
     def __init__(self, lockerinstance, elements = {}, relief=GROOVE, bd=2, anchor = W, side =LEFT, master=None):
@@ -66,24 +177,19 @@ class EstunBar(Frame):
         self.locker[0].lock.acquire()
         self.locker[0].estun[button] = toggle(self.locker[0].estun[button])
         self.locker[0].lock.release()
+    
+    def Update(self):
+        pass
 
 class console(object):
     Alive = False
 
     def timerloop(self):
-        self.locker[0].lock.acquire()
+        
         for bar in self.bars:
-            for key in bar.elements.keys():
-                if isinstance(bar, PistonBar):
-                    if 'sensor' + key in self.locker[0].pistons.keys():
-                        bar.elements[key].configure(bg='green' if self.locker[0].pistons['sensor'+key] else 'black')
-                elif isinstance(bar, EstunBar):
-                    pass
-                elif 'I' in key:
-                        bar.elements[key].configure(bg='green' if self.locker[0].GPIO[key] else 'black')
-                elif not self.locker[0].GPIO[key] == bar.elements[key].get():
-                    bar.elements[key].set(self.locker[0].GPIO[key])
+            bar.Update()
         self.textbox.delete('1.0',END)
+        self.locker[0].lock.acquire()
         self.textbox.insert(INSERT,self.locker[0].shared['Errors'])
         self.locker[0].lock.release()
         self.root.after(300,self.timerloop)
@@ -102,22 +208,22 @@ class console(object):
         self.locker[0].lock.release()
         self.root = Tk()
         self.root.protocol('WM_DELETE_WINDOW', self.Wclose)
-        self.locker[0].lock.acquire()
         self.checkbuttons = []
         self.variables = {}
         self.lastact = ''
         self.root.wm_title('debug window')
         self.textbox = Text(self.root, width = 90, height=10)
-        pistonbaritems = ['SealUp', 'SealDown', 'LeftPusherFront', 'LeftPusherBack', 'RightPusherFront', 'RightPusherBack', 'ShieldingGas', 'HeadCooling', 'CrossJet']
+        pistonbaritems = ['Seal', 'LeftPusher', 'RightPusher', 'ShieldingGas', 'HeadCooling', 'CrossJet', 'Air', 'Vacuum']
         estuncommands = ['homing', 'step', 'reset']
+        self.locker[0].lock.acquire()
         self.bars = [
             IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))[:16]), master = self.root),
             IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))[16:]), master = self.root),
             IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))[:16]), master = self.root),
             IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))[16:]), master = self.root),
             IOBar(self.locker, elements = dict(list(filter((lambda item: True if 'ged' in item[0] else False), self.locker[0].GPIO.items()))), master = self.root)]
-        for item in pistonbaritems:
-            self.bars.append(PistonBar(self.locker, side= LEFT, elements = {item:None}, master = self.root))
+        self.locker[0].lock.release()
+        self.bars.append(PistonBar(self.locker, side= LEFT, elements = pistonbaritems, master = self.root))
         for item in estuncommands:
             self.bars.append(EstunBar(self.locker, side= LEFT, elements = {item:None}, master = self.root))
         for i, bar in enumerate(filter(lambda item:isinstance(item,PistonBar),self.bars)):
@@ -128,7 +234,7 @@ class console(object):
             bar.grid(column = 0, row = i, sticky = W)
         self.textbox.grid(column = 0)
         
-        self.locker[0].lock.release()
+        
         self.root.after(100,self.timerloop)
 
         while self.Alive:
