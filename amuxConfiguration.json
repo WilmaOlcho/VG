@@ -2,12 +2,19 @@
     "AnalogMultiplexer":{
         "IPAddress":"192.168.4.20",
         "moduleName":"ADAM6052",
-        "Port":9100,
-        "__comment0":"port is deleted from modbusTCPunits.ADAMDataAcquisitionModule.__init__(... /port =/ ...)",
+        "Port":502,
         "BindOutput":0
+    },
+    "LaserControl":{
+        "IPAddress":"192.168.4.20",
+        "moduleName":"ADAM6052",
+        "Port":502,
+        "ResetError":3,
+        "LaserRequest":4,
+        "OpticalChannelbit0":5,
+        "OpticalChannelbit1":6,
+        "OpticalChannelbit2":7,
+        "OpticalChannelbit3":8,
+        "MyOpticalChannel":1
     }
-
-
-
-
 }

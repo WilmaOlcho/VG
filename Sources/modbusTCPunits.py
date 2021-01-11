@@ -960,7 +960,7 @@ class ADAMModule(object):
 
 class ADAMDataAcquisitionModule(ModbusClient):
     def __init__(self, lockerinstance, moduleName = 'ADAM6052', address = '192.168.0.1', port = 502, *args, **kwargs):
-        super().__init__(address = address, port = port, *args, **kwargs)
+        super().__init__(host = address, port = port, *args, **kwargs)
         self.moduleName = moduleName
         stringtoeval = 'ADAMModule().' + self.moduleName
         try:

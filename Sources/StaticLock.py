@@ -3,6 +3,10 @@ from Sources.misc import BlankFunc
 
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
+
+        self.lcon = Manager().dict({
+                'Alive':False,
+                'SetChannel':False})    
         self.ModbusASCIIViaTCPInterval = Value('i',0)
         self.shared = Manager().dict({
                 'Errors':'',
@@ -22,7 +26,7 @@ class SharedLocker(object):
                 'closeApplication':False,
                 'OutputChangedByRobot':False,
                 'OutputsChangedByRobot':''})
-        self.errorlevel = Array('b',255*[False])
+        self.errorlevel = Array('b',256*[False])
         self.pistons = Manager().dict({
                 'Alive':False,
                 'SealUp':False,

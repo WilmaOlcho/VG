@@ -86,6 +86,102 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         else:
             raise AnalogMultiplexerError(lockerinstance, args = ('releasePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
+class LaserControl(ADAMDataAcquisitionModule):
+    def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
+        try:
+            self.parameters = json.load(open(settingFilePath))
+            self.LconParameters = self.parameters['LaserControl']
+            self.IPAddress = self.LconParameters['IPAddress']
+            self.moduleName = self.LconParameters['moduleName']
+            self.Port = self.LconParameters['Port']
+        except Exception as e:
+            errmessage = '\nLaserControl init error - Error while reading config file\n' + repr(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+        try:
+            super().__init__(lockerinstance, moduleName =  self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
+            self.currentState = self.getState(lockerinstance)
+        except Exception as e:
+            errmessage = '\nLaserControl init error\n' + repr(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+
+    def getState(self, lockerinstance):
+        try:
+            state = []
+            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['ResetError'])))
+            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['LaserRequest'])))
+            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit0'])))
+            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit1'])))
+            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit2'])))
+            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit3'])))
+            self.currentState = state
+            return self.currentState
+        except Exception as e:
+            raise LaserControlError(lockerinstance, errstring = "getState Error\n"+ repr(e))
+
+
+    def __bits(self, values = [4*False], le = False):
+        if isinstance(values, list):
+            if len(values) > 4:
+                values = values[:4]
+            result = 0b0000
+            if le: values = values[::-1]
+            for i, val in enumerate(values):
+                if val: result += pow(2,i)
+            return result
+        if isinstance(values, int):
+            values &= 0b1111
+            result = []
+            for i in range(4):
+                power = pow(2,3-i)
+                result.append(bool(values//power))
+                values &= 0b1111 ^ power
+            if not le: result = result[::-1] 
+            return result
+
+    def __prohibitedBehaviour(self, lockerinstance, action = BlankFunc, *args, **kwargs):
+        self.getState(lockerinstance)
+        prohibited = False
+        if action == self.write_coil:
+            if args == ('DO'+str(self.LconParameters['LaserRequest']), True):
+                if self.__bits(self.currentState[-4:]) != self.LconParameters['MyOpticalChannel']:
+                    prohibited == True
+            elif args == ('DO'+str(self.LconParameters['ResetError']), True):
+                if not self.currentState[0]:
+                    prohibited == True
+        return prohibited  
+
+    def SetChannel(self, lockerinstance):
+        try:
+            self.write_coil('DO'+str(self.LconParameters['LaserRequest']), False)
+        except Exception as e:
+            raise LaserControlError(lockerinstance, errstring = "SetChannel LaserRequest Error\n"+ repr(e))
+        try:
+            channel = self.__bits(self.LconParameters['MyOpticalChannel'])
+            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit0']), channel[0])
+            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit1']), channel[1])
+            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit2']), channel[2])
+            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit3']), channel[3])
+        except Exception as e:
+            raise LaserControlError(lockerinstance, errstring = "SetChannel OpticalChannelSetup Error\n"+ repr(e))
+        if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.LconParameters['LaserRequest']), True)):
+            try:
+                self.write_coil('DO'+str(self.LconParameters['LaserRequest']), True)
+            except Exception as e:
+                raise LaserControlError(lockerinstance, errstring = "SetChannel LaserRequest Error\n"+ repr(e))
+        if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.LconParameters['ResetError']), True)):
+            try:
+                self.write_coil('DO'+str(self.LconParameters['ResetError']), True)
+            except Exception as e:
+                raise LaserControlError(lockerinstance, errstring = "SetChannel ResetErrors Error\n"+ repr(e))
+        try:
+            self.write_coil('DO'+str(self.LconParameters['LaserRequest']), False)
+        except Exception as e:
+            raise LaserControlError(lockerinstance, errstring = "SetChannel LaserRequest Error\n"+ repr(e))
+        try:
+            self.write_coil('DO'+str(self.LconParameters['ResetError']), False)
+        except Exception as e:
+            raise LaserControlError(lockerinstance, errstring = "SetChannel ResetError Error\n"+ repr(e))
+
 class MyMultiplexer(AnalogMultiplexer):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
         while True:
@@ -175,6 +271,42 @@ class MyMultiplexer(AnalogMultiplexer):
                 except Exception as e:
                     errstring = repr(e)
                     ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
+
+class MyLaserControl(LaserControl):
+    def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
+        while True:
+            try:
+                super().__init__(lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
+            except Exception as e:
+                errstring = "\nMyLaserControl init error" + repr(e)
+                ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
+            else:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].lcon['Alive'] = True
+                lockerinstance[0].lock.release()
+                self.Alive = True
+                self.Lconloop(lockerinstance)
+                break
+            finally:
+                lockerinstance[0].lock.acquire()
+                letdie = lockerinstance[0].events['closeApplication']
+                lockerinstance[0].lock.release()
+                if letdie: break
+
+    def Lconloop(self, lockerinstance):
+        while self.Alive:
+            lockerinstance[0].lock.acquire()
+            setchannel = lockerinstance[0].lcon['SetChannel']
+            self.Alive = lockerinstance[0].lcon['Alive']
+            lockerinstance[0].lock.release()
+            if not self.Alive: break
+            if setchannel: self.SetChannel(lockerinstance)
+
+class LaserControlError(Exception):
+    def __init__(self, lockerinstance, *args, **kwargs):
+        self.args = args
+        errstring = 'Laser Control Error:\n' + ''.join(map(str, args))
+        ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
 
 class AnalogMultiplexerError(Exception):
     def __init__(self, lockerinstance, *args, **kwargs):

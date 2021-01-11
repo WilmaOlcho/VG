@@ -153,9 +153,7 @@ class RobotVG(KawasakiVG):
             result = 0b0000000000000000
             if le: values = values[::-1]
             for i, val in enumerate(values):
-                #print(i,val)
                 if val: result += pow(2,i)
-                #print(bin(result))
             return result
         if isinstance(values, int):
             values &= 0b1111111111111111
