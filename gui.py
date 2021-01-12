@@ -1,6 +1,5 @@
 from tkinter import *
 import tkinter as tk
-from pygubu.widgets.tkscrollbarhelper import TkScrollbarHelper
 
 class IOBar(Frame):
     def __init__(self, lockerinstance, elements = {}, relief=GROOVE, bd=2, side = LEFT, anchor = W, master=None):
@@ -39,13 +38,27 @@ class IOBar(Frame):
                 self.elements[key].set(self.locker[0].GPIO[key])
             self.locker[0].lock.release()
 
-class ScrolledTextbox(TkScrollbarHelper):
+class ScrolledTextbox(Frame):
     def __init__(self, lockerinstance, master = None, scrolltype = 'both', height=200, width=200):
-        super().__init__(master = master, width = width, height = height, scrolltype = scrolltype)
+        super().__init__(master = master, width = width, height = height)
+        self.master = master
         self.locker = lockerinstance
-        self.text = tk.Text(self.container)
-        self.text.pack(expand='true', side='top', fill='both')
-        self.add_child(self.text)
+        self.text = tk.Text(self, height=height, width=width)
+        self.text.grid()
+        if scrolltype in ('vertical','both'):
+            self.vsb = tk.Scrollbar(self, orient='vertical', command = self.text.yview)#, yscrollcommand = lambda f, l, obj = self:obj.autoscroll(self.vsb, f, l))
+            self.vsb.grid()
+        else: self.vsb = None
+        if scrolltype in ('horizontal','both'):
+            self.hsb = tk.Scrollbar(self, orient='horizontal', command = self.text.xview)#, xscrollcommand = lambda f, l, obj = self:obj.autoscroll(self.hsb, f, l))
+            self.hsb.grid(column=1)
+        else: self.Hsb = None
+
+    def autoscroll(self, scrollbar, first, last):
+        first, last = float(first), float(last)
+        if first <=0 and last >= 1: scrollbar.pack_forgot()
+        else: scrollbar.pack()
+        scrollbar.set(first, last)
 
     def Update(self):
         self.text.delete('1.0',END)
@@ -223,7 +236,7 @@ class console(object):
         self.variables = {}
         self.lastact = ''
         self.root.wm_title('debug window')
-        self.textbox = ScrolledTextbox(self.locker, master = self.root, width = 250, height = 50)
+        self.textbox = ScrolledTextbox(self.locker, master = self.root, width = 100, height = 10)
         pistonbaritems = ['Seal', 'LeftPusher', 'RightPusher', 'ShieldingGas', 'HeadCooling', 'CrossJet', 'Air', 'Vacuum']
         estuncommands = ['homing', 'step', 'reset']
         self.locker[0].lock.acquire()
