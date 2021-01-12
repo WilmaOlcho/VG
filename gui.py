@@ -1,5 +1,6 @@
 from tkinter import *
 import tkinter as tk
+from pygubu.widgets.tkscrollbarhelper import TkScrollbarHelper
 
 class IOBar(Frame):
     def __init__(self, lockerinstance, elements = {}, relief=GROOVE, bd=2, side = LEFT, anchor = W, master=None):
@@ -37,6 +38,20 @@ class IOBar(Frame):
             elif not self.locker[0].GPIO[key] == self.elements[key].get():
                 self.elements[key].set(self.locker[0].GPIO[key])
             self.locker[0].lock.release()
+
+class ScrolledTextbox(TkScrollbarHelper):
+    def __init__(self, lockerinstance, master = None, scrolltype = 'both', height=200, width=200):
+        super().__init__(master = master, width = width, height = height, scrolltype = scrolltype)
+        self.locker = lockerinstance
+        self.text = tk.Text(self.container)
+        self.text.pack(expand='true', side='top', fill='both')
+        self.add_child(self.text)
+
+    def Update(self):
+        self.text.delete('1.0',END)
+        self.locker[0].lock.acquire()
+        self.text.insert(INSERT,self.locker[0].shared['Errors'])
+        self.locker[0].lock.release()
 
 class PistonControl(Frame):
     def __init__(self, lockerinstance, elements = {}, relief=GROOVE, bd=2, anchor = NW, side =TOP, master=None):
@@ -185,13 +200,9 @@ class console(object):
     Alive = False
 
     def timerloop(self):
-        
         for bar in self.bars:
             bar.Update()
-        self.textbox.delete('1.0',END)
-        self.locker[0].lock.acquire()
-        self.textbox.insert(INSERT,self.locker[0].shared['Errors'])
-        self.locker[0].lock.release()
+        self.textbox.Update()
         self.root.after(300,self.timerloop)
 
     def Wclose(self):
@@ -212,7 +223,7 @@ class console(object):
         self.variables = {}
         self.lastact = ''
         self.root.wm_title('debug window')
-        self.textbox = Text(self.root, width = 90, height=10)
+        self.textbox = ScrolledTextbox(self.locker, master = self.root, width = 250, height = 50)
         pistonbaritems = ['Seal', 'LeftPusher', 'RightPusher', 'ShieldingGas', 'HeadCooling', 'CrossJet', 'Air', 'Vacuum']
         estuncommands = ['homing', 'step', 'reset']
         self.locker[0].lock.acquire()
