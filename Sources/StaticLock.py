@@ -3,7 +3,7 @@ from Sources.misc import BlankFunc
 
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
-
+        self.wdt = Manager().list()
         self.lcon = Manager().dict({
                 'Alive':False,
                 'SetChannel':False})    

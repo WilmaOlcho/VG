@@ -23,12 +23,12 @@ if True:
             self.RobotConfigurationFile = path + 'robotConfiguration.json'
             self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
             self.processes = [
-                Process(target = console, args=(self.lock,))#,
-                #Process(target = MyEstun, args=(self.lock, self.ServoConfigurationFile,*args,)),
-                #Process(target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile, *args,)),
-                #Process(target = MyLaserControl, args=(self.lock, self.LconConfigurationFile, *args,)),
-                #Process(target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
-                #Process(target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile, *args,))
+                Process(name = 'console', target = console, args=(self.lock,)),
+                Process(name = 'MyEstun', target = MyEstun, args=(self.lock, self.ServoConfigurationFile,*args,)),
+                Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile, *args,)),
+                Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile, *args,)),
+                Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
+                Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile, *args,))
 
             ]   
             for process in self.processes: 

@@ -52,7 +52,7 @@ class Sensor(PneumaticActive):
 class Coil(PneumaticActive):
     def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
         super().__init__(lockerinstance, branch, parent, *args,**kwargs)
-        self.timer = WDT()
+        self.timer = ''
         self.nosensor = self.root['nosensor']
         self.timeout = self.root['timeout']
 
@@ -60,6 +60,7 @@ class Coil(PneumaticActive):
         lockerinstance[0].lock.acquire()
         cstate = lockerinstance[0].pistons['sensor'+self.action] if not self.nosensor else False
         rstate = lockerinstance[0].pistons[self.action]
+        timers = list(lockerinstance[0].wdt)
         lockerinstance[0].lock.release()
         if rstate and not cstate:
             #print(self.action)
@@ -67,13 +68,16 @@ class Coil(PneumaticActive):
             lockerinstance[0].GPIO[self.address] = True
             lockerinstance[0].GPIO['somethingChanged'] = True
             lockerinstance[0].lock.release()
-            if not self.nosensor and self.timer is None:
+            if not self.nosensor and not self.timer in timers:
                 self.timer = WDT.WDT(lockerinstance, errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', scale = 's', errorlevel = 30, limitval = self.timeout)
         else:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO[self.address] = False
             lockerinstance[0].lock.release()
-            if self.timer.active: self.timer.Destruct()
+            if self.timer in timers:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].wdt.remove(self.timer)
+                lockerinstance[0].lock.release()
 
 class Valve(Pneumatic):
     def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
