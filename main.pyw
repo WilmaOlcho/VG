@@ -55,26 +55,14 @@ if True:
                     for process in self.processes: 
                         process.join()
                     break
-                #self.errorcatching()
+                self.errorcatching()
 
         def errorcatching(self):
-            self.lock[0].lock.acquire()
-            erroroccured = self.lock[0].events['Error']
-            self.lock[0].lock.release()
-            if erroroccured:
-                self.lock[0].lock.acquire()
-                print(self.lock[0].shared['Errors'])
-                for i, err in enumerate(self.lock[0].errorlevel):
-                    if err:
-                        print("errlvl: " + str(i))
-                        self.lock[0].errorlevel[i] = False
-                self.lock[0].shared['Errors'] = ''
-                self.lock[0].lock.release()
-                self.lock[0].lock.acquire()
-                for err in self.lock[0].errorlevel:
-                    if err: self.lock[0].events['Error'] = True
-                    break
-                self.lock[0].lock.release()
+            for proces in self.processes:
+                if not proces.is_alive():
+                    self.lock[0].lock.acquire()
+                    self.lock[0].events['closeApplication'] = True
+                    self.lock[0].lock.release()
 
 if __name__=="__main__":
     ApplicationManager()
