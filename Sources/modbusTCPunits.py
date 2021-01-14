@@ -3,7 +3,6 @@ from functools import wraps, partial
 from pymodbus.transaction import ModbusAsciiFramer
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from Sources.TactWatchdog import TactWatchdog as WDT
-import json
 import re
 
 class ADAMModule(object):

@@ -10,11 +10,11 @@
         "moduleName":"ADAM6052",
         "Port":502,
         "ResetError":3,
-        "LaserRequest":4,
-        "OpticalChannelbit0":5,
-        "OpticalChannelbit1":6,
-        "OpticalChannelbit2":7,
-        "OpticalChannelbit3":8,
+        "LaserRequest":3,
+        "OpticalChannelbit0":4,
+        "OpticalChannelbit1":5,
+        "OpticalChannelbit2":6,
+        "OpticalChannelbit3":7,
         "MyOpticalChannel":1
     }
 }

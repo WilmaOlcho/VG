@@ -1,22 +1,22 @@
 
 if True:
 
-    from multiprocessing import Process, current_process
+    from multiprocessing import Process, current_process, freeze_support, set_start_method
     from Sources.Estun import MyEstun
     from Sources.StaticLock import SharedLocker
     from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
     from Sources.Kawasaki import RobotVG
     from Sources.Pneumatics import PneumaticsVG
     from gui import console
+    from pathlib import Path
 
 
 
     class ApplicationManager(object):
-        def __init__(self, *args, **kwargs):
+        def __init__(self, lockerinstance, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            locker = SharedLocker()
-            self.lock = {0:locker}
-            path = 'C:/users/operator/documents/python/vg/'
+            self.lock = lockerinstance
+            path = str(Path(__file__).parent.absolute())+'\\'
             self.ServoConfigurationFile = path + 'servoEstun.ini'
             self.AmuxConfigurationFile = path + 'amuxConfiguration.json'
             self.LconConfigurationFile = path + 'amuxConfiguration.json'
@@ -24,13 +24,13 @@ if True:
             self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
             self.processes = [
                 Process(name = 'console', target = console, args=(self.lock,)),
-                Process(name = 'MyEstun', target = MyEstun, args=(self.lock, self.ServoConfigurationFile,*args,)),
-                Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile, *args,)),
-                Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile, *args,)),
+                Process(name = 'MyEstun', target = MyEstun, args=(self.lock, self.ServoConfigurationFile,)),
+                Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
+                Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
                 Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
-                Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile, *args,))
-
+                Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,))
             ]   
+
             for process in self.processes: 
                 process.start()
             self.EventLoop(*args, **kwargs)
@@ -65,6 +65,9 @@ if True:
                     self.lock[0].lock.release()
 
 if __name__=="__main__":
-    ApplicationManager()
+    freeze_support()
+    locker = SharedLocker()
+    lockerdict = {0:locker}
+    ApplicationManager(lockerdict)
         
         
