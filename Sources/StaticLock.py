@@ -1,21 +1,18 @@
 from multiprocessing import Manager, Lock, Array, Value
-from Sources.misc import BlankFunc
 
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
-        self.wdt = Manager().list()
-        self.lcon = Manager().dict({
+        manager = Manager()
+        self.shared = manager.dict({
+            'Errors':'',
+            'servoModuleFirstAccess':True,
+            'configurationError':False,
+            'TactWDT':False,
+            'wdt':manager.list(),
+            'lcon':manager.dict({
                 'Alive':False,
-                'SetChannel':False})    
-        self.ModbusASCIIViaTCPInterval = Value('i',0)
-        self.shared = Manager().dict({
-                'Errors':'',
-                'servoModuleFirstAccess':True,
-                'configurationError':False,
-                'TactWDT':False})
-        self.lock = Lock()
-        self.attempts = Value('i',4)
-        self.events = Manager().dict({
+                'SetChannel':False}),
+            'events':manager.dict({
                 'MAVT':False,
                 'ack':False,
                 'Error':False,
@@ -25,9 +22,8 @@ class SharedLocker(object):
                 'EstunResetDone':False,
                 'closeApplication':False,
                 'OutputChangedByRobot':False,
-                'OutputsChangedByRobot':''})
-        self.errorlevel = Array('b',256*[False])
-        self.pistons = Manager().dict({
+                'OutputsChangedByRobot':''}),
+            'pistons':manager.dict({
                 'Alive':False,
                 'SealUp':False,
                 'SealDown':False,
@@ -46,9 +42,8 @@ class SharedLocker(object):
                 'sensorVacuumOk':True,
                 'ShieldingGas':False,
                 'HeadCooling':False,
-                'CrossJet':False
-                })
-        self.safety = Manager().dict({
+                'CrossJet':False}),
+            'safety':manager.dict({
                 'EstopArmed':False,
                 'EstopReleased':False,
                 'DoorOpen':False,
@@ -72,28 +67,27 @@ class SharedLocker(object):
                 'ZoneError':False,
                 'SafetyArmed':False,
                 'SafetyError':False,
-                'LockingJig':False})
-        self.estun = Manager().dict({
+                'LockingJig':False}),
+            'estunModbus':manager.dict({
+                'TGON':False,
+                'SHOM':False,
+                'PCON':False,
+                'COIN':False}),
+            'estun':manager.dict({
                 'homing':False,
                 'step':False,
                 'DOG':False,
                 'reset':False,
                 'servoModuleFirstAccess':True,
-                'Alive':True})
-        self.mux = Manager().dict({
+                'Alive':True}),
+            'mux':manager.dict({
                 'busy':False,
                 'ready':False,
                 'onpath':False,
                 'acquire':False,
                 'release':False,
-                'Alive':False})
-        self.estunModbus = Manager().dict({
-                'TGON':False,
-                'SHOM':False,
-                'PCON':False,
-                'COIN':False
-            })
-        self.robot = Manager().dict({
+                'Alive':False}),
+            'robot':manager.dict({
                 'CommandControl':False,
                 'PositionControl':False,
                 'Alive':False,
@@ -115,11 +109,10 @@ class SharedLocker(object):
                 'StatusRegister3':0,
                 'StatusRegister4':0,
                 'StatusRegister5':0,
-                'StatusRegister6':0})
-        self.console = Manager().dict({
-                'Alive':False
-            })
-        self.GPIO = Manager().dict({
+                'StatusRegister6':0}),
+            'console':manager.dict({
+                'Alive':False}),
+            'GPIO':manager.dict({
                 'somethingChanged':False,
                 'I1':False, 'I2':False, 'I3':False, 'I4':False,
                 'I5':False, 'I6':False, 'I7':False, 'I8':False,
@@ -136,8 +129,22 @@ class SharedLocker(object):
                 'O17':False, 'O18':False, 'O19':False, 'O20':False,
                 'O21':False, 'O22':False, 'O23':False, 'O24':False,
                 'O25':False, 'O26':False, 'O27':False, 'O28':False,
-                'O29':False, 'O30':False, 'O31':False, 'O32':False})
-        self.SICKGMOD0 = Manager().dict({
-                'Alive':False
-            })
-
+                'O29':False, 'O30':False, 'O31':False, 'O32':False}),
+            'SICKGMOD0':manager.dict({
+                'Alive':False})})
+        self.wdt = self.shared['wdt']
+        self.lcon = self.shared['lcon'] 
+        self.ModbusASCIIViaTCPInterval = Value('i',0)
+        self.lock = Lock()
+        self.attempts = Value('i',4)
+        self.events = self.shared['events'] 
+        self.errorlevel = Array('b',256*[False])
+        self.pistons = self.shared['pistons'] 
+        self.safety = self.shared['safety'] 
+        self.estun = self.shared['estun'] 
+        self.mux = self.shared['mux']
+        self.estunModbus = self.shared['estunModbus']
+        self.robot = self.shared['robot']
+        self.console = self.shared['console']
+        self.GPIO = self.shared['GPIO']
+        self.SICKGMOD0 = self.shared['SICKGMOD0']
