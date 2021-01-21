@@ -198,7 +198,7 @@ class MyEstun(Estun):
                         self.BusCtrlInputNode1_39,self.BusCtrlInputNode1_40,
                         self.BusCtrlInputNode1_41,self.BusCtrlInputNode1_42]
         for n, param in enumerate(self.dterminalTypes[:8]):
-            if self.config['SERVOPARAMETERS'][str(buscontrol[n][0])] & self.invertedReducedMask(lockerinstance, buscontrol[n]):
+            if (int(self.config['SERVOPARAMETERS'][str(buscontrol[n][0])]) & int(self.invertedReducedMask(lockerinstance, buscontrol[n]))):
                 self.setParameter(param,lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])])
             else:
                 lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])] = self.readParameter(lockerinstance, param)
@@ -290,7 +290,7 @@ class MyEstun(Estun):
 
     def ServoFirstAccess(self, lockerinstance):
         bakparams = {'SERVOPARAMS':{}}
-        for n in range(1,1000):
+        for n in range(875):
             try:
                 data = self.readRegister(lockerinstance, n)
             except Exception as e:
@@ -298,8 +298,9 @@ class MyEstun(Estun):
                 ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             else:
                 if data is not None: bakparams['SERVOPARAMS'][str(n)] = data
+                #print('{} {}'.format(n,data))
         self.servobak.read_dict(bakparams)
-        self.servobak.write('servobak'+ time.time() +'.ini')
+        self.servobak.write(open('servobak'+ str(time.time()) +'.ini','w'))
         #SERVOPARAMETERS = self.config['SERVOPARAMETERS']
         #for n, param in enumerate(SERVOPARAMETERS):
         #    self.sendRegister(lockerinstance, address=int(param),value=int(SERVOPARAMETERS[param]))
