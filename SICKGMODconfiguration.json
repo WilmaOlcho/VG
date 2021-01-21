@@ -1,0 +1,8 @@
+{
+    "csv":"../FlexiSoftVG.csv",
+    "xml":"../FlexiSoftVG.xml",
+    "basics":{
+        "address":"192.168.255.255",
+        "port":9100
+    }
+}
