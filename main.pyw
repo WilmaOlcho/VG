@@ -21,7 +21,7 @@ class ApplicationManager(object):
         self.processes = [
             Process(name = 'console', target = console, args=(self.lock,)),
             Process(name = 'MyEstun', target = MyEstun, args=(self.lock, self.ServoConfigurationFile,)),
-            #Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
+            Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
             Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
             Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
             Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,))
