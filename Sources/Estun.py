@@ -31,14 +31,14 @@ class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
             self.serial.parity = parity
             self.serial.timeout = 1
         except Exception as e:
-            errormessage = 'Estun communication error: ' + repr(e)
+            errormessage = 'Estun communication error: ' + str(e)
             ErrorEventWrite(lockerinstance, errormessage)
 
     def sendRegister(self, lockerinstance, address, value):
         try:
             return self.write_register(address,value,0,self.WRITE_REGISTER,False)
         except Exception as e:
-            errormessage = 'Estun sendRegister Error: ' + repr(e)
+            errormessage = 'Estun sendRegister Error: ' + str(e)
             ErrorEventWrite(lockerinstance, errormessage)
             return None
 
@@ -240,7 +240,7 @@ class MyEstun(Estun):
                     super().__init__(   lockerinstance, **skwargs, **kwargs)
                     if self.serial is None: raise Exception('Serial is not open: ' + str(skwargs.items()))
                 except Exception as e:
-                    errmessage = '\nEstun init error:\n' + repr(e)
+                    errmessage = 'Estun init error:' + str(e)
                     ErrorEventWrite(lockerinstance, errmessage)
                 else:
                     lockerinstance[0].lock.acquire()
@@ -265,45 +265,39 @@ class MyEstun(Estun):
             try:
                 if homing: self.control_switch['homing'](lockerinstance)
             except Exception as e:
-                errmessage = '\nEstun homing error:\n' + repr(e)
-                lockerinstance[0].lock.acquire()
-                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
-                lockerinstance[0].lock.release()
+                errmessage = 'Estun homing error:' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
             try:
                 if step: self.control_switch['step'](lockerinstance)
             except Exception as e:
-                errmessage = '\nEstun step error:\n' + repr(e)
-                lockerinstance[0].lock.acquire()
-                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
-                lockerinstance[0].lock.release()
+                errmessage = 'Estun step error:' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
             try:
                 if reset: self.control_switch['reset'](lockerinstance)
             except Exception as e:
-                errmessage = '\nEstun reset error:\n' + repr(e)
-                lockerinstance[0].lock.acquire()
-                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
-                lockerinstance[0].lock.release()
+                errmessage = 'Estun reset error:' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
             try:
                 if Dog: self.control_switch['DOG'](lockerinstance)
             except Exception as e:
-                errmessage = '\nEstun DOG error:\n' + repr(e)
-                lockerinstance[0].lock.acquire()
-                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
-                lockerinstance[0].lock.release()
+                errmessage = 'Estun DOG error:' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
             try:
                 self.IOControl(lockerinstance)
             except Exception as e:
-                errmessage = '\nEstun IOControl error:\n' + repr(e)
-                lockerinstance[0].lock.acquire()
-                if errmessage not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errmessage
-                lockerinstance[0].lock.release()
+                errmessage = 'Estun IOControl error:' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def ServoFirstAccess(self, lockerinstance):
         bakparams = {'SERVOPARAMS':{}}
-        for n in range(1000):
-            data = self.readRegister(lockerinstance, n)
-            if data is not None:
-                bakparams['SERVOPARAMS'][str(n)] = data
+        for n in range(1,1000):
+            try:
+                data = self.readRegister(lockerinstance, n)
+            except Exception as e:
+                errstring = "ServoFirstAccessError " + str(e) + ' Address: {}'.format(n)
+                ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
+            else:
+                if data is not None: bakparams['SERVOPARAMS'][str(n)] = data
         self.servobak.read_dict(bakparams)
         self.servobak.write('servobak'+ time.time() +'.ini')
         #SERVOPARAMETERS = self.config['SERVOPARAMETERS']
