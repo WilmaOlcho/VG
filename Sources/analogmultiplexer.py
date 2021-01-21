@@ -2,6 +2,7 @@ from Sources.modbusTCPunits import ADAMDataAcquisitionModule
 import json
 from Sources.TactWatchdog import TactWatchdog as WDT
 from Sources.misc import BlankFunc, ErrorEventWrite
+import time
 
 class AnalogMultiplexer(ADAMDataAcquisitionModule):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
@@ -98,7 +99,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             errmessage = 'LaserControl init error - Error while reading config file' + str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         try:
-            super().__init__(lockerinstance, moduleName =  self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
+            super().__init__(lockerinstance, moduleName = self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
             self.currentState = self.getState(lockerinstance)
         except Exception as e:
             errmessage = 'LaserControl init error ' + str(e)
@@ -145,15 +146,16 @@ class LaserControl(ADAMDataAcquisitionModule):
         if action == self.write_coil:
             if args == ('DO'+str(self.LconParameters['LaserRequest']), True):
                 if self.__bits(self.currentState[-4:]) != self.LconParameters['MyOpticalChannel']:
-                    prohibited == True
+                    prohibited = True
             elif args == ('DO'+str(self.LconParameters['ResetError']), True):
                 if not self.currentState[0]:
-                    prohibited == True
+                    prohibited = True
         return prohibited  
 
     def SetChannel(self, lockerinstance):
         try:
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserRequest']), False)
+            time.sleep(0.1)
         except Exception as e:
             errmessage = "SetChannel LaserRequest Error\n"+ str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
@@ -164,6 +166,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit1']), channel[1])
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit2']), channel[2])
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit3']), channel[3])
+            time.sleep(0.1)
         except Exception as e:
             errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
@@ -171,6 +174,7 @@ class LaserControl(ADAMDataAcquisitionModule):
         if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.LconParameters['LaserRequest']), True)):
             try:
                 self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserRequest']), True)
+                time.sleep(0.1)
             except Exception as e:
                 errmessage = "SetChannel LaserRequest Error\n"+ str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
@@ -178,18 +182,21 @@ class LaserControl(ADAMDataAcquisitionModule):
         if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.LconParameters['ResetError']), True)):
             try:
                 self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), True)
+                time.sleep(0.1)
             except Exception as e:
                 errmessage = "SetChannel ResetErrors Error\n"+ str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
                 #raise LaserControlError(lockerinstance, errstring = errmessage)
         try:
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserRequest']), False)
+            time.sleep(0.1)
         except Exception as e:
             errmessage = "SetChannel LaserRequest Error\n"+ str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
             #raise LaserControlError(lockerinstance, errstring = errmessage)
         try:
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), False)
+            time.sleep(0.1)
         except Exception as e:
             errmessage = "SetChannel ResetError Error\n"+ str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
@@ -313,7 +320,11 @@ class MyLaserControl(LaserControl):
             self.Alive = lockerinstance[0].lcon['Alive']
             lockerinstance[0].lock.release()
             if not self.Alive: break
-            if setchannel: self.SetChannel(lockerinstance)
+            if setchannel:
+                self.SetChannel(lockerinstance)
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].lcon['SetChannel'] = False
+                lockerinstance[0].lock.release()
 
 class LaserControlError(Exception):
     def __init__(self, lockerinstance, *args, **kwargs):

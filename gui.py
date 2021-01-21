@@ -221,17 +221,15 @@ class EstunBar(tk.LabelFrame):
         self.buttons = []
         self.lockerkey = lockerkey
         for key in self.elements.keys():
-            button = tk.Button(self, text=text + key, command = lambda k = key: self.click(k)) 
+            button = tk.Button(self, activebackground='red', text=text + key, command = lambda obj = self, k = key: obj.click(k)) 
             self.buttons.append(button)
         for btn in self.buttons:
             btn.configure(width = '30')
             btn.pack(expand = tk.YES, side=side, anchor = anchor)
 
     def click(self, button):
-        def toggle(boolvar):
-            return not boolvar
         self.locker[0].lock.acquire()
-        self.locker[0].shared[self.lockerkey][button] = toggle(self.locker[0].shared[self.lockerkey][button])
+        self.locker[0].shared[self.lockerkey][button] = True
         self.locker[0].lock.release()
     
     def Update(self):
