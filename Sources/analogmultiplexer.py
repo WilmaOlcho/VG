@@ -15,7 +15,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
             super().__init__(lockerinstance, moduleName =  self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
             self.currentState = self.getState(lockerinstance)
         except Exception as e:
-            errmessage = '\nAnalog multiplexer init error - Error while reading config file\n' + repr(e)
+            errmessage = 'Analog multiplexer init error - Error while reading config file ' + str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def __prohibitedBehaviour(self, lockerinstance, action = BlankFunc, *args, **kwargs):
@@ -95,13 +95,13 @@ class LaserControl(ADAMDataAcquisitionModule):
             self.moduleName = self.LconParameters['moduleName']
             self.Port = self.LconParameters['Port']
         except Exception as e:
-            errmessage = '\nLaserControl init error - Error while reading config file\n' + repr(e)
+            errmessage = 'LaserControl init error - Error while reading config file' + str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         try:
             super().__init__(lockerinstance, moduleName =  self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
             self.currentState = self.getState(lockerinstance)
         except Exception as e:
-            errmessage = '\nLaserControl init error\n' + repr(e)
+            errmessage = 'LaserControl init error ' + str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def getState(self, lockerinstance):
@@ -116,8 +116,9 @@ class LaserControl(ADAMDataAcquisitionModule):
             self.currentState = state
             return self.currentState
         except Exception as e:
-            raise LaserControlError(lockerinstance, errstring = "getState Error\n"+ repr(e))
-
+            errmessage = "getState Error:\n"+ str(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            #raise LaserControlError(lockerinstance, errstring = errmessage)
 
     def __bits(self, values = [4*False], le = False):
         if isinstance(values, list):
@@ -152,35 +153,47 @@ class LaserControl(ADAMDataAcquisitionModule):
 
     def SetChannel(self, lockerinstance):
         try:
-            self.write_coil('DO'+str(self.LconParameters['LaserRequest']), False)
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserRequest']), False)
         except Exception as e:
-            raise LaserControlError(lockerinstance, errstring = "SetChannel LaserRequest Error\n"+ repr(e))
+            errmessage = "SetChannel LaserRequest Error\n"+ str(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            #raise LaserControlError(lockerinstance, errstring = errmessage)
         try:
             channel = self.__bits(self.LconParameters['MyOpticalChannel'])
-            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit0']), channel[0])
-            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit1']), channel[1])
-            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit2']), channel[2])
-            self.write_coil('DO'+str(self.LconParameters['OpticalChannelbit3']), channel[3])
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit0']), channel[0])
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit1']), channel[1])
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit2']), channel[2])
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit3']), channel[3])
         except Exception as e:
-            raise LaserControlError(lockerinstance, errstring = "SetChannel OpticalChannelSetup Error\n"+ repr(e))
+            errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            #raise LaserControlError(lockerinstance, errstring = errmessage)
         if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.LconParameters['LaserRequest']), True)):
             try:
-                self.write_coil('DO'+str(self.LconParameters['LaserRequest']), True)
+                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserRequest']), True)
             except Exception as e:
-                raise LaserControlError(lockerinstance, errstring = "SetChannel LaserRequest Error\n"+ repr(e))
+                errmessage = "SetChannel LaserRequest Error\n"+ str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+                #raise LaserControlError(lockerinstance, errstring = errmessage)
         if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.LconParameters['ResetError']), True)):
             try:
-                self.write_coil('DO'+str(self.LconParameters['ResetError']), True)
+                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), True)
             except Exception as e:
-                raise LaserControlError(lockerinstance, errstring = "SetChannel ResetErrors Error\n"+ repr(e))
+                errmessage = "SetChannel ResetErrors Error\n"+ str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+                #raise LaserControlError(lockerinstance, errstring = errmessage)
         try:
-            self.write_coil('DO'+str(self.LconParameters['LaserRequest']), False)
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserRequest']), False)
         except Exception as e:
-            raise LaserControlError(lockerinstance, errstring = "SetChannel LaserRequest Error\n"+ repr(e))
+            errmessage = "SetChannel LaserRequest Error\n"+ str(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            #raise LaserControlError(lockerinstance, errstring = errmessage)
         try:
-            self.write_coil('DO'+str(self.LconParameters['ResetError']), False)
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), False)
         except Exception as e:
-            raise LaserControlError(lockerinstance, errstring = "SetChannel ResetError Error\n"+ repr(e))
+            errmessage = "SetChannel ResetError Error\n"+ str(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            #raise LaserControlError(lockerinstance, errstring = errmessage)
 
 class MyMultiplexer(AnalogMultiplexer):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
@@ -188,7 +201,7 @@ class MyMultiplexer(AnalogMultiplexer):
             try:
                 super().__init__(lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
             except Exception as e:
-                errstring = "\nMyMultiplexer init error" + repr(e)
+                errstring = "MyMultiplexer init error" + str(e)
                 ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             else:
                 lockerinstance[0].lock.acquire()
@@ -263,13 +276,13 @@ class MyMultiplexer(AnalogMultiplexer):
                 try:
                     self.__acquire(lockerinstance)
                 except Exception as e:
-                    errstring = repr(e)
+                    errstring = str(e)
                     ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             if rel:
                 try:
                     self.__release(lockerinstance)
                 except Exception as e:
-                    errstring = repr(e)
+                    errstring = str(e)
                     ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
 
 class MyLaserControl(LaserControl):
@@ -278,7 +291,7 @@ class MyLaserControl(LaserControl):
             try:
                 super().__init__(lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
             except Exception as e:
-                errstring = "\nMyLaserControl init error" + repr(e)
+                errstring = "\nMyLaserControl init error" + str(e)
                 ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             else:
                 lockerinstance[0].lock.acquire()
@@ -305,11 +318,11 @@ class MyLaserControl(LaserControl):
 class LaserControlError(Exception):
     def __init__(self, lockerinstance, *args, **kwargs):
         self.args = args
-        errstring = 'Laser Control Error:\n' + ''.join(map(str, args))
+        errstring = 'Laser Control Error:' + ''.join(map(str, args))
         ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
 
 class AnalogMultiplexerError(Exception):
     def __init__(self, lockerinstance, *args, **kwargs):
         self.args = args
-        errstring = 'Analog multiplexer Error:\n' + ''.join(map(str, *args))
+        errstring = 'Analog multiplexer Error:' + ''.join(map(str, *args))
         ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)

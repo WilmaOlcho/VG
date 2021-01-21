@@ -9,11 +9,11 @@
         "IPAddress":"192.168.4.20",
         "moduleName":"ADAM6052",
         "Port":502,
-        "ResetError":3,
-        "LaserRequest":3,
-        "OpticalChannelbit0":4,
-        "OpticalChannelbit1":5,
-        "OpticalChannelbit2":6,
+        "ResetError":5,
+        "LaserRequest":5,
+        "OpticalChannelbit0":6,
+        "OpticalChannelbit1":7,
+        "OpticalChannelbit2":7,
         "OpticalChannelbit3":7,
         "MyOpticalChannel":1
     }

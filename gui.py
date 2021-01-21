@@ -212,15 +212,16 @@ class PistonBar(tk.LabelFrame):
         for piston in self.controls: piston.Update()
 
 class EstunBar(tk.LabelFrame):
-    def __init__(self, lockerinstance, elements = {}, relief=tk.GROOVE, bd=2, anchor = tk.W, side =tk.LEFT, master=None):
+    def __init__(self, lockerinstance, elements = {}, text = 'estun ', relief=tk.GROOVE, bd=2, anchor = tk.W, side =tk.LEFT, master=None, lockerkey = 'estun'):
         self.master = master
         super().__init__(self.master)
-        self.configure(text='Servo')
+        self.configure(text=lockerkey)
         self.locker = lockerinstance
         self.elements = elements
         self.buttons = []
+        self.lockerkey = lockerkey
         for key in self.elements.keys():
-            button = tk.Button(self, text='estun ' + key, command = lambda k = key: self.click(k)) 
+            button = tk.Button(self, text=text + key, command = lambda k = key: self.click(k)) 
             self.buttons.append(button)
         for btn in self.buttons:
             btn.configure(width = '30')
@@ -230,7 +231,7 @@ class EstunBar(tk.LabelFrame):
         def toggle(boolvar):
             return not boolvar
         self.locker[0].lock.acquire()
-        self.locker[0].estun[button] = toggle(self.locker[0].estun[button])
+        self.locker[0].shared[self.lockerkey][button] = toggle(self.locker[0].shared[self.lockerkey][button])
         self.locker[0].lock.release()
     
     def Update(self):
@@ -273,9 +274,12 @@ class console(object):
             IOBar(self.locker, side = tk.LEFT, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))), master = self.IOFrame)]
         self.locker[0].lock.release()
         self.bars.append(PistonBar(self.locker, side= tk.LEFT, elements = pistonbaritems, master = self.IOFrame))
-        self.bars.append(EstunBar(self.locker, side= tk.TOP, elements = {item:None for item in estuncommands}, master = self.IOFrame))
+        self.estunandlaser = tk.Frame(self.IOFrame)
+        self.bars.append(EstunBar(self.locker, side= tk.TOP, elements = {item:None for item in estuncommands}, master = self.estunandlaser))
+        self.bars.append(EstunBar(self.locker, side= tk.TOP, text = 'Laser ', elements = {'SetChannel':None}, master = self.estunandlaser, lockerkey = 'lcon'))
         for bar in filter(lambda item:isinstance(item,EstunBar),self.bars):
-            bar.pack(side=tk.LEFT, anchor = tk.NW)
+            bar.pack(side=tk.TOP, anchor = tk.NW)
+        self.estunandlaser.pack(side=tk.LEFT, anchor = tk.NW)
         for bar in filter(lambda item:isinstance(item,IOBar),self.bars):
             bar.pack(side=tk.LEFT, anchor = tk.NW)
         for bar in filter(lambda item:isinstance(item,PistonBar),self.bars):
