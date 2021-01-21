@@ -25,7 +25,7 @@ class ApplicationManager(object):
             Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
             Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
             Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,))
-        ]   
+        ]    
         for process in self.processes: 
             process.start()
         self.EventLoop(*args, **kwargs)
