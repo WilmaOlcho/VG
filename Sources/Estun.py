@@ -86,23 +86,24 @@ class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
         return mask
 
     def readParameter(self, lockerinstance, parameter):
-        if self.parameterType == self.WRITE_ONLY:
+        if self.parameterType(lockerinstance, parameter) == self.WRITE_ONLY:
             return None
         else:
-            Value = self.readRegister(lockerinstance, self.parameterAddress)
-            if not self.valueType=='int':
+            Value = self.readRegister(lockerinstance, self.parameterAddress(lockerinstance, parameter))
+            if not self.valueType(lockerinstance, parameter)=='int':
                 Value *= self.invertedReducedMask(lockerinstance, parameter)
             return Value
 
     def setParameter(self, lockerinstance, parameter = (None,(None,None),None), value = 0):
-        if self.parameterType == self.READ_ONLY:
+        if self.parameterType(lockerinstance, parameter) == self.READ_ONLY:
             return False
         else:
-            if not self.parameterType=='int':
-                currentValue = self.readRegister(lockerinstance, self.parameterAddress)
+            writeValue = value
+            if not self.parameterType(lockerinstance, parameter)=='int':
+                currentValue = self.readRegister(lockerinstance, self.parameterAddress(lockerinstance, parameter))
                 currentValue &= self.parameterMask(lockerinstance, parameter)
                 writeValue = currentValue + (value * self.invertedReducedMask(lockerinstance, parameter))
-            self.sendRegister(lockerinstance, self.parameterAddress, writeValue)
+            self.sendRegister(lockerinstance, self.parameterAddress(lockerinstance, parameter), writeValue)
 
 class MyEstun(Estun):
     def homing(self, lockerinstance):

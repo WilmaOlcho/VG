@@ -990,7 +990,6 @@ class ADAMDataAcquisitionModule(ModbusClient):
                     raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
             else:
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
-        
         if isinstance(input,int):
             try:
                 ParameterTuple = self.addresses['DI' + str(input)]
@@ -999,7 +998,7 @@ class ADAMDataAcquisitionModule(ModbusClient):
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
         if access == 'w':
             raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
-        return super().read_coils(address, NumberOfCoils, **kwargs)
+        return super().read_coils(address-1, NumberOfCoils, **kwargs)
 
     def write_coils(self, lockerinstance, startCoil = 'DO0', listOfValues = [True], **kwargs):
         access = ''
@@ -1020,7 +1019,7 @@ class ADAMDataAcquisitionModule(ModbusClient):
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
         if access == 'r':
             raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_coils, parameter = ' + str(startCoil))
-        return super().write_coils(address, listOfValues, **kwargs)
+        return super().write_coils(address-1, listOfValues, **kwargs)
 
     def write_coil(self, lockerinstance, Coil='DO0', value=0, **kwargs):
         access = ''
@@ -1041,7 +1040,7 @@ class ADAMDataAcquisitionModule(ModbusClient):
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
         if access == 'r':
             raise ParameterIsNotWritable(lockerinstance, self.moduleName + ' write_coil, parameter = ' + str(Coil))
-        return super().write_coil(address, value, **kwargs)
+        return super().write_coil(address-1, value, **kwargs)
 
     def read_discrete_inputs(self, lockerinstance, InputToStartFrom = 'DI0', count=1, **kwargs):
         access = ''
@@ -1062,7 +1061,7 @@ class ADAMDataAcquisitionModule(ModbusClient):
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
         if access == 'w':
             raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_discrete_inputs, parameter = ' + str(InputToStartFrom))
-        return super().read_discrete_inputs(address, count, **kwargs)
+        return super().read_discrete_inputs(address-1, count, **kwargs)
     
     def read_holding_registers(self, lockerinstance, registerToStartFrom = 'Counter/FrequencyValue0', count=1, **kwargs):
         access = ''
