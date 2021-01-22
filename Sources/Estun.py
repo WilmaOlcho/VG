@@ -46,13 +46,16 @@ class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
         return self.read_register(address,0,self.READ_HOLDING_REGISTERS,False)
 
     def parameterType(self, lockerinstance, parameter = (None,(None,None),None)):
+        if len(parameter) < 3 and len(parameter) > 1:
+            if isinstance(parameter[1],str):
+                pass
         return parameter[2]
 
     def valueType(self, lockerinstance, parameter = (None,(None,None),None)):
         return parameter[1][0]
 
     def parameterMask(self, lockerinstance, parameter = (None,(None,None),None), bitonly=False):
-        pType = self.valueType(parameter)
+        pType = self.valueType(lockerinstance, parameter)
         if pType == 'bit' or pType == 'bin' or bitonly:
             if parameter[1][1] == 0:
                 return 0b1110
@@ -62,7 +65,7 @@ class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
                 return 0b1011
             if parameter[1][1] == 3:
                 return 0b0111
-        elif pType == "hex":
+        elif pType == 'hex':
             if parameter[1][1] == 0:
                 return 0xFFF0
             if parameter[1][1] == 1:
@@ -78,11 +81,12 @@ class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
         return parameter[0]
 
     def invertedReducedMask(self, lockerinstance, parameter):
-        pType = self.valueType(parameter)
-        pMask = self.parameterMask(parameter)
-        mask = not pMask
-        if pType == 'hex':
-            mask /= 0xF
+        #pType = self.valueType(lockerinstance, parameter)
+        pMask = self.parameterMask(lockerinstance, parameter)
+        mask = ~pMask & 0xFFFF
+        #if pType == 'hex':
+        #    mask //= 0xF
+        
         return mask
 
     def readParameter(self, lockerinstance, parameter):
@@ -153,7 +157,6 @@ class MyEstun(Estun):
         lockerinstance[0].lock.release()
         return DOGv
 
-    @lru_cache(maxsize = 2)
     def getIOTerminals(self, lockerinstance, anythingChanged = False):
         if anythingChanged:
             default = None
@@ -182,29 +185,42 @@ class MyEstun(Estun):
                 'OT':default,
                 '/RD':default,
                 '/HOME':default}
-            @lru_cache(maxsize = 32)
             def getTerminal(terminal):
                 term=self.dterminals[terminal]
                 termv=self.dterminals[terminal +'v']
                 paramdict = self.config['SERVOPARAMETERS']
-                Byval = self.invertedReducedMask(lockerinstance, term & paramdict[str(term[0])])
-                return dictKeyByVal(termv, Byval)
+                mask = int(self.invertedReducedMask(lockerinstance, term))
+                value = paramdict.getint(str(term[0]))
+                Byval = (value & mask) >> (term[1][1]*4)
+                return dictKeyByVal(termv, Byval)[0]
             for val in self.dterminalTypes: terminals[getTerminal(str(val[0]))] = val
-            return terminals
+            result = dict(filter(lambda item: item[1] is not None,terminals.items()))
+            return result
 
     def IOControl(self, lockerinstance):
-        terminals = self.getIOTerminals(True)
-        buscontrol = [  self.BusCtrlInputNode1_14,self.BusCtrlInputNode1_15,
-                        self.BusCtrlInputNode1_16,self.BusCtrlInputNode1_17,
-                        self.BusCtrlInputNode1_39,self.BusCtrlInputNode1_40,
-                        self.BusCtrlInputNode1_41,self.BusCtrlInputNode1_42]
+        sparams = self.config['SERVOPARAMETERS']
+        terminals = self.getIOTerminals(lockerinstance, True)
+        buscontrol = {  14:self.BusCtrlInputNode1_14,15:self.BusCtrlInputNode1_15,
+                        16:self.BusCtrlInputNode1_16,17:self.BusCtrlInputNode1_17,
+                        39:self.BusCtrlInputNode1_39,40:self.BusCtrlInputNode1_40,
+                        41:self.BusCtrlInputNode1_41,42:self.BusCtrlInputNode1_42}
+        currentvalue = self.readParameter(lockerinstance, self.MODBUSIO)
         for n, param in enumerate(self.dterminalTypes[:8]):
-            if (int(self.config['SERVOPARAMETERS'][str(buscontrol[n][0])]) & int(self.invertedReducedMask(lockerinstance, buscontrol[n]))):
-                self.setParameter(param,lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])])
+            currentparameter = dictKeyByVal(terminals, param)
+            if not (sparams.getint(str(buscontrol[param[0]][0])) & self.invertedReducedMask(lockerinstance, buscontrol[param[0]])):
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].estunModbus[currentparameter] = bool(currentvalue & self.invertedReducedMask(lockerinstance, buscontrol[n]))
+                lockerinstance[0].lock.release()
             else:
-                lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])] = self.readParameter(lockerinstance, param)
+                lockerinstance[0].lock.acquire()
+                valuetoset = lockerinstance[0].estunModbus[currentparameter]
+                lockerinstance[0].lock.release()
+                self.setParameter(lockerinstance, self.MODBUSIO, value = currentvalue | (valuetoset << n))
         for n, param in enumerate(self.dterminalTypes[8:]):
-             lockerinstance[0].estunModbus[dictKeyByVal(terminals,self.dterminalTypes[n])] = self.readParameter(lockerinstance, param)
+            lockerinstance[0].lock.acquire()
+            valuetoset = lockerinstance[0].estunModbus[currentparameter]
+            lockerinstance[0].lock.release()
+            self.setParameter(lockerinstance, self.MODBUSIO, value = currentvalue | (valuetoset << n))
 
     def __init__(self, lockerinstance, configFile, *args, **kwargs):
         self.control_switch = {

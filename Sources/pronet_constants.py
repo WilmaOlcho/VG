@@ -193,11 +193,11 @@ class Pronet_constants():
         self.AllocateCN1_17ToTerm_values = self.AllocateCN1_14ToTerm_values #The same values
         self.AllocateCN1_39ToTerm= (510,('hex',0),'rw')
         self.AllocateCN1_39ToTerm_values = self.AllocateCN1_14ToTerm_values #The same values
-        self.AllocateCN1_40ToTerm= (511,('hex',1),'rw')
+        self.AllocateCN1_40ToTerm= (510,('hex',1),'rw')
         self.AllocateCN1_40ToTerm_values = self.AllocateCN1_14ToTerm_values #The same values
-        self.AllocateCN1_41ToTerm= (512,('hex',2),'rw')
+        self.AllocateCN1_41ToTerm= (510,('hex',2),'rw')
         self.AllocateCN1_41ToTerm_values = self.AllocateCN1_14ToTerm_values #The same values 
-        self.AllocateCN1_42ToTerm= (513,('hex',3),'rw')
+        self.AllocateCN1_42ToTerm= (510,('hex',3),'rw')
         self.AllocateCN1_42ToTerm_values = self.AllocateCN1_14ToTerm_values #The same values
         self.AllocCN1_11t12ToTerm= (511,('hex',0),'rw')
         self.AllocCN1_11t12ToTerm_values = {
