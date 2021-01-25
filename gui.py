@@ -1,8 +1,9 @@
 import tkinter as tk
 
 class IOBar(tk.LabelFrame):
-    def __init__(self, lockerinstance, elements = {}, relief=tk.GROOVE, bd=2, side = tk.LEFT, anchor = tk.W, master=None):
+    def __init__(self, lockerinstance, masterkey='GPIO', elements = {}, relief=tk.GROOVE, bd=2, side = tk.LEFT, anchor = tk.W, master=None, text='Robot Inputs'):
         self.master = master
+        self.masterkey=masterkey
         super().__init__(self.master)
         self.elements = elements.copy()
         self.locker = lockerinstance
@@ -13,7 +14,7 @@ class IOBar(tk.LabelFrame):
                 Frames.append(tk.Frame(master = self))
                 currentFrame = Frames[i//4]
             if 'I' in key:
-                self.configure(text='Robot Inputs')
+                self.configure(text = text)
                 self.elements[key] =  tk.Canvas(currentFrame, bg='black', width = 20, height = 20)
                 lblval = tk.StringVar()
                 lblval.set(key)
@@ -31,23 +32,24 @@ class IOBar(tk.LabelFrame):
     def click(self):
         for key in self.elements.keys():
             self.locker[0].lock.acquire()
-            if not self.locker[0].GPIO[key] == self.elements[key].get() and not 'I' in key:
-                self.locker[0].GPIO[key] = self.elements[key].get()
+            if not self.locker[0].shared[self.masterkey][key] == self.elements[key].get() and not 'I' in key:
+                self.locker[0].shared[self.masterkey][key] = self.elements[key].get()
             self.locker[0].lock.release()
 
     def Update(self):
         for key in self.elements.keys():
             self.locker[0].lock.acquire()
             if 'I' in key:
-                self.elements[key].configure(bg='green' if self.locker[0].GPIO[key] else 'black')
-            elif not self.locker[0].GPIO[key] == self.elements[key].get():
-                self.elements[key].set(self.locker[0].GPIO[key])
+                self.elements[key].configure(bg='green' if self.locker[0].shared[self.masterkey][key] else 'black')
+            elif not self.locker[0].shared[self.masterkey][key] == self.elements[key].get():
+                self.elements[key].set(self.locker[0].shared[self.masterkey][key])
             self.locker[0].lock.release()
 
 class ScrolledTextbox(tk.LabelFrame):
-    def __init__(self, lockerinstance, master = None, scrolltype = 'both', height=200, width=200):
+    def __init__(self, lockerinstance, masterkey = 'Errors', master = None, scrolltype = 'both', height=200, width=200, text = 'Errors'):
         super().__init__(master = master, width = width, height = height)
-        self.configure(text='Errors')
+        self.masterkey = masterkey
+        self.configure(text=text)
         self.master = master
         self.locker = lockerinstance
         self.text = tk.Text(self, height=height, width=width)
@@ -65,8 +67,12 @@ class ScrolledTextbox(tk.LabelFrame):
 
     def Update(self):
         self.locker[0].lock.acquire()
-        text = self.locker[0].shared['Errors']
+        text = self.locker[0].shared[self.masterkey]
         self.locker[0].lock.release()
+        if isinstance(text,list):
+            vlist, text = text, ''
+            for item in vlist:
+                text += item
         if self.vtext != text:
             vpos, hpos = self.vsb.get(), self.hsb.get()
             prevw, prevh = self.text.winfo_width(), self.text.winfo_height()
@@ -242,6 +248,7 @@ class console(object):
         for bar in self.bars:
             bar.Update()
         self.textbox.Update()
+        self.textbox2.Update()
         self.root.after(300,self.timerloop)
 
     def Wclose(self):
@@ -263,6 +270,7 @@ class console(object):
         self.lastact = ''
         self.root.wm_title('debug window')
         self.textbox = ScrolledTextbox(self.locker, master = self.root, width = 100, height = 10)
+        self.textbox2 = ScrolledTextbox(self.locker,masterkey = 'wdt', text = 'WDT', master = self.root, width = 100, height = 10)
         pistonbaritems = ['Seal', 'LeftPusher', 'RightPusher', 'ShieldingGas', 'HeadCooling', 'CrossJet', 'Air', 'Vacuum']
         estuncommands = ['homing', 'step', 'reset']
         self.locker[0].lock.acquire()
@@ -273,6 +281,7 @@ class console(object):
         self.locker[0].lock.release()
         self.bars.append(PistonBar(self.locker, side= tk.LEFT, elements = pistonbaritems, master = self.IOFrame))
         self.estunandlaser = tk.Frame(self.IOFrame)
+        self.bars.append(IOBar(self.locker, text='estunIO', masterkey='estunModbus', side = tk.LEFT, elements = dict(list(filter((lambda item: True if len(item[0])==2 else False), self.locker[0].estunModbus.items()))), master = self.estunandlaser))
         self.bars.append(EstunBar(self.locker, side= tk.TOP, elements = {item:None for item in estuncommands}, master = self.estunandlaser))
         self.bars.append(EstunBar(self.locker, side= tk.TOP, text = 'Laser ', elements = {'SetChannel':None}, master = self.estunandlaser, lockerkey = 'lcon'))
         for bar in filter(lambda item:isinstance(item,EstunBar),self.bars):
@@ -284,7 +293,7 @@ class console(object):
             bar.pack(side=tk.LEFT, anchor = tk.NW)
         self.IOFrame.grid(column=0, row=0, sticky=tk.W)
         self.textbox.grid(row=1)
-        
+        self.textbox2.grid(row=2)
         
         self.root.after(100,self.timerloop)
 

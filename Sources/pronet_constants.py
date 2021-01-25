@@ -212,6 +212,8 @@ class Pronet_constants():
             '/HOME':8}
         self.AllocCN1_05t06ToTerm= (511,('hex',1),'rw')
         self.AllocCN1_05t06ToTerm_values = self.AllocCN1_11t12ToTerm_values #The same values
+        self.AllocCN1_07t08ToTerm= (511,('hex',3),'rw')
+        self.AllocCN1_07t08ToTerm_values = self.AllocCN1_11t12ToTerm_values #The same values
         self.AllocCN1_09t10ToTerm= (511,('hex',2),'rw')
         self.AllocCN1_09t10ToTerm_values = self.AllocCN1_11t12ToTerm_values #The same values
         self.BusCtrlInputNode1_14= (512,('bit',0),'rw') #Low bit - Enabled
@@ -246,8 +248,9 @@ class Pronet_constants():
             '42':self.AllocateCN1_42ToTerm, '42v':self.AllocateCN1_42ToTerm_values,
             '12':self.AllocCN1_11t12ToTerm, '12v':self.AllocCN1_11t12ToTerm_values,
             '6':self.AllocCN1_05t06ToTerm, '6v':self.AllocCN1_05t06ToTerm_values,
+            '8':self.AllocCN1_07t08ToTerm, '8v':self.AllocCN1_07t08ToTerm_values,
             '10':self.AllocCN1_09t10ToTerm, '10v':self.AllocCN1_09t10ToTerm_values}
-        self.dterminalTypes = ((14,'I1'),(15,'I2'),(16,'I3'),(17,'I4'),(39,'I5'),(40,'I6'),(41,'I7'),(42,'I8'),(12,'O1'),(6,'O2'),(10,'O3'))
+        self.dterminalTypes = ((14,'I1'),(15,'I2'),(16,'I3'),(17,'I4'),(39,'I5'),(40,'I6'),(41,'I7'),(42,'I8'),(12,'O1'),(6,'O2'),(8,'O4'),(10,'O3'))
         #############Point-to-Point control related parameters#############
         self.PosPulseInPtPCtrl00 = (600,('int',0),'rw') #10k pulses per unit
         self.PosPulseInPtPCtrl01 = (601,('int',0),'rw') #1 pulse per unit

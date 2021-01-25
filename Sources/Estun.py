@@ -1,4 +1,6 @@
-import minimalmodbus
+from pymodbus.pdu import ModbusRequest
+from pymodbus.client.sync import ModbusSerialClient
+from pymodbus.transaction import ModbusAsciiFramer
 import serial
 import configparser
 import sys
@@ -9,7 +11,7 @@ from Sources.pronet_constants import Pronet_constants
 from Sources.modbus_constants import Modbus_constants
 from Sources.misc import BlankFunc, writeInLambda, dictKeyByVal, ErrorEventWrite
 
-class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
+class Estun(ModbusSerialClient, Pronet_constants, Modbus_constants):
     def __init__(self, lockerinstance,
             comport = "COM1",
             slaveaddress = 1,
@@ -24,26 +26,32 @@ class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
         try:
             Pronet_constants.__init__(self)
             Modbus_constants.__init__(self)
-            minimalmodbus.Instrument.__init__(self, comport,slaveaddress,mode = protocol,close_port_after_each_call=close_port_after_each_call,debug=debug,*args, **kwargs)
-            self.serial.baudrate = baud
-            self.serial.bytesize = bytesize 
-            self.serial.stopbits = stopbits
-            self.serial.parity = parity
-            self.serial.timeout = 1
+            ModbusSerialClient.__init__(self,bytesize = bytesize, baudrate = baud, parity = parity, port = comport,timeout = 2, stopbits = stopbits, method = protocol)
         except Exception as e:
             errormessage = 'Estun communication error: ' + str(e)
             ErrorEventWrite(lockerinstance, errormessage)
 
     def sendRegister(self, lockerinstance, address, value):
         try:
-            return self.write_register(address,value,0,self.WRITE_REGISTER,False)
+            self.connect()
+            self.write_register(address, value, unit=0x1)
+            self.close()
+            return True
         except Exception as e:
             errormessage = 'Estun sendRegister Error: ' + str(e)
             ErrorEventWrite(lockerinstance, errormessage)
             return None
 
     def readRegister(self, lockerinstance, address):
-        return self.read_register(address,0,self.READ_HOLDING_REGISTERS,False)
+        while True:
+            try:
+                self.connect()
+                result = self.read_holding_registers(address,1,unit = 0x1)
+                self.close()
+                break
+            except:
+                pass
+        return result.registers[0]
 
     def parameterType(self, lockerinstance, parameter = (None,(None,None),None)):
         if len(parameter) < 3 and len(parameter) > 1:
@@ -103,25 +111,25 @@ class Estun(minimalmodbus.Instrument, Pronet_constants, Modbus_constants):
             return False
         else:
             writeValue = value
-            if not self.parameterType(lockerinstance, parameter)=='int':
-                currentValue = self.readRegister(lockerinstance, self.parameterAddress(lockerinstance, parameter))
-                currentValue &= self.parameterMask(lockerinstance, parameter)
-                writeValue = currentValue + (value * self.invertedReducedMask(lockerinstance, parameter))
+            #if not self.parameterType(lockerinstance, parameter)=='int':
+            #    currentValue = self.readRegister(lockerinstance, self.parameterAddress(lockerinstance, parameter))
+            #    currentValue &= self.parameterMask(lockerinstance, parameter)
+            #    writeValue = currentValue + (value * self.invertedReducedMask(lockerinstance, parameter))
             self.sendRegister(lockerinstance, self.parameterAddress(lockerinstance, parameter), writeValue)
 
 class MyEstun(Estun):
     def homing(self, lockerinstance):
-        if self.timerhoming == None:
-            self.timerhoming = WDT.WDT(lockerinstance, scale = 's',limitval = 30, errToRaise='Servo Homing Time exceeded', errorlevel=10)
+        lockerinstance[0].lock.acquire()
+        WDTActive = 'WDTServo Homing Time exceeded' in lockerinstance[0].wdt
+        lockerinstance[0].estunModbus['N-CL'] = True
+        lockerinstance[0].lock.release()
+        if not WDTActive:
+            WDT.WDT(lockerinstance, scale = 's',limitval = 60, eventToCatch='EstunHomingComplete', errToRaise='Servo Homing Time exceeded', errorlevel=10)
         if self.readDOG(lockerinstance):
             lockerinstance[0].lock.acquire()
-            lockerinstance[0].estun['homing'] = False
             lockerinstance[0].events['EstunHomingComplete'] = True
-            lockerinstance[0].lock.release()
-            self.timerhoming.Destruct()
-        else:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].estunModbus['SHOM'] = False if lockerinstance[0].estunModbus['TGON'] else True
+            lockerinstance[0].estunModbus['N-CL'] = False
+            lockerinstance[0].estun['homing'] = False
             lockerinstance[0].lock.release()
             # homing key reaction:
             #   set homing input on servo for a while, resets when servo runs
@@ -129,14 +137,26 @@ class MyEstun(Estun):
             #   DOG input destructs timer and close homing procedure 
 
     def step(self, lockerinstance):
-        if self.timerstep == None:
-            self.timerstep = WDT.WDT(lockerinstance, scale = 's',limitval = 10, errToRaise='Servo Step Time exceeded', errorlevel=10)
+        lockerinstance[0].lock.acquire()
+        WDTActive = 'WDTServo Step Time exceeded' in lockerinstance[0].wdt
+        lockerinstance[0].lock.release()
+        self.IOControl(lockerinstance)
+        lockerinstance[0].lock.acquire()
+        lockerinstance[0].estunModbus['P-CON'] = True
+        srdy = lockerinstance[0].estunModbus['/S-RDY']
+        lockerinstance[0].lock.release()
+        if srdy and WDTActive:
             lockerinstance[0].lock.acquire()
-            lockerinstance[0].estunModbus['PCON'] = False if lockerinstance[0].estunModbus['TGON'] else True
-            if lockerinstance[0].estunModbus['COIN']:
-                lockerinstance[0].estun['step'] = False
-                lockerinstance[0].estun['stepComplete'] = True
-                self.timerstep.Destruct()
+            lockerinstance[0].estun['stepComplete'] = True
+            lockerinstance[0].estunModbus['P-CON'] = False
+            lockerinstance[0].estun['step'] = False
+            lockerinstance[0].lock.release()
+        elif srdy and not WDTActive:
+            WDT.WDT(lockerinstance, scale = 's',limitval = 15, eventToCatch='stepComplete', errToRaise='Servo Step Time exceeded', errorlevel=10)
+        else:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].estunModbus['P-CON'] = False
+            lockerinstance[0].estun['step'] = False
             lockerinstance[0].lock.release()
             #step key reaction:
             #set PCON for a while, reset whne servo runs
@@ -147,13 +167,18 @@ class MyEstun(Estun):
         if self.readParameter(lockerinstance, self.CurrentAlarm) != 0:
             self.setParameter(lockerinstance, self.ClearCurrentAlarms, 0x01)
             lockerinstance[0].lock.acquire()
-            lockerinstance[0].estun['reset'] = False
             lockerinstance[0].events['EstunResetDone'] = True
+            lockerinstance[0].estun['reset'] = False
+            lockerinstance[0].lock.release()
+        else:
+            self.setParameter(lockerinstance, self.InputSignalState)
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].estun['reset'] = False
             lockerinstance[0].lock.release()
 
     def readDOG(self, lockerinstance):
         lockerinstance[0].lock.acquire()
-        DOGv = lockerinstance[0].estunModbus['ORG']
+        DOGv = lockerinstance[0].estunModbus['N-OT']
         lockerinstance[0].lock.release()
         return DOGv
 
@@ -199,42 +224,98 @@ class MyEstun(Estun):
 
     def IOControl(self, lockerinstance):
         sparams = self.config['SERVOPARAMETERS']
-        terminals = self.getIOTerminals(lockerinstance, True)
+        if not self.terminals:
+            self.terminals = self.getIOTerminals(lockerinstance, True)
+        ##terminals are like {'SHOM':(14,'I1')}
+        ##these values are programmable in servocontroller
         buscontrol = {  14:self.BusCtrlInputNode1_14,15:self.BusCtrlInputNode1_15,
                         16:self.BusCtrlInputNode1_16,17:self.BusCtrlInputNode1_17,
                         39:self.BusCtrlInputNode1_39,40:self.BusCtrlInputNode1_40,
                         41:self.BusCtrlInputNode1_41,42:self.BusCtrlInputNode1_42}
         currentvalue = self.readParameter(lockerinstance, self.MODBUSIO)
+        #current value is one byte with 8bits corresponding with inputs
+        lockerinstance[0].lock.acquire()
+        if not lockerinstance[0].estun['homing']: lockerinstance[0].estunModbus['N-CL'] = False
+        if not lockerinstance[0].estun['step']: lockerinstance[0].estunModbus['P-CON'] = False
+        lockerinstance[0].lock.release()
         for n, param in enumerate(self.dterminalTypes[:8]):
-            currentparameter = dictKeyByVal(terminals, param)
-            if not (sparams.getint(str(buscontrol[param[0]][0])) & self.invertedReducedMask(lockerinstance, buscontrol[param[0]])):
+            #dterminalTypes is tuple of tuples of which terminal is which input/output
+            #dterminals[0] -> (14,'I1')
+            currentparameter = dictKeyByVal(self.terminals, param)[0]
+            #currentparameter is key of terminal like 'SHOM' corresponding with dterminalTypes
+            currentNode = buscontrol[param[0]]
+            bitmask = 0b1 << n%4
+            if not (sparams.getint(str(currentNode[0])) & bitmask):
+                #buscontrol byte corresponding to actual input & it's bitmask
+                #BusCtrlInputNode is internal variable of servo controller and possibility of external control of inputs depends on it 
+                bitmask = 0b1 << n
                 lockerinstance[0].lock.acquire()
-                lockerinstance[0].estunModbus[currentparameter] = bool(currentvalue & self.invertedReducedMask(lockerinstance, buscontrol[n]))
+                lockerinstance[0].estunModbus[currentparameter] = bool(currentvalue & bitmask)
                 lockerinstance[0].lock.release()
             else:
+                bitmask = 0b1 << n
                 lockerinstance[0].lock.acquire()
                 valuetoset = lockerinstance[0].estunModbus[currentparameter]
                 lockerinstance[0].lock.release()
-                self.setParameter(lockerinstance, self.MODBUSIO, value = currentvalue | (valuetoset << n))
+                ErrorEventWrite(lockerinstance,str(bin(currentvalue)))
+                bitmask = ~bitmask & 0xFF
+                valuetoseta = (currentvalue & bitmask) | (valuetoset << n)
+                self.setParameter(lockerinstance, self.MODBUSIO, valuetoseta)
+        servoOutputs = self.readParameter(lockerinstance, self.OutputSignalState)
         for n, param in enumerate(self.dterminalTypes[8:]):
+            currentparameter = dictKeyByVal(self.terminals, param)
+            if not currentparameter:
+                continue
+            else:
+                currentparameter = currentparameter[0]
+            bitmask = 0b1 << n
             lockerinstance[0].lock.acquire()
-            valuetoset = lockerinstance[0].estunModbus[currentparameter]
+            lockerinstance[0].estunModbus[currentparameter] = bool(servoOutputs & bitmask)
             lockerinstance[0].lock.release()
-            self.setParameter(lockerinstance, self.MODBUSIO, value = currentvalue | (valuetoset << n))
+        for n, bit in enumerate(self.__bits(self.readParameter(lockerinstance, self.InputSignalState))):
+            key = 'I' + str(n+1)
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].estunModbus[key] = bit
+            lockerinstance[0].lock.release()
+        for n, bit in enumerate(self.__bits(self.readParameter(lockerinstance, self.OutputSignalState))[7:]):
+            key = 'O' + str(n+1)
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].estunModbus[key] = bit
+            lockerinstance[0].lock.release()
+
+    def __bits(self, values = [8*False], le = False):
+        if isinstance(values, list):
+            if len(values) > 8:
+                values = values[:8]
+            result = 0b00000000
+            if le: values = values[::-1]
+            for i, val in enumerate(values):
+                if val: result += pow(2,i)
+            return result
+        if isinstance(values, int):
+            values &= 0b11111111
+            result = []
+            for i in range(8):
+                power = pow(2,7-i)
+                result.append(bool(values//power))
+                values &= 0b11111111 ^ power
+            if not le: result = result[::-1] 
+            return result
+            
 
     def __init__(self, lockerinstance, configFile, *args, **kwargs):
         self.control_switch = {
-            'procedure':{
-                'homing':self.homing,
-                'step':self.step,
-                'reset':self.resetAlarm,
-                'DOG':self.readDOG,
-                'IOControl':self.IOControl}} 
+            'homing':self.homing,
+            'step':self.step,
+            'reset':self.resetAlarm,
+            'DOG':self.readDOG,
+            'IOControl':self.IOControl}
         self.timerhoming = None
         self.timerstep = None
         self.config = configparser.ConfigParser()
         self.servobak = configparser.ConfigParser()
         fileFeedback = self.config.read(configFile)
+        self.terminals = {}
         if not fileFeedback:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].shared['configurationError']=True
@@ -255,7 +336,6 @@ class MyEstun(Estun):
                                 'parity':COMSETTINGS.get('parity'),
                                 'bytesize':COMSETTINGS.getint('bytesize')}
                     super().__init__(   lockerinstance, **skwargs, **kwargs)
-                    if self.serial is None: raise Exception('Serial is not open: ' + str(skwargs.items()))
                 except Exception as e:
                     errmessage = 'Estun init error:' + str(e)
                     ErrorEventWrite(lockerinstance, errmessage)
@@ -278,6 +358,7 @@ class MyEstun(Estun):
         while self.Alive:
             lockerinstance[0].lock.acquire()
             homing, step, reset, Dog = lockerinstance[0].estun['homing'], lockerinstance[0].estun['step'], lockerinstance[0].estun['reset'], lockerinstance[0].estun['DOG']
+            #lockerinstance[0].estun['homing'] = lockerinstance[0].estun['step'] = lockerinstance[0].estun['reset'] = lockerinstance[0].estun['DOG'] = False
             lockerinstance[0].lock.release()
             try:
                 if homing: self.control_switch['homing'](lockerinstance)
