@@ -178,22 +178,20 @@ class RobotVG(KawasakiVG):
         lockerinstance[0].lock.acquire()
         somethingchanged = lockerinstance[0].GPIO['somethingChanged']
         lockerinstance[0].lock.release()
-        def GPIOeights(startpoint):
+        def GPIO():
             output = []
             lockerinstance[0].lock.acquire()
-            for i in range(16):
-                output.append(lockerinstance[0].GPIO['O'+str(i+startpoint)])
+            for i in range(1,33):
+                output.append(lockerinstance[0].GPIO['O'+str(i)])
             lockerinstance[0].lock.release()
             return output
         if somethingchanged:
-            if False: #switch to change sending format
-                for i, reg in enumerate(['O1-16', 'O17-32']):
-                    self.write_register(lockerinstance, register = reg, value = self._bits(GPIOeights(i*16+1), le = True))
-            else:
-                for i, reg in enumerate(['O1-16', 'O17-32']):
-                    values = GPIOeights(i*16+1)
-                    for j, val in enumerate(values):
-                        self.write_coil(lockerinstance, Coil= 'O' + str(1+j+16*i), value = val)
+            output = GPIO()
+            if True: #switch to change sending format
+                for i in range(32):
+                    if i == 1-1 or i==27-1:
+                        continue
+                    self.write_coil(lockerinstance, Coil = 'DO' + str(i+1), value = output[i])
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO['somethingChanged'] = False
             lockerinstance[0].lock.release()

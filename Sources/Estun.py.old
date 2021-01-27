@@ -43,14 +43,13 @@ class Estun(ModbusSerialClient, Pronet_constants, Modbus_constants):
             return None
 
     def readRegister(self, lockerinstance, address):
+        self.connect()
         while True:
-            try:
-                self.connect()
-                result = self.read_holding_registers(address,1,unit = 0x1)
-                self.close()
+            result = self.read_holding_registers(address,1,unit = 0x1)
+            if isinstance(result, Exception):
                 break
-            except:
-                pass
+            break               
+        self.close()
         return result.registers[0]
 
     def parameterType(self, lockerinstance, parameter = (None,(None,None),None)):

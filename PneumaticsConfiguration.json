@@ -49,7 +49,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"SealUp",
-                    "address":"I32",
+                    "address":"I31",
                     "voltage":24,
                     "current":0.1
                 },
@@ -60,7 +60,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"SealDown",
-                    "address":"I31",
+                    "address":"I32",
                     "voltage":24,
                     "current":0.1
                 }
