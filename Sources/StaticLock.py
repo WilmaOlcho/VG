@@ -13,15 +13,15 @@ class SharedLocker(object):
                 'Alive':False,
                 'SetChannel':False}),
             'events':manager.dict({
-                'MAVT':False,
                 'ack':False,
                 'Error':False,
                 'stepComplete':False,
                 'RobotMoving':True,
                 'ServoMoving':False,
                 'anyButtonPressed':False,
-                'EstunResetDone':False,
-                'EstunHomingComplete':False,
+                'ServoResetDone':False,
+                'ServoHomingComplete':False,
+                'ServoStepComplete':False,
                 'closeApplication':False,
                 'OutputChangedByRobot':False,
                 'OutputsChangedByRobot':''}),
@@ -31,14 +31,12 @@ class SharedLocker(object):
                 'SealDown':False,
                 'sensorSealUp':True,
                 'sensorSealDown':False,
-                'LeftPusherFront':False,
-                'LeftPusherBack':False,
-                'sensorLeftPusherFront':False,
-                'sensorLeftPusherBack':False,
-                'RightPusherFront':False,
-                'RightPusherBack':False,
-                'sensorRightPusherFront':False,
-                'sensorRightPusherBack':False,
+                'sensorTroleyPusher2Front':False,
+                'sensorTroleyPusher2Back':False,
+                'TroleyPusherFront':False,
+                'TroleyPusherBack':False,
+                'sensorTroleyPusherFront':False,
+                'sensorTroleyPusherBack':False,
                 'sensorShieldingGasOk':False,
                 'sensorAirOk':False,
                 'sensorVacuumOk':True,
@@ -76,7 +74,18 @@ class SharedLocker(object):
                 'onpath':False,
                 'acquire':False,
                 'release':False,
-                'Alive':False}),
+                'Alive':False,
+                'Channel':-1}),
+            'servo':manager.dict({
+                'Alive':False,
+                'homing':False,
+                'step':False,
+                'reset':False,
+                'run':False,
+                'stop':False,
+                'positionNumber':-1,
+                'moving':False,
+                'active':False}),
             'robot':manager.dict({
                 'CommandControl':False,
                 'PositionControl':False,
@@ -124,16 +133,14 @@ class SharedLocker(object):
                 'Alive':False})})
         self.wdt = self.shared['wdt']
         self.lcon = self.shared['lcon'] 
-        self.ModbusASCIIViaTCPInterval = Value('i',0)
         self.lock = Lock()
         self.attempts = Value('i',4)
         self.events = self.shared['events'] 
         self.errorlevel = Array('b',256*[False])
         self.pistons = self.shared['pistons'] 
         self.safety = self.shared['safety'] 
-        self.estun = self.shared['estun'] 
         self.mux = self.shared['mux']
-        self.estunModbus = self.shared['estunModbus']
+        self.servo = self.shared['servo']
         self.robot = self.shared['robot']
         self.console = self.shared['console']
         self.GPIO = self.shared['GPIO']

@@ -1426,26 +1426,6 @@ class KawasakiVG(ModbusClient):
         super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
         self.params = KawasakiRobot()
         self.addresses = self.params.addresses
-        lockerinstance[0].lock.acquire()
-        self.interval = lockerinstance[0].ModbusASCIIViaTCPInterval.value
-        lockerinstance[0].lock.release()
-        self.timer = WDT()
-        
-    def __WDTEventExceed(self, lockerinstance): #Function on exceed
-        lockerinstance[0].lock.acquire()
-        if lockerinstance[0].events['MAVT']: lockerinstance[0].events['MAVT'] = False
-        lockerinstance[0].lock.release()
-
-    def __WDTEventRaise(self, lockerinstance): #Function on start
-        lockerinstance[0].lock.acquire()
-        if not lockerinstance[0].events['MAVT']: lockerinstance[0].events['MAVT'] = True
-        lockerinstance[0].lock.release()
-
-    def __MAVTActive(self, lockerinstance): #Function on start
-        lockerinstance[0].lock.acquire()
-        result = lockerinstance[0].events['MAVT']
-        lockerinstance[0].lock.release()
-        return result
 
     def __getAddress(self, lockerinstance, parameterName=''):
         try:
@@ -1456,8 +1436,6 @@ class KawasakiVG(ModbusClient):
     def read_coils(self, lockerinstance, input = 'I1', NumberOfCoils = 1, **kwargs):
         access = ''
         result = []
-        while self.__MAVTActive(lockerinstance):
-            pass
         if isinstance(input,str):
             if 'I' in input:
                 try:
@@ -1491,14 +1469,11 @@ class KawasakiVG(ModbusClient):
             lockerinstance[0].lock.release()
             result = []
         finally:
-            self.timer = WDT.WDT(lockerinstance, limitval = self.interval, scale = 'ms', additionalFuncOnStart = lambda a = lockerinstance, b=self: b.__WDTEventRaise(a), additionalFuncOnExceed = lambda a = lockerinstance, b=self: b.__WDTEventExceed(a), noerror = True)
             return result
 
     def write_coil(self, lockerinstance, Coil='DO0', value=0, **kwargs):
         access = ''
         result = []
-        while self.__MAVTActive(lockerinstance):
-            pass
         if isinstance(Coil,str):
             if 'O' in Coil:
                 try:
@@ -1526,14 +1501,11 @@ class KawasakiVG(ModbusClient):
             lockerinstance[0].lock.release()
             result = []
         finally:
-            self.timer = WDT.WDT(lockerinstance, limitval = self.interval, scale = 'ms', additionalFuncOnStart = lambda a = lockerinstance, b=self: b.__WDTEventRaise(a), additionalFuncOnExceed = lambda a = lockerinstance, b=self: b.__WDTEventExceed(a), noerror = True)
             return result
 
     def read_holding_registers(self, lockerinstance, registerToStartFrom = 'command', count=1, **kwargs):
         access = ''
         result = []
-        while self.__MAVTActive(lockerinstance):
-            pass
         if isinstance(registerToStartFrom,str):
             try:
                 ParameterTuple = self.addresses[registerToStartFrom]
@@ -1554,15 +1526,12 @@ class KawasakiVG(ModbusClient):
             lockerinstance[0].lock.release()
             result = []
         finally:
-            self.timer = WDT.WDT(lockerinstance, limitval = self.interval, scale = 'ms', additionalFuncOnStart = lambda a = lockerinstance, b=self: b.__WDTEventRaise(a), additionalFuncOnExceed = lambda a = lockerinstance, b=self: b.__WDTEventExceed(a), noerror = True)
             if isinstance(result,ReadHoldingRegistersResponse): result = result.registers
             return result
 
     def write_register(self, lockerinstance, register = '', value = 0xFFFF, **kwargs):
         access = ''
         result = []
-        while self.__MAVTActive(lockerinstance):
-            pass
         if isinstance(register,str):
             try:
                 ParameterTuple = self.addresses[register]
@@ -1583,7 +1552,6 @@ class KawasakiVG(ModbusClient):
             lockerinstance[0].lock.release()
             result = []
         finally:
-            self.timer = WDT.WDT(lockerinstance, limitval = self.interval, scale = 'ms', additionalFuncOnStart = lambda a = lockerinstance, b=self: b.__WDTEventRaise(a), additionalFuncOnExceed = lambda a = lockerinstance, b=self: b.__WDTEventExceed(a), noerror = True)
             return result
 
 

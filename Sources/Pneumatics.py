@@ -43,9 +43,13 @@ class Piston(Pneumatic):
                 lockerinstance[0].lock.release()
 
 class Sensor(PneumaticActive):
+    def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
+        super().__init__(lockerinstance, branch, parent, *args,**kwargs)
+        self.tandem = self.root['tandem']
     def controlSequence(self, lockerinstance):
         lockerinstance[0].lock.acquire()
         cstate = bool(lockerinstance[0].GPIO[self.address])
+        if self.tandem: cstate = cstate & lockerinstance[0].pistons['sensor'+self.tandem]
         lockerinstance[0].pistons['sensor'+self.action] = cstate
         lockerinstance[0].lock.release()
 

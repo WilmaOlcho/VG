@@ -68,7 +68,7 @@
         },
         {
             "class":"Piston",
-            "name":"Left Pusher",
+            "name":"Troley Pusher",
             "type":"Double acting",
             "model":"",
             "vendor":"MetalWork",
@@ -86,7 +86,7 @@
                             "type":"DC",
                             "model":"",
                             "vendor":"MetalWork",
-                            "action":"LeftPusherFront",
+                            "action":"TroleyPusherFront",
                             "address":"O17",
                             "voltage":24,
                             "current":0.2,
@@ -99,7 +99,7 @@
                             "type":"DC",
                             "model":"",
                             "vendor":"MetalWork",
-                            "action":"LeftPusherBack",
+                            "action":"TroleyPusherBack",
                             "address":"O18",
                             "voltage":24,
                             "current":0.2,
@@ -114,7 +114,7 @@
                     "type":"reed",
                     "model":"",
                     "vendor":"MetalWork",
-                    "action":"LeftPusherFront",
+                    "action":"TroleyPusherFront",
                     "address":"I24",
                     "voltage":24,
                     "current":0.1
@@ -125,54 +125,11 @@
                     "type":"reed",
                     "model":"",
                     "vendor":"MetalWork",
-                    "action":"LeftPusherBack",
+                    "action":"TroleyPusherBack",
+                    "tandem":"TroleyPusher2Back",
                     "address":"I23",
                     "voltage":24,
                     "current":0.1
-                }
-            ]
-        },
-        {
-            "class":"Piston",
-            "name":"Right Pusher",
-            "type":"Double acting",
-            "model":"",
-            "vendor":"MetalWork",
-            "objects":[
-                {
-                    "class":"Valve",
-                    "name":"",
-                    "type":"5/3OC",
-                    "model":"",
-                    "vendor":"MetalWork",
-                    "objects":[
-                        {
-                            "class":"Coil",
-                            "name":"",
-                            "type":"DC",
-                            "model":"",
-                            "vendor":"MetalWork",
-                            "action":"RightPusherFront",
-                            "address":"O17",
-                            "voltage":24,
-                            "current":0.2,
-                            "nosensor":false,
-                            "timeout":10
-                        },
-                        {
-                            "class":"Coil",
-                            "name":"",
-                            "type":"DC",
-                            "model":"",
-                            "vendor":"MetalWork",
-                            "action":"RightPusherBack",
-                            "address":"O18",
-                            "voltage":24,
-                            "current":0.2,
-                            "nosensor":false,
-                            "timeout":10
-                        }
-                    ]
                 },
                 {
                     "class":"Sensor",
@@ -180,7 +137,8 @@
                     "type":"reed",
                     "model":"",
                     "vendor":"MetalWork",
-                    "action":"RightPusherFront",
+                    "action":"TroleyPusher2Front",
+                    "tandem":"TroleyPusher2Front",
                     "address":"I26",
                     "voltage":24,
                     "current":0.1
@@ -191,7 +149,7 @@
                     "type":"reed",
                     "model":"",
                     "vendor":"MetalWork",
-                    "action":"RightPusherBack",
+                    "action":"TroleyPusher2Back",
                     "address":"I25",
                     "voltage":24,
                     "current":0.1

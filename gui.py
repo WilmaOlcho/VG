@@ -13,7 +13,7 @@ class IOBar(tk.LabelFrame):
             if i//4 > len(Frames)-1:
                 Frames.append(tk.Frame(master = self))
                 currentFrame = Frames[i//4]
-            if 'I' in key:
+            if True:#'I' in key:
                 self.configure(text = text)
                 self.elements[key] =  tk.Canvas(currentFrame, bg='black', width = 20, height = 20)
                 lblval = tk.StringVar()
@@ -39,10 +39,7 @@ class IOBar(tk.LabelFrame):
     def Update(self):
         for key in self.elements.keys():
             self.locker[0].lock.acquire()
-            if 'I' in key:
-                self.elements[key].configure(bg='green' if self.locker[0].shared[self.masterkey][key] else 'black')
-            elif not self.locker[0].shared[self.masterkey][key] == self.elements[key].get():
-                self.elements[key].set(self.locker[0].shared[self.masterkey][key])
+            self.elements[key].configure(bg='green' if self.locker[0].shared[self.masterkey][key] else 'black')
             self.locker[0].lock.release()
 
 class ScrolledTextbox(tk.LabelFrame):
@@ -69,10 +66,10 @@ class ScrolledTextbox(tk.LabelFrame):
         self.locker[0].lock.acquire()
         text = self.locker[0].shared[self.masterkey]
         self.locker[0].lock.release()
-        if isinstance(text,list):
-            vlist, text = text, ''
+        if not isinstance(text,str):
+            vlist, text = list(text), ''
             for item in vlist:
-                text += item
+                text += item + '\n'
         if self.vtext != text:
             vpos, hpos = self.vsb.get(), self.hsb.get()
             prevw, prevh = self.text.winfo_width(), self.text.winfo_height()
@@ -120,11 +117,17 @@ class PistonControl(tk.Frame):
     def Left(self):
         self.locker[0].lock.acquire()
         self.locker[0].pistons[self.elements['Left']['coil']] = not self.locker[0].pistons[self.elements['Left']['coil']]
+        if 'Right' in self.elements:
+            if 'sensor' in self.elements['Right']: 
+                self.locker[0].pistons[self.elements['Right']['coil']] = False
         self.locker[0].lock.release()
 
     def Right(self):
         self.locker[0].lock.acquire()
         self.locker[0].pistons[self.elements['Right']['coil']] = not self.locker[0].pistons[self.elements['Right']['coil']]
+        if 'Left' in self.elements:
+            if 'sensor' in self.elements['Left']: 
+                self.locker[0].pistons[self.elements['Left']['coil']] = False
         self.locker[0].lock.release()
 
     def Center(self):
@@ -249,6 +252,13 @@ class console(object):
             bar.Update()
         self.textbox.Update()
         self.textbox2.Update()
+        self.locker[0].lock.acquire()
+        Spos = self.locker[0].servo['positionNumber']
+        Muxchan = self.locker[0].mux['Channel']
+        Muxready = self.locker[0].mux['ready']
+        self.locker[0].lock.release()
+        self.servopos.configure(text = 'ServoPos ' + str(Spos))
+        self.channelactive.configure(text = 'Channel ' + str(Muxchan) + (' and ready' if Muxready else ''))
         self.root.after(300,self.timerloop)
 
     def Wclose(self):
@@ -270,22 +280,26 @@ class console(object):
         self.lastact = ''
         self.root.wm_title('debug window')
         self.textbox = ScrolledTextbox(self.locker, master = self.root, width = 100, height = 10)
-        self.textbox2 = ScrolledTextbox(self.locker,masterkey = 'wdt', text = 'WDT', master = self.root, width = 100, height = 10)
-        pistonbaritems = ['Seal', 'LeftPusher', 'RightPusher', 'ShieldingGas', 'HeadCooling', 'CrossJet', 'Air', 'Vacuum']
-        estuncommands = ['homing', 'step', 'reset']
+        self.textbox2 = ScrolledTextbox(self.locker,masterkey = 'wdt', text = 'WDT', master = self.root, width = 33, height = 10)
+        pistonbaritems = ['Seal', 'TroleyPusher', 'ShieldingGas', 'HeadCooling', 'CrossJet', 'Air', 'Vacuum']
+        estuncommands = ['homing', 'step', 'reset', 'run', 'stop']
         self.locker[0].lock.acquire()
         self.IOFrame = tk.Frame(self.root)
         self.bars = [
-            IOBar(self.locker, side = tk.LEFT, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))), master = self.IOFrame),
-            IOBar(self.locker, side = tk.LEFT, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))), master = self.IOFrame)]
+            IOBar(self.locker, text = 'Robot Inputs', side = tk.LEFT, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))), master = self.IOFrame),
+            IOBar(self.locker, text = 'Robot Outputs', side = tk.LEFT, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))), master = self.IOFrame)]
         self.locker[0].lock.release()
         self.bars.append(PistonBar(self.locker, side= tk.LEFT, elements = pistonbaritems, master = self.IOFrame))
         self.estunandlaser = tk.Frame(self.IOFrame)
-        self.bars.append(IOBar(self.locker, text='estunIO', masterkey='estunModbus', side = tk.LEFT, elements = dict(list(filter((lambda item: True if len(item[0])==2 else False), self.locker[0].estunModbus.items()))), master = self.estunandlaser))
-        self.bars.append(EstunBar(self.locker, side= tk.TOP, elements = {item:None for item in estuncommands}, master = self.estunandlaser))
+        self.servopos = tk.Label(master = self.estunandlaser, text = '')
+        self.channelactive = tk.Label(master = self.estunandlaser, text = '')
+        self.bars.append(IOBar(self.locker, text='Servo State', masterkey='servo', side = tk.LEFT, elements = dict(list(filter((lambda item: True if item[0] in ['active','moving'] else False), self.locker[0].servo.items()))), master = self.estunandlaser))
+        self.bars.append(EstunBar(self.locker, side= tk.TOP, text = 'Servo ', elements = {item:None for item in estuncommands}, master = self.estunandlaser, lockerkey = 'servo'))
         self.bars.append(EstunBar(self.locker, side= tk.TOP, text = 'Laser ', elements = {'SetChannel':None}, master = self.estunandlaser, lockerkey = 'lcon'))
         for bar in filter(lambda item:isinstance(item,EstunBar),self.bars):
             bar.pack(side=tk.TOP, anchor = tk.NW)
+        self.servopos.pack()
+        self.channelactive.pack()
         self.estunandlaser.pack(side=tk.LEFT, anchor = tk.NW)
         for bar in filter(lambda item:isinstance(item,IOBar),self.bars):
             bar.pack(side=tk.LEFT, anchor = tk.NW)
@@ -293,7 +307,7 @@ class console(object):
             bar.pack(side=tk.LEFT, anchor = tk.NW)
         self.IOFrame.grid(column=0, row=0, sticky=tk.W)
         self.textbox.grid(row=1)
-        self.textbox2.grid(row=2)
+        self.textbox2.grid(row=2, sticky = tk.W)
         
         self.root.after(100,self.timerloop)
 

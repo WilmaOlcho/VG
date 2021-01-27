@@ -14,7 +14,6 @@ class RobotVG(KawasakiVG):
                 lockerinstance[0].errorlevel[10] = True
                 lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Config file not found'
                 lockerinstance[0].lock.release()
-            self.timer = WDT()
             try:
                 self.IPAddress = self.parameters['RobotParameters']['IPAddress']
                 self.Port = self.parameters['RobotParameters']['Port']
@@ -114,7 +113,6 @@ class RobotVG(KawasakiVG):
                 lockerinstance[0].robot['activecommand'] = True
                 lockerinstance[0].robot['homing'] = False
                 lockerinstance[0].lock.release()
-                self.timer = WDT.WDT(lockerinstance, errToRaise = self.__class__ + 'RobotVG Homing time exceeded', errorlevel = 30, limitval = 20 )
             if go:
                 lockerinstance[0].lock.acquire()
                 spos = lockerinstance[0].robot['setpos']
@@ -125,26 +123,22 @@ class RobotVG(KawasakiVG):
                 lockerinstance[0].robot['activecommand'] = True
                 lockerinstance[0].robot['go'] = False
                 lockerinstance[0].lock.release()
-                self.timer = WDT.WDT(lockerinstance, errToRaise = self.__class__ + 'RobotVG moving time exceeded', errorlevel = 30, limitval = 20 )
             if setoffset:
                 self.write_register(lockerinstance, register = 'command', value = self.addresses['command_values']['setoffset'])
                 lockerinstance[0].lock.acquire()
                 lockerinstance[0].robot['activecommand'] = True
                 lockerinstance[0].robot['setoffset'] = False
                 lockerinstance[0].lock.release()
-                self.timer = WDT.WDT(lockerinstance, errToRaise = self.__class__ + 'RobotVG offsetting time exceeded', errorlevel = 30, limitval = 20 )
             if goonce:
                 self.write_register(lockerinstance, register = 'command', value = self.addresses['command_values']['goonce'])
                 lockerinstance[0].lock.acquire()
                 lockerinstance[0].robot['activecommand'] = True
                 lockerinstance[0].robot['goonce'] = False
                 lockerinstance[0].lock.release()
-                self.timer = WDT.WDT(lockerinstance,  errToRaise = self.__class__ + 'RobotVG moving once time exceeded', errorlevel = 30, limitval = 20 )
         else:
             if self.read_holding_registers(lockerinstance, registerToStartFrom = 'command') == 0:
                 lockerinstance[0].lock.acquire()
                 lockerinstance[0].robot['activecommand'] = False
-                if self.timer.active: self.timer.Destroy()
 
     def _bits(self, values = [16*False], le = False):
         if isinstance(values, list):

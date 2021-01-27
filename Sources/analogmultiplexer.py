@@ -38,6 +38,9 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
     def getState(self, lockerinstance):
         try:
             self.currentState = self.read_coils(lockerinstance, input = 'DO0', NumberOfCoils = 3)
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].mux['ready'] = self.currentState.bits[self.myOutput]
+            lockerinstance[0].lock.acquire()
             return self.currentState.bits
         except:
             return -1

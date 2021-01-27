@@ -3,6 +3,7 @@ from Sources.StaticLock import SharedLocker
 from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
 from Sources.Kawasaki import RobotVG
 from Sources.Pneumatics import PneumaticsVG
+from Sources.Servo import Servo
 from gui import console
 from pathlib import Path
 
@@ -15,10 +16,12 @@ class ApplicationManager(object):
         self.AmuxConfigurationFile = path + 'amuxConfiguration.json'
         self.LconConfigurationFile = path + 'amuxConfiguration.json'
         self.RobotConfigurationFile = path + 'robotConfiguration.json'
+        self.ServoConfigurationFile = path + 'ServoSettings.json'
         self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
         self.processes = [
             Process(name = 'console', target = console, args=(self.lock,)),
             Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
+            Process(name = 'Servo', target = Servo, args=(self.lock, self.ServoConfigurationFile,)),
             Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
             Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
             Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,))
@@ -37,7 +40,7 @@ class ApplicationManager(object):
             self.lock[0].lock.release()
             if not self.ApplicationAlive:
                 self.lock[0].lock.acquire()
-                self.lock[0].estun['Alive'] = False
+                self.lock[0].servo['Alive'] = False
                 self.lock[0].mux['Alive'] = False
                 self.lock[0].robot['Alive'] = False
                 self.lock[0].pistons['Alive'] = False
