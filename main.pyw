@@ -1,5 +1,4 @@
 from multiprocessing import Process, current_process, freeze_support, set_start_method
-from Sources.Estun import MyEstun
 from Sources.StaticLock import SharedLocker
 from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
 from Sources.Kawasaki import RobotVG
@@ -13,14 +12,12 @@ class ApplicationManager(object):
         self.locker = SharedLocker()
         self.lock = {0:self.locker}
         path = str(Path(__file__).parent.absolute())+'\\'
-        self.ServoConfigurationFile = path + 'servoEstun.ini'
         self.AmuxConfigurationFile = path + 'amuxConfiguration.json'
         self.LconConfigurationFile = path + 'amuxConfiguration.json'
         self.RobotConfigurationFile = path + 'robotConfiguration.json'
         self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
         self.processes = [
             Process(name = 'console', target = console, args=(self.lock,)),
-            Process(name = 'MyEstun', target = MyEstun, args=(self.lock, self.ServoConfigurationFile,)),
             Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
             Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
             Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
