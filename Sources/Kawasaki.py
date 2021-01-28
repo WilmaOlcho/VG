@@ -29,7 +29,7 @@ class RobotVG(KawasakiVG):
                 lockerinstance[0].lock.acquire()
                 lockerinstance[0].robot['Alive'] = self.Alive
                 lockerinstance[0].lock.release()
-                self.IOtab = [[32*False],[32*False]]
+                self.IOtab = [32*[False],32*[False]]
                 self.Robotloop(lockerinstance)
                 break
             finally:
