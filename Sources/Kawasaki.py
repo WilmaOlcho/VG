@@ -29,6 +29,7 @@ class RobotVG(KawasakiVG):
                 lockerinstance[0].lock.acquire()
                 lockerinstance[0].robot['Alive'] = self.Alive
                 lockerinstance[0].lock.release()
+                self.IOtab = [[32*False],[32*False]]
                 self.Robotloop(lockerinstance)
                 break
             finally:
@@ -139,8 +140,9 @@ class RobotVG(KawasakiVG):
             if self.read_holding_registers(lockerinstance, registerToStartFrom = 'command') == 0:
                 lockerinstance[0].lock.acquire()
                 lockerinstance[0].robot['activecommand'] = False
+                lockerinstance[0].lock.release()
 
-    def _bits(self, values = [16*False], le = False):
+    def __bits(self, values = [16*False], le = False):
         if isinstance(values, list):
             if len(values) > 16:
                 values = values[:16]
@@ -159,47 +161,55 @@ class RobotVG(KawasakiVG):
             if not le: result = result[::-1] 
             return result
 
-    def IOControl(self, lockerinstance):
+    def __readcoils(self, lockerinstance, input = True):
         inputs = [] 
-        inputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'I1-16'))
-        inputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'I17-32'))
+        inputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'I1-16' if input else 'O1-16'))
+        inputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'I17-32'if input else 'O17-32'))
+        somethingchanged = False
+        output = ''
+        direction = ('I' if input else 'O')
+        IOtabdirection = (0 if input else 1)
         for i, reg in enumerate(inputs):
-            lockerinstance[0].lock.acquire()
-            bits = self._bits(reg)
+            bits = self.__bits(reg)
             for j in range(16):
-                lockerinstance[0].GPIO['I'+str(i*16+j+1)] = bits[j] 
-            lockerinstance[0].lock.release()
-        lockerinstance[0].lock.acquire()
-        somethingchanged = lockerinstance[0].GPIO['somethingChanged']
-        lockerinstance[0].lock.release()
-        def GPIO():
-            output = []
+                signalnumber = i*16+j+1
+                signal = direction + str(signalnumber)
+                lockerinstance[0].lock.acquire()
+                if lockerinstance[0].GPIO[signal] != bits[j]:
+                    lockerinstance[0].GPIO[signal] = bits[j]
+                    self.IOtab[IOtabdirection][signalnumber] = bits[j]
+                    somethingchanged = True
+                    output += signal + ' '
+                lockerinstance[0].lock.release()
+        if not input and somethingchanged:
             lockerinstance[0].lock.acquire()
-            for i in range(1,33):
-                output.append(lockerinstance[0].GPIO['O'+str(i)])
+            lockerinstance[0].events['OutputChangedByRobot'] = True
+            lockerinstance[0].events['OutputsChangedByRobot'] += output + ' '
             lockerinstance[0].lock.release()
-            return output
-        if somethingchanged:
-            output = GPIO()
-            if True: #switch to change sending format
-                for i in range(32):
-                    if i == 1-1 or i==27-1:
-                        continue
+
+    def __GPIO(self, lockerinstance, input = False):
+        output = []
+        direction = ('I' if input else 'O')
+        lockerinstance[0].lock.acquire()
+        for i in range(1,33):
+            output.append(lockerinstance[0].GPIO[direction+str(i)])
+        lockerinstance[0].lock.release()
+        return output
+
+    def IOControl(self, lockerinstance):
+        self.__readcoils(lockerinstance)        
+        lockerinstance[0].lock.acquire()
+        somethingchanged = lockerinstance[0].GPIO['somethingChanged'] 
+        lockerinstance[0].lock.release()
+        if somethingchanged: #signal changed by program
+            output = self.__GPIO(lockerinstance, input = False)
+            for i in range(32):
+                if i == 1-1 or i==27-1: #dedicated signals cant be picked up
+                    continue
+                if output[i] != self.IOtab[1][i]: #single coil writing instead of 32
                     self.write_coil(lockerinstance, Coil = 'DO' + str(i+1), value = output[i])
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO['somethingChanged'] = False
             lockerinstance[0].lock.release()
         else:
-            outputs = [] 
-            outputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'O1-16'))
-            outputs.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = 'O17-32'))
-            for i, reg in enumerate(outputs):
-                lockerinstance[0].lock.acquire()
-                bits = self._bits(reg)
-                for j in range(16):
-                    output = 'O'+str(i*16+j+1)
-                    if lockerinstance[0].GPIO[output] != bits[j]:
-                        lockerinstance[0].events['OutputChangedByRobot'] = True
-                        lockerinstance[0].events['OutputsChangedByRobot'] += output + ' '
-                        lockerinstance[0].GPIO[output] = bits[j] 
-                lockerinstance[0].lock.release()
+            self.__readcoils(lockerinstance, input = False)

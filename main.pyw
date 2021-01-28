@@ -47,7 +47,8 @@ class ApplicationManager(object):
                 self.lock[0].console['Alive'] = False
                 self.lock[0].lcon['Alive'] = False
                 self.lock[0].lock.release()
-                for process in self.processes: 
+                for process in self.processes:
+                    print(str(process))
                     process.join()
                 break
             self.errorcatching()

@@ -56,6 +56,7 @@ class Servo(object):
             lockerinstance[0].lock.release()
 
     def homing(self, lockerinstance):
+        if self.control['stepping']: return 0
         lockerinstance[0].lock.acquire()
         WDTActive = 'WDTServo Homing Time exceeded' in lockerinstance[0].wdt
         lockerinstance[0].lock.release()
@@ -87,6 +88,7 @@ class Servo(object):
             if servoIsRunning: self.control['homing'] = True
 
     def step(self, lockerinstance):
+        if self.control['homing']: return 0
         lockerinstance[0].lock.acquire()
         WDTActive = 'WDTServo Step Time exceeded' in lockerinstance[0].wdt
         lockerinstance[0].lock.release()
