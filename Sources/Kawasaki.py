@@ -172,12 +172,16 @@ class RobotVG(KawasakiVG):
         for i, reg in enumerate(inputs):
             bits = self.__bits(reg)
             for j in range(16):
+                lockerinstance[0].lock.acquire()
+                somethingchangedFromProgram = lockerinstance[0].GPIO['somethingChanged'] 
+                lockerinstance[0].lock.release()
+                if somethingchangedFromProgram: self.__changedstate(lockerinstance)
                 signalnumber = i*16+j+1
                 signal = direction + str(signalnumber)
                 lockerinstance[0].lock.acquire()
                 if lockerinstance[0].GPIO[signal] != bits[j]:
                     lockerinstance[0].GPIO[signal] = bits[j]
-                    self.IOtab[IOtabdirection][signalnumber] = bits[j]
+                    self.IOtab[IOtabdirection][signalnumber-1] = bits[j]
                     somethingchanged = True
                     output += signal + ' '
                 lockerinstance[0].lock.release()
@@ -196,20 +200,17 @@ class RobotVG(KawasakiVG):
         lockerinstance[0].lock.release()
         return output
 
-    def IOControl(self, lockerinstance):
-        self.__readcoils(lockerinstance)        
+    def __changedstate(self, lockerinstance):
+        output = self.__GPIO(lockerinstance, input = False)
+        for i in range(32):
+            if i == 1-1 or i==27-1: #dedicated signals cant be picked up
+                continue
+            if output[i] != self.IOtab[1][i]: #single coil writing instead of 32
+                self.write_coil(lockerinstance, Coil = 'DO' + str(i+1), value = output[i])
         lockerinstance[0].lock.acquire()
-        somethingchanged = lockerinstance[0].GPIO['somethingChanged'] 
+        lockerinstance[0].GPIO['somethingChanged'] = False
         lockerinstance[0].lock.release()
-        if somethingchanged: #signal changed by program
-            output = self.__GPIO(lockerinstance, input = False)
-            for i in range(32):
-                if i == 1-1 or i==27-1: #dedicated signals cant be picked up
-                    continue
-                if output[i] != self.IOtab[1][i]: #single coil writing instead of 32
-                    self.write_coil(lockerinstance, Coil = 'DO' + str(i+1), value = output[i])
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].GPIO['somethingChanged'] = False
-            lockerinstance[0].lock.release()
-        else:
+
+    def IOControl(self, lockerinstance):    
+            self.__readcoils(lockerinstance)
             self.__readcoils(lockerinstance, input = False)

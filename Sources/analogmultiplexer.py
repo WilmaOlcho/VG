@@ -40,7 +40,8 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
             self.currentState = self.read_coils(lockerinstance, input = 'DO0', NumberOfCoils = 3)
             lockerinstance[0].lock.acquire()
             lockerinstance[0].mux['ready'] = self.currentState.bits[self.myOutput]
-            lockerinstance[0].lock.acquire()
+            lockerinstance[0].mux['Channel'] = (1 if bool(self.currentState.bits[0]) else 0) + (2 if bool(self.currentState.bits[1]) else 0)
+            lockerinstance[0].lock.release()
             return self.currentState.bits
         except:
             return -1

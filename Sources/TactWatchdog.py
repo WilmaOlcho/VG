@@ -61,6 +61,9 @@ class TactWatchdog(object):
                 event = lockerinstance[0].events[eventToCatch]
             lockerinstance[0].lock.release()
             if event:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].events[eventToCatch] = False
+                lockerinstance[0].lock.release()
                 additionalFuncOnCatch()
                 break
             if self.elapsed() >= limitval:
