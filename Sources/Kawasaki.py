@@ -1,6 +1,7 @@
 from Sources.modbusTCPunits import KawasakiVG
 from Sources.TactWatchdog import TactWatchdog as WDT
 from functools import lru_cache
+from threading import Thread
 import json
 
 class RobotVG(KawasakiVG):
@@ -179,12 +180,14 @@ class RobotVG(KawasakiVG):
                 signalnumber = i*16+j+1
                 signal = direction + str(signalnumber)
                 lockerinstance[0].lock.acquire()
-                if lockerinstance[0].GPIO[signal] != bits[j]:
+                currentcoil = lockerinstance[0].GPIO[signal]
+                if currentcoil != bits[j]:
                     lockerinstance[0].GPIO[signal] = bits[j]
+                lockerinstance[0].lock.release()
+                if currentcoil != bits[j]:
                     self.IOtab[IOtabdirection][signalnumber-1] = bits[j]
                     somethingchanged = True
                     output += signal + ' '
-                lockerinstance[0].lock.release()
         if not input and somethingchanged:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].events['OutputChangedByRobot'] = True
@@ -214,3 +217,52 @@ class RobotVG(KawasakiVG):
     def IOControl(self, lockerinstance):    
             self.__readcoils(lockerinstance)
             self.__readcoils(lockerinstance, input = False)
+
+class EventManager():
+    def __init__(self, lockerinstance, input = '', edge = None, event = ''):
+        self.input = input
+        self.edge = edge
+        self.event = event
+        lockerinstance[0].lock.acquire()
+        self.state = lockerinstance[0].GPIO[self.input]
+        self.Alive = lockerinstance[0].robot['Alive']
+        lockerinstance[0].lock.release()
+        self.loop(lockerinstance)
+
+    def loop(self, lockerinstance):
+        while self.Alive:
+            lockerinstance[0].lock.acquire()
+            self.Alive = lockerinstance[0].robot['Alive']
+            currentstate = lockerinstance[0].GPIO[self.input]
+            lockerinstance[0].lock.release()
+            if not self.edge:
+                if currentstate:
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].events[self.event] = True
+                    lockerinstance[0].lock.release()
+                    break
+            elif self.edge == 'rising':
+                if self.state:
+                    lockerinstance[0].lock.acquire()
+                    self.state = lockerinstance[0].GPIO[self.input]
+                    lockerinstance[0].lock.release()
+                elif currentstate:
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].events[self.event] = True
+                    lockerinstance[0].lock.release()
+                    break
+            elif self.edge == 'falling':
+                if not self.state:
+                    lockerinstance[0].lock.acquire()
+                    self.state = lockerinstance[0].GPIO[self.input]
+                    lockerinstance[0].lock.release()
+                elif not currentstate:
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].events[self.event] = True
+                    lockerinstance[0].lock.release()
+                    break
+    
+    @classmethod
+    def AdaptEvent(cls, lockerinstance, input = '', edge = None, event = ''):
+        EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event,))
+        EventThread.start()
