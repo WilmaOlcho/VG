@@ -29,3 +29,6 @@ build/main/xref-main.html
 main.spec
 __pycache__/gui.cpython-37.pyc
 __pycache__/main.cpython-37.pyc
+Sources/__pycache__/Servo.cpython-37.pyc
+Sources/__pycache__/__init__.cpython-37.pyc
+debug.log
