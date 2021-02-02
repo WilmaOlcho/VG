@@ -1,7 +1,7 @@
 import json
-from Sources.misc import ErrorEventWrite
+from Sources import ErrorEventWrite
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources.Kawasaki import EventManager
+from Sources import EventManager
 
 class Servo(object):
     def __init__(self, lockerinstance, jsonfile, *args, **kwargs):

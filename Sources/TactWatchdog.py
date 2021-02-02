@@ -1,6 +1,6 @@
 import time
 import threading as thr
-from Sources.misc import BlankFunc, writeInLambda, dictKeyByVal, ErrorEventWrite
+from Sources import BlankFunc, writeInLambda, dictKeyByVal, ErrorEventWrite
 from Sources.StaticLock import SharedLocker
 
 class TactWatchdog(object):

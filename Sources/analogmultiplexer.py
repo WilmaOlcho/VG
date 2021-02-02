@@ -1,7 +1,7 @@
 from Sources.modbusTCPunits import ADAMDataAcquisitionModule
 import json
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources.misc import BlankFunc, ErrorEventWrite
+from Sources import BlankFunc, ErrorEventWrite
 import time
 
 class AnalogMultiplexer(ADAMDataAcquisitionModule):
