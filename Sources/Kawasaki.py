@@ -147,6 +147,8 @@ class RobotVG(KawasakiVG):
         if isinstance(values, list):
             if len(values) > 16:
                 values = values[:16]
+            elif len(values) < 16:
+                values.extend((16-len(values))*[False])
             result = 0b0000000000000000
             if le: values = values[::-1]
             for i, val in enumerate(values):
@@ -171,11 +173,13 @@ class RobotVG(KawasakiVG):
         direction = ('I' if input else 'O')
         IOtabdirection = (0 if input else 1)
         lockerinstance[0].lock.acquire()
-        WDTActive = 'WDTsomethingchanged' in lockerinstance[0].wdt
+        WDTActive = 'WDT: somethingchanged' in lockerinstance[0].wdt
         lockerinstance[0].lock.release()
         if not WDTActive and not input:
-            EventManager.AdaptEvent(lockerinstance, input = 'somethingChanged', edge = 'rising', event = 'somethingchanged')
-            WDT.WDT(lockerinstance, additionalFuncOnCatch = lambda obj = self, lock = lockerinstance: obj.__changedstate(lock), scale = 'm', limitval = 10, errToRaise = 'somethingchanged', eventToCatch= 'somethingchanged', noerror = True)
+            def startcatchfunction(object = self, lockerinstance = lockerinstance):
+                object.__changedstate(lockerinstance)
+            EventManager.AdaptEvent(lockerinstance, input = 'somethingChanged', event = 'somethingchanged')
+            WDT.WDT(lockerinstance, additionalFuncOnStart = startcatchfunction, additionalFuncOnCatch = startcatchfunction, scale = 'm', limitval = 10, errToRaise = 'somethingchanged', eventToCatch= 'somethingchanged', noerror = True)
         for i, reg in enumerate(inputs):
             bits = self.__bits(reg)
             for j in range(16):
