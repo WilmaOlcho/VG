@@ -97,7 +97,11 @@ class TactWatchdog(object):
             additionalFuncOnExceed = BlankFunc,
             noerror = False,
             *args, **kwargs):
-        timer = thr.Thread(target=cli().WDTloop, args = (lockerinstance,
+        lockerinstance[0].lock.acquire()
+        timerActive = 'WDT: '+errToRaise in lockerinstance[0].wdt
+        lockerinstance[0].lock.release()
+        if not timerActive:
+            timer = thr.Thread(target=cli().WDTloop, args = (lockerinstance,
                                                     limitval,
                                                     errToRaise,
                                                     caption, scale, errorlevel,
@@ -108,9 +112,9 @@ class TactWatchdog(object):
                                                     additionalFuncOnExceed,
                                                     noerror,
                                                     *args), daemon = True)
-        timer.setName('WDT' + errToRaise)
-        timer.start()
-        return timer.name
+            timer.setName('WDT: ' + errToRaise)
+            timer.start()
+            return timer.name
 
 if __name__=='__main__': ##Test
     lockerbaseinstance = SharedLocker()

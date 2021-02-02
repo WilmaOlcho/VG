@@ -66,8 +66,12 @@ class ScrolledTextbox(tk.LabelFrame):
         self.locker[0].lock.acquire()
         text = self.locker[0].shared[self.masterkey]
         self.locker[0].lock.release()
-        if not isinstance(text,str):
+        if text and not isinstance(text,str):
             vlist, text = list(text), ''
+            self.locker[0].lock.acquire()
+            ect = self.locker[0].shared['ect']
+            self.locker[0].lock.release()
+            vlist.extend(ect)
             for item in vlist:
                 text += item + '\n'
         if self.vtext != text:

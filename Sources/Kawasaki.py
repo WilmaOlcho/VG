@@ -1,7 +1,7 @@
 from Sources.modbusTCPunits import KawasakiVG
 from Sources.TactWatchdog import TactWatchdog as WDT
 from functools import lru_cache
-from threading import Thread
+from threading import Thread, currentThread
 import json
 
 class RobotVG(KawasakiVG):
@@ -170,21 +170,21 @@ class RobotVG(KawasakiVG):
         output = ''
         direction = ('I' if input else 'O')
         IOtabdirection = (0 if input else 1)
+        lockerinstance[0].lock.acquire()
+        WDTActive = 'WDTsomethingchanged' in lockerinstance[0].wdt
+        lockerinstance[0].lock.release()
+        if not WDTActive and not input:
+            EventManager.AdaptEvent(lockerinstance, input = 'somethingChanged', edge = 'rising', event = 'somethingchanged')
+            WDT.WDT(lockerinstance, additionalFuncOnCatch = lambda obj = self, lock = lockerinstance: obj.__changedstate(lock), scale = 'm', limitval = 10, errToRaise = 'somethingchanged', eventToCatch= 'somethingchanged', noerror = True)
         for i, reg in enumerate(inputs):
             bits = self.__bits(reg)
             for j in range(16):
-                lockerinstance[0].lock.acquire()
-                somethingchangedFromProgram = lockerinstance[0].GPIO['somethingChanged'] 
-                lockerinstance[0].lock.release()
-                if somethingchangedFromProgram: self.__changedstate(lockerinstance)
                 signalnumber = i*16+j+1
                 signal = direction + str(signalnumber)
                 lockerinstance[0].lock.acquire()
-                currentcoil = lockerinstance[0].GPIO[signal]
-                if currentcoil != bits[j]:
-                    lockerinstance[0].GPIO[signal] = bits[j]
+                lockerinstance[0].GPIO[signal] = bits[j]
                 lockerinstance[0].lock.release()
-                if currentcoil != bits[j]:
+                if self.IOtab[IOtabdirection][signalnumber-1] != bits[j]:
                     self.IOtab[IOtabdirection][signalnumber-1] = bits[j]
                     somethingchanged = True
                     output += signal + ' '
@@ -226,13 +226,15 @@ class EventManager():
         lockerinstance[0].lock.acquire()
         self.state = lockerinstance[0].GPIO[self.input]
         self.Alive = lockerinstance[0].robot['Alive']
+        self.name = currentThread().name
+        lockerinstance[0].ect.append(self.name)
         lockerinstance[0].lock.release()
         self.loop(lockerinstance)
 
     def loop(self, lockerinstance):
         while self.Alive:
             lockerinstance[0].lock.acquire()
-            self.Alive = lockerinstance[0].robot['Alive']
+            self.Alive = lockerinstance[0].robot['Alive'] and self.name in lockerinstance[0].ect
             currentstate = lockerinstance[0].GPIO[self.input]
             lockerinstance[0].lock.release()
             if not self.edge:
@@ -261,8 +263,30 @@ class EventManager():
                     lockerinstance[0].events[self.event] = True
                     lockerinstance[0].lock.release()
                     break
+            elif self.edge == 'toggle':
+                if self.state != currentstate:
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].events[self.event] = True
+                    lockerinstance[0].lock.release()
+                    break
+        lockerinstance[0].lock.acquire()
+        if self.name in lockerinstance[0].ect: lockerinstance[0].ect.remove(self.name)
+        lockerinstance[0].lock.release()
     
     @classmethod
     def AdaptEvent(cls, lockerinstance, input = '', edge = None, event = ''):
-        EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event,))
-        EventThread.start()
+        lockerinstance[0].lock.acquire()
+        ectActive = str('EventCatcher: ' + event) in lockerinstance[0].ect
+        lockerinstance[0].lock.release()
+        if not ectActive:
+            EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event,))
+            EventThread.setName('EventCatcher: ' + event)
+            EventThread.start()
+
+    @classmethod
+    def DestroyEvent(cls, lockerinstance, event = ''):
+        eventname = 'EventCatcher: ' + event
+        lockerinstance[0].lock.acquire()
+        ectActive = eventname in lockerinstance[0].ect
+        if ectActive: lockerinstance[0].ect.remove(eventname)
+        lockerinstance[0].lock.release()

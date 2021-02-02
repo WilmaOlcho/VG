@@ -3,16 +3,37 @@ from multiprocessing import Manager, Lock, Array, Value
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
         manager = Manager()
+        self.inputs = Array('b',32*[False])
+        self.outputs = Array('b',32*[False])
+#        self.GPIO = {
+#            'I1': self.inputs[0], 'I2': self.inputs[1], 'I3': self.inputs[2], 'I4': self.inputs[3],
+#            'I5': self.inputs[4], 'I6': self.inputs[5], 'I7': self.inputs[6], 'I8': self.inputs[7],
+#            'I9': self.inputs[8], 'I10': self.inputs[9], 'I11': self.inputs[10], 'I12': self.inputs[11],
+#            'I13': self.inputs[12], 'I14': self.inputs[13], 'I15': self.inputs[14], 'I16': self.inputs[15],
+#            'I17': self.inputs[16], 'I18': self.inputs[17], 'I19': self.inputs[18], 'I20': self.inputs[19],
+#            'I21': self.inputs[20], 'I22': self.inputs[21], 'I23': self.inputs[22], 'I24': self.inputs[23],
+#            'I25': self.inputs[24], 'I26': self.inputs[25], 'I27': self.inputs[26], 'I28': self.inputs[27],
+#            'I29': self.inputs[28], 'I30': self.inputs[29], 'I31': self.inputs[30], 'I32': self.inputs[31],
+#            'O1': self.outputs[0], 'O2': self.outputs[1], 'O3': self.outputs[2], 'O4': self.outputs[3],
+#            'O5': self.outputs[4], 'O6': self.outputs[5], 'O7': self.outputs[6], 'O8': self.outputs[7],
+#            'O9': self.outputs[8], 'O10': self.outputs[9], 'O11': self.outputs[10], 'O12': self.outputs[11],
+#            'O13': self.outputs[12], 'O14': self.outputs[13], 'O15': self.outputs[14], 'O16': self.outputs[15],
+#            'O17': self.outputs[16], 'O18': self.outputs[17], 'O19': self.outputs[18], 'O20': self.outputs[19],
+#            'O21': self.outputs[20], 'O22': self.outputs[21], 'O23': self.outputs[22], 'O24': self.outputs[23],
+#            'O25': self.outputs[24], 'O26': self.outputs[25], 'O27': self.outputs[26], 'O28': self.outputs[27],
+#            'O29': self.outputs[28], 'O30': self.outputs[29], 'O31': self.outputs[30], 'O32': self.outputs[31]}
         self.shared = manager.dict({
             'Errors':'',
             'servoModuleFirstAccess':True,
             'configurationError':False,
             'TactWDT':False,
             'wdt':manager.list(),
+            'ect':manager.list(),
             'lcon':manager.dict({
                 'Alive':False,
                 'SetChannel':False}),
             'events':manager.dict({
+                'somethingchanged':False,
                 'ack':False,
                 'Error':False,
                 'stepComplete':False,
@@ -132,6 +153,7 @@ class SharedLocker(object):
             'SICKGMOD0':manager.dict({
                 'Alive':False})})
         self.wdt = self.shared['wdt']
+        self.ect = self.shared['ect']
         self.lcon = self.shared['lcon'] 
         self.lock = Lock()
         self.attempts = Value('i',4)
