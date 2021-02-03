@@ -32,3 +32,6 @@ __pycache__/main.cpython-37.pyc
 Sources/__pycache__/Servo.cpython-37.pyc
 Sources/__pycache__/__init__.cpython-37.pyc
 debug.log
+Sources/UI/__pycache__/Home.cpython-37.pyc
+Sources/UI/__pycache__/Settings.cpython-37.pyc
+Sources/UI/__pycache__/Table.cpython-37.pyc
