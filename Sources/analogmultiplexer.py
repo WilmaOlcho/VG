@@ -1,7 +1,7 @@
 from Sources.modbusTCPunits import ADAMDataAcquisitionModule
 import json
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources import BlankFunc, ErrorEventWrite
+from Sources import BlankFunc, ErrorEventWrite, Bits
 import time
 
 class AnalogMultiplexer(ADAMDataAcquisitionModule):
@@ -99,6 +99,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             self.IPAddress = self.LconParameters['IPAddress']
             self.moduleName = self.LconParameters['moduleName']
             self.Port = self.LconParameters['Port']
+            self.Bits = Bits()
         except Exception as e:
             errmessage = 'LaserControl init error - Error while reading config file' + str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
@@ -125,31 +126,12 @@ class LaserControl(ADAMDataAcquisitionModule):
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
             #raise LaserControlError(lockerinstance, errstring = errmessage)
 
-    def __bits(self, values = [4*False], le = False):
-        if isinstance(values, list):
-            if len(values) > 4:
-                values = values[:4]
-            result = 0b0000
-            if le: values = values[::-1]
-            for i, val in enumerate(values):
-                if val: result += pow(2,i)
-            return result
-        if isinstance(values, int):
-            values &= 0b1111
-            result = []
-            for i in range(4):
-                power = pow(2,3-i)
-                result.append(bool(values//power))
-                values &= 0b1111 ^ power
-            if not le: result = result[::-1] 
-            return result
-
     def __prohibitedBehaviour(self, lockerinstance, action = BlankFunc, *args, **kwargs):
         self.getState(lockerinstance)
         prohibited = False
         if action == self.write_coil:
             if args == ('DO'+str(self.LconParameters['LaserRequest']), True):
-                if self.__bits(self.currentState[-4:]) != self.LconParameters['MyOpticalChannel']:
+                if self.Bits.Bits(self.currentState[-4:]) != self.LconParameters['MyOpticalChannel']:
                     prohibited = True
             elif args == ('DO'+str(self.LconParameters['ResetError']), True):
                 if not self.currentState[0]:
@@ -165,7 +147,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
             #raise LaserControlError(lockerinstance, errstring = errmessage)
         try:
-            channel = self.__bits(self.LconParameters['MyOpticalChannel'])
+            channel = self.Bits.Bits(self.LconParameters['MyOpticalChannel'])
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit0']), channel[0])
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit1']), channel[1])
             self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit2']), channel[2])

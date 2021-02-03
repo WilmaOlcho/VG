@@ -3,6 +3,7 @@ from functools import wraps, partial
 from pymodbus.transaction import ModbusAsciiFramer
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from Sources.TactWatchdog import TactWatchdog as WDT
+from sources import Bits
 import re
 
 class ADAMModule(object):
@@ -1167,6 +1168,7 @@ class SICKGmod(FX0GMOD, ModbusClient):
         super().__init__(address, *args, **kwargs)
         self.InputDatablock = [[25*[0]],[16*[0]],[30*[0]],[30*[0]]]
         self.OutputDatablock = [5*[5*[0]]]
+        self.Bits = Bits(len = 16)
 
     def read_datablock(self, datablockNumber): ##TODO errorhandling
         datablockToDealWith = self.datablocks['ReqInputDataset'+str(datablockNumber)]
@@ -1179,27 +1181,6 @@ class SICKGmod(FX0GMOD, ModbusClient):
         if any(outputBlock):
             super().write_registers(datablockToDealWith, outputBlock)
 
-    def __bits(self, values = [16*False], le = False):
-        if isinstance(values, list):
-            if len(values) > 16:
-                values = values[:16]
-            result = 0b0000000000000000
-            if le: values = values[::-1]
-            for i, val in enumerate(values):
-                print(i,val)
-                if val: result += pow(2,i)
-                print(result)
-            return result
-        if isinstance(values, int):
-            values &= 0b1111111111111111
-            result = []
-            for i in range(16):
-                power = pow(2,15-i)
-                result.append(bool(values//power))
-                values &= 0b1111111111111111 ^ power
-            if not le: result = result[::-1] 
-            return result
-
     def read_coils(self, startCoil, numberOfCoils = 1):
         self.read_datablock(1)
         datablockToDealWith = self.InputDatablock[0] #GMOD000000 have one input dataset
@@ -1209,7 +1190,7 @@ class SICKGmod(FX0GMOD, ModbusClient):
         endbit = (startCoil+numberOfCoils)%16
         result = []
         for i, word in enumerate(datablockToDealWith[startword:len(datablockToDealWith)-1-endword]):
-            bitlist = self.__bits(word)
+            bitlist = self.Bits.Bits(word)
             if startword==endword:
                 bits = bitlist[startbit:len(bitlist)-1-endbit]
             else:
@@ -1260,9 +1241,9 @@ class SICKGmod(FX0GMOD, ModbusClient):
         wordToDealWith = coil//16 #bits per word
         bitToDealWith = coil%16
         valueToChange = self.OutputDatablock[datablockToDealWith][wordToDealWith]
-        bitlist = self.__bits(valueToChange)
+        bitlist = self.Bits.Bits(valueToChange)
         bitlist[bitToDealWith] = value
-        wordToWrite = self.__bits(bitlist)
+        wordToWrite = self.Bits.Bits(bitlist)
         self.OutputDatablock[datablockToDealWith][wordToDealWith] = wordToWrite
         self.write_datablock(datablockToDealWith+1) #numbers of datablocks in GMOD registers are starting from 1
 

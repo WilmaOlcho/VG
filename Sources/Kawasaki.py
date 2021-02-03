@@ -1,13 +1,15 @@
 from Sources.modbusTCPunits import KawasakiVG
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources import EventManager
+from Sources import EventManager, ErrorEventWrite, Bits
 from functools import lru_cache
 from threading import Thread, currentThread
 import json
 
 class RobotVG(KawasakiVG):
     def __init__(self, lockerinstance, configFile='', *args, **kwargs):
-        while True:
+        self.bitconverter = Bits(len=16)
+        self.Alive = True
+        while self.Alive:
             try:
                 self.parameters = json.load(open(configFile))
             except:
@@ -27,18 +29,15 @@ class RobotVG(KawasakiVG):
                 lockerinstance[0].lock.release()
             else:
                 super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
-                self.Alive = True
                 lockerinstance[0].lock.acquire()
                 lockerinstance[0].robot['Alive'] = self.Alive
                 lockerinstance[0].lock.release()
                 self.IOtab = [32*[False],32*[False]]
                 self.Robotloop(lockerinstance)
-                break
             finally:
                 lockerinstance[0].lock.acquire()
-                letdie = lockerinstance[0].events['closeApplication']
+                self.Alive = lockerinstance[0].robot['Alive']
                 lockerinstance[0].lock.release()
-                if letdie: break
 
     def Robotloop(self, lockerinstance):
         while self.Alive:
@@ -57,8 +56,8 @@ class RobotVG(KawasakiVG):
         ##TODO There are statusRegisters for forbidden operation
         pass
 
-    @lru_cache(maxsize = 16)
-    def _splitdecimals(self, floatval):
+    @lru_cache(maxsize = 64)
+    def __splitdecimals(self, floatval):
         result = []
         result.append(int(floatval))
         result.append(int((floatval-result[0])*100))
@@ -72,98 +71,53 @@ class RobotVG(KawasakiVG):
                     'StatusRegister6']:
             RobotRegister.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = reg))
         if len(RobotRegister) == 16:
+            axisValues = {'A':[0,0], 'X':[0,0], 'Y':[0,0], 'Z':[0,0]}
             lockerinstance[0].lock.acquire()
             lockerinstance[0].robot['currentpos'] = RobotRegister[0]
-            A, X = self._splitdecimals(lockerinstance[0].robot['A']), self._splitdecimals(lockerinstance[0].robot['X'])
-            Y, Z = self._splitdecimals(lockerinstance[0].robot['Y']), self._splitdecimals(lockerinstance[0].robot['Z'])
-            lockerinstance[0].robot['StatusRegister0'] = RobotRegister[9]
-            lockerinstance[0].robot['StatusRegister1'] = RobotRegister[10]
-            lockerinstance[0].robot['StatusRegister2'] = RobotRegister[11]
-            lockerinstance[0].robot['StatusRegister3'] = RobotRegister[12]
-            lockerinstance[0].robot['StatusRegister4'] = RobotRegister[13]
-            lockerinstance[0].robot['StatusRegister5'] = RobotRegister[14]
-            lockerinstance[0].robot['StatusRegister6'] = RobotRegister[15]
+            for axis in axisValues.keys():
+                axisValues[axis] = self.__splitdecimals(lockerinstance[0].robot[axis])
+            for i, status in enumerate(RobotRegister[9:][:7]):
+                lockerinstance[0].robot['StatusRegister' + str(i)] = status
             lockerinstance[0].lock.release()
-            if A[0] != RobotRegister[1]:
-                self.write_register(lockerinstance, register = 'A', value = RobotRegister[1])
-            if A[1] != RobotRegister[2]:
-                self.write_register(lockerinstance, register = '00A', value = RobotRegister[2])
-            if X[0] != RobotRegister[3]:
-                self.write_register(lockerinstance, register = 'X', value = RobotRegister[3])
-            if X[1] != RobotRegister[4]:
-                self.write_register(lockerinstance, register = '00X', value = RobotRegister[4])
-            if Y[0] != RobotRegister[5]:
-                self.write_register(lockerinstance, register = 'Y', value = RobotRegister[5])
-            if Y[1] != RobotRegister[6]:
-                self.write_register(lockerinstance, register = '00Y', value = RobotRegister[6])
-            if Z[0] != RobotRegister[7]:
-                self.write_register(lockerinstance, register = 'Z', value = RobotRegister[7])
-            if Z[1] != RobotRegister[8]:
-                self.write_register(lockerinstance, register = '00Z', value = RobotRegister[8])
+            for i, register, axis in enumerate([[RobotRegister[1:][:8][x], [2*['A'],2*['X'],2*['Y'],2*['Z']][x]] for x in range(len(RobotRegister[1:][:8]))]):
+                if i%2:
+                    if axisValues[axis][0] != register:
+                        self.write_register(lockerinstance, register = axis, value = register)
+                else:
+                    self.write_register(lockerinstance, register = '00'+axis, value = register)
+
+    def __Command(self, lockerinstance, command = ''):
+        command_u = command[:1].upper() + command[1:]
+        commandevent = 'Robot'+command_u+'Complete'
+        def funconstart(object = self, lockerinstance = lockerinstance):
+            self.write_register(lockerinstance, register = 'command', value = object.addresses['command_values'][command])
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['activecommand'] = True
+            lockerinstance[0].lock.release()
+            EventManager.AdaptEvent(lockerinstance, input = '-robot.activecommand', event = commandevent)
+        def funconexceed(lockerinstance = lockerinstance):
+            EventManager.DestroyEvent(lockerinstance, event = commandevent)
+        WDT.WDT(lockerinstance, additionalFuncOnStart = funconstart, additionalFuncOnExceed = funconexceed, limitval = 30, scale = 's', errToRaise = 'Robot '+command_u+' time exceeded', eventToCatch = commandevent)
 
     def CommandControl(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        activecommand = lockerinstance[0].robot['activecommand']
-        lockerinstance[0].lock.release()
+        activecommand = self.read_holding_registers(lockerinstance, registerToStartFrom = 'command')
         if not activecommand:
             lockerinstance[0].lock.acquire()
-            homing, go = lockerinstance[0].robot['homing'], lockerinstance[0].robot['go']
-            setoffset, goonce = lockerinstance[0].robot['setoffset'], lockerinstance[0].robot['goonce']
+            homing, go, setoffset, goonce = [lockerinstance[0].robot[x] for x in ['homing', 'go', 'setoffset', 'goonce']]
+            for x in ['homing', 'go', 'setoffset', 'goonce']: lockerinstance[0].robot[x] = False
             lockerinstance[0].lock.release()
             if homing:
-                self.write_register(lockerinstance, register = 'command', value = self.addresses['command_values']['homing'])
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].robot['activecommand'] = True
-                lockerinstance[0].robot['homing'] = False
-                lockerinstance[0].lock.release()
+                self.__Command(lockerinstance, command = 'homing')
             if go:
                 lockerinstance[0].lock.acquire()
                 spos = lockerinstance[0].robot['setpos']
                 lockerinstance[0].lock.release()
                 self.write_register(lockerinstance, register = 'DestinationPositionNumber', value = spos)
-                self.write_register(lockerinstance, register = 'command', value = self.addresses['command_values']['go'])
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].robot['activecommand'] = True
-                lockerinstance[0].robot['go'] = False
-                lockerinstance[0].lock.release()
+                self.__Command(lockerinstance, command = 'go')
             if setoffset:
-                self.write_register(lockerinstance, register = 'command', value = self.addresses['command_values']['setoffset'])
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].robot['activecommand'] = True
-                lockerinstance[0].robot['setoffset'] = False
-                lockerinstance[0].lock.release()
+                self.__Command(lockerinstance, command = 'setoffset')
             if goonce:
-                self.write_register(lockerinstance, register = 'command', value = self.addresses['command_values']['goonce'])
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].robot['activecommand'] = True
-                lockerinstance[0].robot['goonce'] = False
-                lockerinstance[0].lock.release()
-        else:
-            if self.read_holding_registers(lockerinstance, registerToStartFrom = 'command') == 0:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].robot['activecommand'] = False
-                lockerinstance[0].lock.release()
-
-    def __bits(self, values = [16*False], le = False):
-        if isinstance(values, list):
-            if len(values) > 16:
-                values = values[:16]
-            elif len(values) < 16:
-                values.extend((16-len(values))*[False])
-            result = 0b0000000000000000
-            if le: values = values[::-1]
-            for i, val in enumerate(values):
-                if val: result += pow(2,i)
-            return result
-        if isinstance(values, int):
-            values &= 0b1111111111111111
-            result = []
-            for i in range(16):
-                power = pow(2,15-i)
-                result.append(bool(values//power))
-                values &= 0b1111111111111111 ^ power
-            if not le: result = result[::-1] 
-            return result
+                self.__Command(lockerinstance, command = 'goonce')
 
     def __readcoils(self, lockerinstance, input = True):
         inputs = [] 
@@ -182,7 +136,7 @@ class RobotVG(KawasakiVG):
             EventManager.AdaptEvent(lockerinstance, input = 'somethingChanged', event = 'somethingchanged')
             WDT.WDT(lockerinstance, additionalFuncOnStart = startcatchfunction, additionalFuncOnCatch = startcatchfunction, scale = 'm', limitval = 10, errToRaise = 'somethingchanged', eventToCatch= 'somethingchanged', noerror = True)
         for i, reg in enumerate(inputs):
-            bits = self.__bits(reg)
+            bits = self.bitconverter.Bits(reg)
             for j in range(16):
                 signalnumber = i*16+j+1
                 signal = direction + str(signalnumber)

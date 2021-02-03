@@ -23,7 +23,17 @@ def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255):
 
 class EventManager():
     def __init__(self, lockerinstance, input = '', edge = None, event = ''):
-        self.input = input
+        if input and input[0] == '-':
+            self.sign = True
+            input = input[1:]
+        else :
+            self.sign = False
+        if '.' in input:
+            path = input.split('.')
+            evalstring = 'lockerinstance[0].' + path[:-1] + '["' + path[::-1][:1] + '"]'
+            self.input = eval(evalstring)
+        else:
+            self.input = input
         self.edge = edge
         self.event = event
         lockerinstance[0].lock.acquire()
@@ -38,10 +48,10 @@ class EventManager():
         while self.Alive:
             lockerinstance[0].lock.acquire()
             self.Alive = lockerinstance[0].robot['Alive'] and self.name in lockerinstance[0].ect
-            currentstate = lockerinstance[0].GPIO[self.input]
+            currentstate = bool(lockerinstance[0].GPIO[self.input])
             lockerinstance[0].lock.release()
             if not self.edge:
-                if currentstate:
+                if (currentstate ^ self.sign):
                     lockerinstance[0].lock.acquire()
                     lockerinstance[0].events[self.event] = True
                     lockerinstance[0].lock.release()
@@ -93,3 +103,45 @@ class EventManager():
         ectActive = eventname in lockerinstance[0].ect
         if ectActive: lockerinstance[0].ect.remove(eventname)
         lockerinstance[0].lock.release()
+
+class Bits():
+    def __init__(self, len = 4, LE = False):
+        self.le = LE
+        self.len = len
+        self.ones = 0
+        for i in range(self.len):
+            self.ones += pow(2,len-1-i)
+
+    def IntToBitlist(self, integer = 0):
+        integer &= self.ones
+        result = []
+        for i in range(self.len):
+            power = pow(2,self.len-1-i)
+            result.append(bool(integer//power))
+            integer &= self.ones ^ power
+        if not self.le:
+            result = result[::-1]
+        return result
+    
+    def BitListToInt(self, bitlist = [4*[False]]):
+        if len(bitlist) > self.len:
+            bitlist = bitlist[:self.len]
+        elif len(bitlist) < self.len:
+            bitlist.extend((self.len-len(bitlist))*[False])
+        result = 0b0
+        if self.le: bitlist = bitlist[::-1]
+        for i, val in enumerate(bitlist):
+            if val:
+                result += pow(2,i)
+        return result
+
+    def Bits(self, values = [4*False]):
+        if isinstance(values, list):
+            result = self.BitListToInt(values)
+        elif isinstance(values, int):
+            result = self.IntToBitlist(values)
+        else:
+            result = TypeError('Bits cannot be' + str(values))
+        return result
+
+            
