@@ -37,7 +37,9 @@ class RobotVG(KawasakiVG):
             finally:
                 lockerinstance[0].lock.acquire()
                 self.Alive = lockerinstance[0].robot['Alive']
+                closeapp = lockerinstance[0].events['closeApplication']
                 lockerinstance[0].lock.release()
+                if closeapp: break
 
     def Robotloop(self, lockerinstance):
         while self.Alive:

@@ -59,8 +59,9 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.myOutput), True)):
             try:
                 self.write_coil(lockerinstance, coil = 'DO'+str(self.myOutput), value = True)
-            except:
-                pass
+            except Exception as e:
+                errmessage = 'AnalogMultiplexer Error - setPath Error' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
             raise AnalogMultiplexerError(lockerinstance, args = ('setPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
@@ -68,8 +69,9 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         if self.getState(lockerinstance)[self.myOutput] and not self.isBusy(lockerinstance):
             try:
                 self.write_coil(lockerinstance, coil = 'DO'+str(self.myOutput), value = False)
-            except:
-                pass
+            except Exception as e:
+                errmessage = 'AnalogMultiplexer Error - resetPath Error' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
             raise AnalogMultiplexerError(lockerinstance, args = ('resetPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
@@ -77,8 +79,9 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(2), True)):
             try:
                 self.write_coil(lockerinstance, coil = 'DO'+str(2), value = True)
-            except:
-                pass
+            except Exception as e:
+                errmessage = 'AnalogMultiplexer Error - activatePath Error' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
             raise AnalogMultiplexerError(lockerinstance, args = ('activatePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
@@ -86,8 +89,9 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
         if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(2), False)):
             try:
                 self.write_coil(lockerinstance, coil = 'DO'+str(2), value = False)
-            except:
-                pass
+            except Exception as e:
+                errmessage = 'AnalogMultiplexer Error - releasePath Error' + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
             raise AnalogMultiplexerError(lockerinstance, args = ('releasePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
 
@@ -113,14 +117,10 @@ class LaserControl(ADAMDataAcquisitionModule):
     def getState(self, lockerinstance):
         try:
             state = []
-            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['ResetError'])))
-            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['LaserRequest'])))
-            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit0'])))
-            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit1'])))
-            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit2'])))
-            state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters['OpticalChannelbit3'])))
+            for coil in ['ResetError','LaserRequest','OpticalChannelbit0','OpticalChannelbit1','OpticalChannelbit2','OpticalChannelbit3']:
+                state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters[coil])))
             self.currentState = state
-            return self.currentState
+            return state
         except Exception as e:
             errmessage = "getState Error:\n"+ str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
@@ -148,10 +148,8 @@ class LaserControl(ADAMDataAcquisitionModule):
             #raise LaserControlError(lockerinstance, errstring = errmessage)
         try:
             channel = self.Bits.Bits(self.LconParameters['MyOpticalChannel'])
-            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit0']), channel[0])
-            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit1']), channel[1])
-            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit2']), channel[2])
-            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit3']), channel[3])
+            for i in range(4):
+                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit'+str(i)]), channel[i])
             time.sleep(0.1)
         except Exception as e:
             errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
@@ -190,7 +188,8 @@ class LaserControl(ADAMDataAcquisitionModule):
 
 class MyMultiplexer(AnalogMultiplexer):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
-        while True:
+        self.Alive = True
+        while self.Alive:
             try:
                 super().__init__(lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
             except Exception as e:
@@ -198,14 +197,13 @@ class MyMultiplexer(AnalogMultiplexer):
                 ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             else:
                 lockerinstance[0].lock.acquire()
-                lockerinstance[0].mux['Alive'] = True
+                lockerinstance[0].mux['Alive'] = self.Alive
                 lockerinstance[0].lock.release()
-                self.Alive = True
                 self.MUXloop(lockerinstance)
-                break
             finally:
                 lockerinstance[0].lock.acquire()
                 letdie = lockerinstance[0].events['closeApplication']
+                self.Alive = lockerinstance[0].mux['Alive']
                 lockerinstance[0].lock.release()
                 if letdie: break
         
@@ -280,7 +278,8 @@ class MyMultiplexer(AnalogMultiplexer):
 
 class MyLaserControl(LaserControl):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
-        while True:
+        self.Alive = True
+        while self.Alive:
             try:
                 super().__init__(lockerinstance, settingFilePath = settingFilePath, *args, **kwargs)
             except Exception as e:
@@ -288,11 +287,9 @@ class MyLaserControl(LaserControl):
                 ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             else:
                 lockerinstance[0].lock.acquire()
-                lockerinstance[0].lcon['Alive'] = True
+                lockerinstance[0].lcon['Alive'] = self.Alive
                 lockerinstance[0].lock.release()
-                self.Alive = True
                 self.Lconloop(lockerinstance)
-                break
             finally:
                 lockerinstance[0].lock.acquire()
                 letdie = lockerinstance[0].events['closeApplication']
@@ -303,14 +300,12 @@ class MyLaserControl(LaserControl):
         while self.Alive:
             lockerinstance[0].lock.acquire()
             setchannel = lockerinstance[0].lcon['SetChannel']
+            if setchannel: lockerinstance[0].lcon['SetChannel'] = False
             self.Alive = lockerinstance[0].lcon['Alive']
             lockerinstance[0].lock.release()
             if not self.Alive: break
-            if setchannel:
-                self.SetChannel(lockerinstance)
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].lcon['SetChannel'] = False
-                lockerinstance[0].lock.release()
+            if setchannel: self.SetChannel(lockerinstance)
+
 
 class LaserControlError(Exception):
     def __init__(self, lockerinstance, *args, **kwargs):
