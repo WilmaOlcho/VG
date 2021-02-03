@@ -246,7 +246,12 @@ class EstunBar(tk.LabelFrame):
         self.locker[0].lock.release()
     
     def Update(self):
-        pass
+        if self.lockerkey == 'servo':
+            self.locker[0].lock.acquire()
+            buttonsactive = not self.locker[0].GPIO['I27']
+            self.locker[0].lock.release()
+            for button in self.buttons:
+                button.config(state = 'normal' if buttonsactive else 'disabled')
 
 class console(object):
     Alive = False

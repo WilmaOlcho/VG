@@ -50,7 +50,7 @@ class Servo(object):
 
     def homing(self, lockerinstance):
         def funconstart(object = self, lockerinstance = lockerinstance):
-            EventManager.AdaptEvent(lockerinstance, input = object.coinAddress, edge = 'falling', event = 'ServoHomingComplete')
+            EventManager.AdaptEvent(lockerinstance, input = object.coinAddress, event = 'ServoMoving')
         def funconloop(object = self, lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO[self.homingAddress] = True
@@ -61,11 +61,13 @@ class Servo(object):
             lockerinstance[0].GPIO[self.homingAddress] = False
             lockerinstance[0].GPIO['somethingChanged'] = True
             lockerinstance[0].lock.release()
-        def funconcatch(object = self, lockerinstance = lockerinstance):
+        def funconcatchServoEnd(lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].servo['positionNumber'] = 0
             lockerinstance[0].lock.release()
-            WDT.WDT(lockerinstance, scale = 's',limitval = 4, additionalFuncOnExceed = releasing, errToRaise='ServoReleasing', noerror = True)
+        def funconcatch(object = self, lockerinstance = lockerinstance):
+            EventManager.AdaptEvent(lockerinstance, input = '-'+object.coinAddress, event = 'ServoHomingComplete')
+            WDT.WDT(lockerinstance, additionalFuncOnExceed = funconexceed, additionalFuncOnLoop = releasing, additionalFuncOnCatch = funconcatchServoEnd, scale = 's',limitval = 30, eventToCatch='ServoHomingComplete', errToRaise='Servo Homing Time Exceeded')
         def funconexceed(object = self, lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].servo['positionNumber'] = -1
@@ -73,12 +75,13 @@ class Servo(object):
             releasing(lockerinstance)
             object.stop(lockerinstance)
             EventManager.DestroyEvent(lockerinstance, event = 'ServoHomingComplete')
+            EventManager.DestroyEvent(lockerinstance, event = 'ServoMoving')
             ErrorEventWrite(lockerinstance,'Servo is forced to stop')
-        WDT.WDT(lockerinstance, additionalFuncOnStart = funconstart, additionalFuncOnExceed = funconexceed, additionalFuncOnLoop = funconloop, additionalFuncOnCatch = funconcatch, scale = 's',limitval = 30, eventToCatch='ServoHomingComplete', errToRaise='Servo Homing Time exceeded')
+        WDT.WDT(lockerinstance, additionalFuncOnStart = funconstart, additionalFuncOnExceed = funconexceed, additionalFuncOnLoop = funconloop, additionalFuncOnCatch = funconcatch, scale = 's',limitval = 5, eventToCatch='ServoMoving', errToRaise='Servo Starting Time Exceeded')
             
     def step(self, lockerinstance):
         def funconstart(object = self, lockerinstance = lockerinstance):
-            EventManager.AdaptEvent(lockerinstance, input = object.coinAddress, edge = 'falling', event = 'ServoStepComplete')
+            EventManager.AdaptEvent(lockerinstance, input = object.coinAddress, event = 'ServoMoving')
         def funconloop(object = self, lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO[self.stepAddress] = True
@@ -89,12 +92,14 @@ class Servo(object):
             lockerinstance[0].GPIO[self.stepAddress] = False
             lockerinstance[0].GPIO['somethingChanged'] = True
             lockerinstance[0].lock.release()
-        def funconcatch(lockerinstance = lockerinstance):
+        def funconcatchServoEnd(lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             pos = lockerinstance[0].servo['positionNumber']
             lockerinstance[0].servo['positionNumber'] = (pos+1) if pos < 2 else 0
             lockerinstance[0].lock.release()
-            WDT.WDT(lockerinstance, scale = 's', limitval = 4, additionalFuncOnExceed = releasing, errToRaise='ServoReleasing', noerror = True)
+        def funconcatch(object = self, lockerinstance = lockerinstance):
+            EventManager.AdaptEvent(lockerinstance, input = '-'+object.coinAddress, event = 'ServoStepComplete')
+            WDT.WDT(lockerinstance, additionalFuncOnExceed = funconexceed, additionalFuncOnLoop = releasing, additionalFuncOnCatch = funconcatchServoEnd, scale = 's',limitval = 30, eventToCatch='ServoStepComplete', errToRaise='Servo Stepping Time Exceeded')
         def funconexceed(object = self, lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].servo['positionNumber'] = -1
@@ -102,9 +107,10 @@ class Servo(object):
             releasing(lockerinstance)
             object.stop(lockerinstance)
             EventManager.DestroyEvent(lockerinstance, event = 'ServoStepComplete')
+            EventManager.DestroyEvent(lockerinstance, event = 'ServoMoving')
             ErrorEventWrite(lockerinstance,'Servo is forced to stop')
-        WDT.WDT(lockerinstance, additionalFuncOnStart = funconstart, additionalFuncOnExceed = funconexceed, additionalFuncOnLoop = funconloop, additionalFuncOnCatch = funconcatch, scale = 's',limitval = 10, eventToCatch='ServoStepComplete', errToRaise='Servo Step Time exceeded')
-
+        WDT.WDT(lockerinstance, additionalFuncOnStart = funconstart, additionalFuncOnExceed = funconexceed, additionalFuncOnLoop = funconloop, additionalFuncOnCatch = funconcatch, scale = 's',limitval = 5, eventToCatch='ServoMoving', errToRaise='Servo Starting Time Exceeded')
+            
     def reset(self, lockerinstance):
         def funconexceedrelease(object = self, lockerinstance = lockerinstance, running = False):
             if running: object.run(lockerinstance)
@@ -118,21 +124,23 @@ class Servo(object):
             running = lockerinstance[0].GPIO[self.activeAddress]
             lockerinstance[0].lock.release()
             if running: object.stop(lockerinstance)
-            WDT.WDT(lockerinstance, additionalFuncOnLoop = funconlooprelease, additionalFuncOnExceed = lambda obj = object, lck = lockerinstance, rn = running:funconexceedrelease(object = obj, lockerinstance=lck, running=rn), scale = 's', noerror = True, limitval = 4, errToRaise='Servo Resetting Release')
+            WDT.WDT(lockerinstance, additionalFuncOnLoop = funconlooprelease, additionalFuncOnExceed = lambda obj = object, lck = lockerinstance, rn = running:funconexceedrelease(object = obj, lockerinstance=lck, running=rn), scale = 's', noerror = True, limitval = 2, errToRaise='Servo Resetting Release')
         def funconloop(lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO[self.resetAddress] = True
             lockerinstance[0].GPIO['somethingChanged'] = True
             lockerinstance[0].lock.release()
-        WDT.WDT(lockerinstance, additionalFuncOnLoop = funconloop, additionalFuncOnExceed = funconexceed, scale = 's', noerror = True, limitval = 4, errToRaise='Servo Resetting')
+        WDT.WDT(lockerinstance, additionalFuncOnLoop = funconloop, additionalFuncOnExceed = funconexceed, scale = 's', noerror = True, limitval = 2, errToRaise='Servo Resetting')
 
     def stop(self, lockerinstance):
         def funconloop(lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             lockerinstance[0].GPIO[self.activeAddress] = False
+            lockerinstance[0].GPIO[self.stepAddress] = False
+            lockerinstance[0].GPIO[self.homingAddress] = False
             lockerinstance[0].GPIO['somethingChanged'] = True
             lockerinstance[0].lock.release()
-        WDT.WDT(lockerinstance, additionalFuncOnLoop = funconloop, scale = 's', noerror = True, limitval = 4, errToRaise='Servo Stopping')
+        WDT.WDT(lockerinstance, additionalFuncOnLoop = funconloop, scale = 's', noerror = True, limitval = 2, errToRaise='Servo Stopping')
 
     def run(self, lockerinstance):
         def funconloop(lockerinstance = lockerinstance):
@@ -140,7 +148,7 @@ class Servo(object):
             lockerinstance[0].GPIO[self.activeAddress] = True
             lockerinstance[0].GPIO['somethingChanged'] = True
             lockerinstance[0].lock.release()
-        WDT.WDT(lockerinstance, additionalFuncOnLoop = funconloop, scale = 's', noerror = True, limitval = 4, errToRaise='Servo Running')
+        WDT.WDT(lockerinstance, additionalFuncOnLoop = funconloop, scale = 's', noerror = True, limitval = 2, errToRaise='Servo Running')
        
     def IO(self, lockerinstance):
         lockerinstance[0].lock.acquire()
