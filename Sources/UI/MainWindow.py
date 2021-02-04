@@ -18,6 +18,11 @@ class Frame(tk.Frame):
             self.OverallNotebook.add(widget, text=widget.name)
         self.OverallNotebook.pack(side = tk.LEFT, expand = tk.Y, fill='both')
 
+    def update(self):
+        super().update()
+        for widget in self.widgets:
+            widget.update()
+
 class Window():
     def __init__(self, lockerinstance):
         self.window = tk.Tk()
@@ -31,11 +36,13 @@ class Window():
             widget.pack(side = tk.LEFT, expand = tk.Y, fill='both')
         self.master.pack(side = tk.LEFT, expand = tk.Y, fill='both')
         self.Alive = True
-        self.window.mainloop()
+        self.loop()
 
     def loop(self):
         while self.Alive:
             self.window.update()
+            for widget in self.widgets:
+                widget.update()
 
 if __name__ == '__main__':
     Window(object)
