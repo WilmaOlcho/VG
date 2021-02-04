@@ -1,0 +1,16 @@
+{
+    "Programs":[
+        {
+            "Name":"VG UP",
+            "Table":[[],[],[],[],[],[],[],[],[],[]]
+
+        },
+        {
+            "Name":"test",
+            "Table":[   [["ID"],["Nr"], ["SCOUT Program"],      ["SCOUT Layer"],["Robot Pos nr"],   ["Robot A"],["Robot X"],["Robot Y"],["Robot Z"] ],
+                        [[0],   [0],    ["Kwiatek VG120 TOP"],  [0],            [0],                [0.0],      [0.0],      [0.0],      [0.0]       ]
+                    ]
+
+        }
+    ]
+}

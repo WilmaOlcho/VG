@@ -3,28 +3,30 @@ from tkinter import ttk
 from Home import HomeScreen
 from Settings import SettingsScreen
 from Table import TableScreen
-
+from Variables import Variables
 
 class Frame(tk.Frame):
-    def __init__(self, master = None):
+    def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master)
+        self.variables = variables
         self.OverallNotebook = ttk.Notebook(self)
         self.widgets = [
-            HomeScreen(master = self.OverallNotebook),
-            SettingsScreen(master = self.OverallNotebook),
-            TableScreen(master = self.OverallNotebook) ]
+            HomeScreen(master = self.OverallNotebook, variables = self.variables),
+            SettingsScreen(master = self.OverallNotebook, variables = self.variables),
+            TableScreen(master = self.OverallNotebook, variables = self.variables) ]
         for widget in self.widgets:
             self.OverallNotebook.add(widget, text=widget.name)
-        self.OverallNotebook.pack()
+        self.OverallNotebook.pack(side = tk.LEFT, expand = tk.Y, fill='both')
 
 class Window():
     def __init__(self, lockerinstance):
         self.window = tk.Tk()
+        self.variables = Variables()
         self.window.title('Spawanie Lusterkowe VG')
-        self.window.attributes('-fullscreen', True)
+        #self.window.attributes('-fullscreen', True)
         self.master = tk.Frame(self.window)
         self.widgets = [
-            Frame(master = self.master) ]
+            Frame(master = self.master, variables = self.variables) ]
         for widget in self.widgets:
             widget.pack(side = tk.LEFT, expand = tk.Y, fill='both')
         self.master.pack(side = tk.LEFT, expand = tk.Y, fill='both')
