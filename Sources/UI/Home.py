@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
-import json
 from pathlib import Path
 from Variables import Variables
+import json
 
 class HomeScreen(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
