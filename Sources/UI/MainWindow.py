@@ -28,7 +28,7 @@ class Window():
         self.window = tk.Tk()
         self.variables = Variables()
         self.window.title('Spawanie Lusterkowe VG')
-        #self.window.attributes('-fullscreen', True)
+        self.window.attributes('-fullscreen', True)
         self.master = tk.Frame(self.window)
         self.widgets = [
             Frame(master = self.master, variables = self.variables) ]

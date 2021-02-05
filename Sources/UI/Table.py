@@ -10,7 +10,8 @@ class TableScreen(tk.Frame):
         self.master = master
         self.name = 'Table'
         self.widgets = [
-            ScrolledWidget(PosTable, text = 'Tabela programu:', variables=self.variables, master = self)
+            ScrolledWidget(PosTable, text = 'Tabela programu:', variables=self.variables, master = self),
+            tk.Button(master = self, command = lambda v = self: v.btnclick(), text = 'Zapisz')
                     ]
         for widget in self.widgets:
             widget.pack(fill = 'both', expand = tk.Y)
@@ -20,6 +21,9 @@ class TableScreen(tk.Frame):
         super().update()
         for widget in self.widgets:
             widget.update()
+
+    def btnclick(self):
+        self.variables.internalEvents['DumpProgramToFile'] = True
 
 #Działa nie tykać
 class ScrolledWidget(tk.LabelFrame):
@@ -67,6 +71,7 @@ class PosTable(tk.Frame):
         self.freeze = False
         self.table = []
         self.entries = []
+        self.synctable = []
         self.width = 20
 
     def update(self):
@@ -81,21 +86,28 @@ class PosTable(tk.Frame):
                     self.frame.pack()
                     self.table = [[0,0,0,0,0,0,0,0,0]]
                     self.table.extend(program['Table'])
-                    self.entries = (len(self.table))*[9*[[]]]
+                    for i in range(len(self.table)):
+                        self.entries.append([None,None,None,None,None,None,None,None,None])
+                    for i in range(len(self.table)):
+                        self.synctable.append([None,None,None,None,None,None,None,None,None])
                     break
             for row, content in enumerate(self.table):
                 for column, value in enumerate(content):
                     if self.variables.displayedprogramcolumns[column]:
                         if row == 0:
-                            self.entries[row][column] = tk.Entry(self.frame, width = self.variables.columnwidths[column])
+                            entry = tk.Entry(self.frame, width = self.variables.columnwidths[column])
+                            self.entries[row][column] = entry
                             self.entries[row][column].delete(0,tk.END)
                             self.entries[row][column].insert(0,self.variables.programcolumns[column])
                             self.entries[row][column].configure(state = 'disabled')
                             self.entries[row][column].grid(row = row, column = column)
                         else:
-                            self.entries[row][column] = tk.Entry(self.frame, width = self.variables.columnwidths[column])
+                            entry = tk.Entry(self.frame, width = self.variables.columnwidths[column])
+                            self.entries[row][column] = entry
                             self.entries[row][column].delete(0,tk.END)
                             self.entries[row][column].insert(0,value)
+                            self.synctable[row][column] = value
+                            self.entries[row][column].bind('<FocusOut>',self.RetrieveSynctable)
                             self.entries[row][column].grid(row = row, column = column)
             self.freeze = True
             self.variables.internalEvents['TableRefresh'] = False
@@ -103,5 +115,23 @@ class PosTable(tk.Frame):
             print(self.variables.displayedprogramtableheight)
             self.pack(expand = tk.YES, fill=tk.BOTH)
             return True
+        if self.variables.internalEvents['DumpProgramToFile']:
+            self.WriteSyncTable()
+            self.variables.internalEvents['DumpProgramToFile'] = False
         return False
+    
+    def RetrieveSynctable(self, event):
+        for row, content in enumerate(self.entries):
+            for column, value in enumerate(content):
+                if value:
+                    tmp = value.get()
+                    self.synctable[row][column] = tmp
 
+    def WriteSyncTable(self):
+        tjson = json.load(open(self.variables.jsonpath))
+        for program in tjson['Programs']:
+            if program['Name'] == self.variables.currentProgram:
+                program['Table'] = []
+                program['Table'] = self.synctable[1:].copy()
+                json.dump(tjson,open(self.variables.jsonpath,'w'))
+                break

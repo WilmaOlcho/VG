@@ -10,7 +10,8 @@ class Variables():
         self.columnwidths = [4,4,30,15,10,8,8,8,8]
         self.internalEvents = {
             'RefreshStartEnd':False,
-            'TableRefresh':False
+            'TableRefresh':False,
+            'DumpProgramToFile':False
         }
 
         self.statusindicators = {
