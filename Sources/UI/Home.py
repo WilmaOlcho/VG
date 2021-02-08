@@ -205,9 +205,9 @@ class Positions(tk.LabelFrame):
         self.program = {}
         self.widgets = [
             tk.Label(master = self, text = 'OD '),
-            tk.Entry(master = self, text = str(self.variables.programposstart)),
+            tk.Entry(master = self, text = ''),
             tk.Label(master = self, text = 'DO '),
-            tk.Entry(master = self, text = str(self.variables.programposend))
+            tk.Entry(master = self, text = '')
         ]
         for widget in self.widgets:
             if isinstance(widget, tk.Entry):
