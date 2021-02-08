@@ -100,7 +100,7 @@ class PosTable(tk.Frame):
                     if entry == focus:
                         entry.config(bg='lightblue')
                         self.focused_on = [row,column]
-                    else: entry.config(bg='white')
+                    else: entry.config(bg='white') #TODO
 
     def getActiveRow(self):
         return self.focused_on[0]
@@ -117,7 +117,6 @@ class PosTable(tk.Frame):
                             ID += 1
                             IDChanged = True
         return ID
-
 
     def AddRowBefore(self):
         row = self.getActiveRow()
@@ -154,6 +153,7 @@ class PosTable(tk.Frame):
                     self.table = [[0,0,0,0,0,0,0,0,0]].copy()
                     self.table.extend(program['Table'])
                     self.synctable = []
+                    self.entries = []
                     for row in self.table:
                         self.entries.append([None,None,None,None,None,None,None,None,None].copy())
                         self.synctable.append(row.copy())

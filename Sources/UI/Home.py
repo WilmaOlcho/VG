@@ -235,8 +235,7 @@ class Positions(tk.LabelFrame):
                 else:
                     self.variables.programposstart = value
         self.variables.internalEvents['RefreshStartEnd'] = True
-
-
+        
     def update(self):
         super().update()
         for program in self.programs['Programs']:
