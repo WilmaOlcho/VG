@@ -14,7 +14,7 @@ class TableScreen(tk.Frame):
             tk.Button(master = self, command = lambda v = self: v.btnclick(), text = 'Zapisz')
                     ]
         for widget in self.widgets:
-            widget.pack(fill = 'both', expand = tk.Y)
+            widget.pack()
         self.pack()
     
     def update(self):
@@ -66,49 +66,116 @@ class PosTable(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master)
         self.frame = tk.Frame(self)
+        self.menu = self.CreateContextMenu()
         self.variables = variables
         self.master = master
         self.freeze = False
         self.table = []
         self.entries = []
         self.synctable = []
+        self.focused_on = [0,0]
         self.width = 20
+        self.tjson = json.load(open(self.variables.jsonpath))
+
+    def CreateContextMenu(self):
+        menu = tk.Menu(self, tearoff = 0)
+        menu.add_command(label = "Dodaj wiersz przed", command = self.AddRowBefore)
+        menu.add_command(label = "Dodaj wiersz za", command = self.AddRowAfter)
+        menu.add_command(label = "Usuń wiersz", command = self.DeleteRow)
+        menu.add_separator()
+        menu.add_command(label = "Sortuj Tabelę", command = self.SortTable)
+        return menu
+
+    def ContextMenuPopup(self, event):
+        try:
+            self.menu.tk_popup(event.x_root, event.y_root, 0)
+        finally:
+            self.menu.grab_release()
+
+    def GetFocus(self, event):
+        focus = self.focus_get()
+        for row, row_content in enumerate(self.entries):
+            for column, entry in enumerate(row_content):
+                if isinstance(entry, tk.Entry):
+                    if entry == focus:
+                        entry.config(bg='lightblue')
+                        self.focused_on = [row,column]
+                    else: entry.config(bg='white')
+
+    def getActiveRow(self):
+        return self.focused_on[0]
+
+    def CreateID(self):
+        ID = 0
+        for program in self.tjson['Programs']:
+            if program['Name'] == self.variables.currentProgram:
+                IDChanged = True
+                while IDChanged:
+                    IDChanged = False
+                    for content in program['Table']:
+                        if ID == content[0]:
+                            ID += 1
+                            IDChanged = True
+        return ID
+
+
+    def AddRowBefore(self):
+        row = self.getActiveRow()
+        self.synctable.insert(row,[self.CreateID(),0,0,0,0,0,0,0,0])
+        self.UpdateJson()
+        self.variables.internalEvents['TableRefresh'] = True
+
+    def AddRowAfter(self):
+        row = self.getActiveRow()
+        self.synctable.insert(row+1,[self.CreateID(),0,0,0,0,0,0,0,0])
+        self.UpdateJson()
+        self.variables.internalEvents['TableRefresh'] = True
+
+    def DeleteRow(self):
+        row = self.getActiveRow()
+        del self.synctable[row]
+        self.UpdateJson()
+        self.variables.internalEvents['TableRefresh'] = True
+
+    def SortTable(self):
+        self.synctable[0] = [0,0,0,0,0,0,0,0,0]
+        self.synctable.sort(key = lambda element: element[1])
+        self.UpdateJson()
+        self.variables.internalEvents['TableRefresh'] = True
 
     def update(self):
         super().update()
         self.freeze = not self.variables.internalEvents['TableRefresh']
         if not self.freeze:
-            tjson = json.load(open(self.variables.jsonpath))
-            for program in tjson['Programs']:
+            for program in self.tjson['Programs']:
                 if program['Name'] == self.variables.currentProgram:
                     self.frame.destroy()
                     self.frame = tk.Frame(self)
                     self.frame.pack()
-                    self.table = [[0,0,0,0,0,0,0,0,0]]
+                    self.table = [[0,0,0,0,0,0,0,0,0]].copy()
                     self.table.extend(program['Table'])
-                    for i in range(len(self.table)):
-                        self.entries.append([None,None,None,None,None,None,None,None,None])
-                    for i in range(len(self.table)):
-                        self.synctable.append([None,None,None,None,None,None,None,None,None])
+                    self.synctable = []
+                    for row in self.table:
+                        self.entries.append([None,None,None,None,None,None,None,None,None].copy())
+                        self.synctable.append(row.copy())
                     break
             for row, content in enumerate(self.table):
                 for column, value in enumerate(content):
                     if self.variables.displayedprogramcolumns[column]:
+                        entry = tk.Entry(self.frame, width = self.variables.columnwidths[column])
+                        self.entries[row][column] = entry
+                        self.entries[row][column].delete(0,tk.END)
                         if row == 0:
-                            entry = tk.Entry(self.frame, width = self.variables.columnwidths[column])
-                            self.entries[row][column] = entry
-                            self.entries[row][column].delete(0,tk.END)
                             self.entries[row][column].insert(0,self.variables.programcolumns[column])
                             self.entries[row][column].configure(state = 'disabled')
-                            self.entries[row][column].grid(row = row, column = column)
                         else:
-                            entry = tk.Entry(self.frame, width = self.variables.columnwidths[column])
-                            self.entries[row][column] = entry
-                            self.entries[row][column].delete(0,tk.END)
                             self.entries[row][column].insert(0,value)
-                            self.synctable[row][column] = value
+                            if column == 1 and isinstance(value, str): value = int(value)
+                            self.synctable[row][column] = value 
                             self.entries[row][column].bind('<FocusOut>',self.RetrieveSynctable)
-                            self.entries[row][column].grid(row = row, column = column)
+                            self.entries[row][column].bind('<FocusIn>',self.GetFocus)
+                            self.entries[row][column].bind('<Button-3>',self.ContextMenuPopup)
+                        self.entries[row][column].grid(row = row, column = column)
             self.freeze = True
             self.variables.internalEvents['TableRefresh'] = False
             self.variables.displayedprogramtableheight = (self.width * len(self.table)) - len(self.table)
@@ -127,11 +194,13 @@ class PosTable(tk.Frame):
                     tmp = value.get()
                     self.synctable[row][column] = tmp
 
-    def WriteSyncTable(self):
-        tjson = json.load(open(self.variables.jsonpath))
-        for program in tjson['Programs']:
+    def UpdateJson(self):
+        for i, program in enumerate(self.tjson['Programs']):
             if program['Name'] == self.variables.currentProgram:
-                program['Table'] = []
-                program['Table'] = self.synctable[1:].copy()
-                json.dump(tjson,open(self.variables.jsonpath,'w'))
+                self.tjson['Programs'][i]['Table'] = []
+                self.tjson['Programs'][i]['Table'] = self.synctable[1:].copy()
                 break
+
+    def WriteSyncTable(self):
+        self.UpdateJson()
+        json.dump(self.tjson,open(self.variables.jsonpath,'w'))
