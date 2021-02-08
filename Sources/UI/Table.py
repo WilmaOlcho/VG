@@ -138,8 +138,7 @@ class PosTable(tk.Frame):
         self.variables.internalEvents['TableRefresh'] = True
 
     def SortTable(self):
-        self.synctable[0] = [0,0,0,0,0,0,0,0,0]
-        self.synctable.sort(key = lambda element: element[1])
+        self.synctable.sort(key = lambda element: element[1] if isinstance(element[1],int) else 0)
         self.UpdateJson()
         self.variables.internalEvents['TableRefresh'] = True
 
@@ -179,7 +178,6 @@ class PosTable(tk.Frame):
             self.freeze = True
             self.variables.internalEvents['TableRefresh'] = False
             self.variables.displayedprogramtableheight = (self.width * len(self.table)) - len(self.table)
-            print(self.variables.displayedprogramtableheight)
             self.pack(expand = tk.YES, fill=tk.BOTH)
             return True
         if self.variables.internalEvents['DumpProgramToFile']:

@@ -12,10 +12,102 @@ class HomeScreen(tk.Frame):
         self.name = 'home'
         self.widgets = [
             FirstColumn(self, variables = self.variables),
-            StatusIndicators(self, variables = self.variables)
+            SecondColumn(self, variables = self.variables),
+            ThirdColumn(self, variables = self.variables)
         ]
         for widget in self.widgets:
             widget.pack(side = tk.LEFT, expand = tk.Y)
+        self.pack()
+
+    def update(self):
+        super().update()
+        for widget in self.widgets:
+            widget.update()
+
+class ThirdColumn(tk.Frame):
+    def __init__(self, master = None, variables = Variables()):
+        super().__init__(master = master)
+        self.variables = variables
+        self.master = master
+        self.widgets = [
+            ProcessVariables(self, variables = self.variables)
+        ]
+        for widget in self.widgets:
+            widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
+        self.pack()
+
+    def update(self):
+        super().update()
+        for widget in self.widgets:
+            widget.update()
+
+class ProcessVariables(tk.LabelFrame):
+    def __init__(self, master = None, variables = Variables()):
+        super().__init__(master = master, text = 'Proces')
+        self.variables = variables
+        self.master = master
+        self.leftFrame = tk.Frame(self)
+        self.rightFrame = tk.Frame(self)
+        self.widgets = [
+            variablesFrame(master = self.leftFrame, text = 'Pozycja w tabeli', key = 'currentposition'),
+            variablesFrame(master = self.leftFrame, text = 'Czas cyklu', key = 'processtime'),
+            tk.Button(master = self.rightFrame, text = "Krok", command = self.stepclick),
+            tk.Button(master = self.rightFrame, text = 'Uruchom', command = self.startclick),
+            tk.Button(master = self.rightFrame, text = 'Zatrzymaj', command = self.stopclick),
+            self.leftFrame,
+            self.rightFrame
+        ]
+        for widget in self.widgets:
+            widget.pack(side = tk.LEFT if widget.master == self else tk.TOP, fill ='x', anchor = tk.S)
+        self.pack()
+
+    def stepclick(self):
+        self.variables.auto != self.variables.auto
+
+    def startclick(self):
+        self.variables.ProgramActive = True
+
+    def stopclick(self):
+        self.variables.ProgramActive = False
+
+    def update(self):
+        super().update()
+        for widget in self.widgets:
+            widget.update()
+
+class variablesFrame(tk.Frame):
+    def __init__(self, master = None, variables = Variables(), text = 'Pozycja w tabeli', key = 'auto'):
+        super().__init__(master = master)
+        self.variables = variables
+        self.key = key
+        self.master = master
+        self.widgets = [
+            tk.Label(master = self, text = text),
+            tk.Entry(master = self, text = self.variables.ProcessVariables[self.key], width = 10)
+        ]
+        for widget in self.widgets:
+            widget.pack()
+        self.pack()
+
+    def update(self):
+        super().update()
+        for widget in self.widgets:
+            if isinstance(widget,tk.Entry):
+                widget.delete(0,tk.END)
+                widget.insert(0,self.variables.ProcessVariables[self.key])
+            widget.update()
+
+
+class SecondColumn(tk.Frame):
+    def __init__(self, master = None, variables = Variables()):
+        super().__init__(master = master)
+        self.variables = variables
+        self.master = master
+        self.widgets = [
+            StatusIndicators(self, variables = self.variables)
+        ]
+        for widget in self.widgets:
+            widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
         self.pack()
 
     def update(self):
@@ -97,10 +189,10 @@ class ProgramSelect(tk.LabelFrame):
     def command(self, program):
         self.menubutton.config(text = program)
         self.variables.currentProgram = program
-        self.variables.programposstart = 1
         for prog in self.programs['Programs']:
             if prog['Name'] == program:
-                self.variables.programposend = len(prog['Table'])-1
+                self.variables.programposstart = min(int(item[1]) for item in prog['Table'])
+                self.variables.programposend = max(int(item[1]) for item in prog['Table'])
                 break
         self.variables.internalEvents['RefreshStartEnd'] = True
         self.variables.internalEvents['TableRefresh'] = True
@@ -109,31 +201,47 @@ class Positions(tk.LabelFrame):
     def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master, text = 'Wybór pozycji')
         self.variables = variables
+        self.programs = json.load(open(self.variables.jsonpath))
+        self.program = {}
         self.widgets = [
-            tk.Label(self, text = 'OD '),
-            tk.Entry(self, text = str(self.variables.programposstart)),
-            tk.Label(self, text = 'DO '),
-            tk.Entry(self, text = str(self.variables.programposend))
+            tk.Label(master = self, text = 'OD '),
+            tk.Entry(master = self, text = str(self.variables.programposstart)),
+            tk.Label(master = self, text = 'DO '),
+            tk.Entry(master = self, text = str(self.variables.programposend))
         ]
         for widget in self.widgets:
-            if 'entry' in widget._name:
+            if isinstance(widget, tk.Entry):
                 widget.config(width = 5)
                 widget.bind("<FocusOut>",lambda x, obj = self: obj.setvalue())
             widget.pack(side = tk.LEFT, anchor = tk.N)
         self.pack()
         
+    def nearest(self, value, attempts = list()):
+        attemptlist = attempts.copy()
+        attemptlist.sort(key = lambda element, v = int(value): abs(v - int(element)))
+        return attemptlist[0]
+
     def setvalue(self):
         for widget in self.widgets:
-            if isinstance(widget, list):
-                if 'entry' in widget._name:
-                    widget.update_idletasks()
-                    if '2' in widget._name:
-                        self.variables.programposend = widget.get()
-                    else:
-                        self.variables.programposstart = widget.get()
+            if isinstance(widget, tk.Entry):
+                value = widget.get()
+                if not value.isnumeric(): break
+                value = int(value)
+                positionsintable = [item[1] for item in self.program['Table']]
+                if not value in positionsintable:
+                    value = self.nearest(value, positionsintable)
+                if '2' in widget._name:
+                    self.variables.programposend = value
+                else:
+                    self.variables.programposstart = value
+        self.variables.internalEvents['RefreshStartEnd'] = True
+
 
     def update(self):
         super().update()
+        for program in self.programs['Programs']:
+            if program['Name'] == self.variables.currentProgram:
+                self.program = program
         if self.variables.internalEvents['RefreshStartEnd']:
             for widget in self.widgets:
                 if 'entry' in widget._name:
@@ -142,6 +250,6 @@ class Positions(tk.LabelFrame):
                         widget.insert(0,str(self.variables.programposend))
                     else:
                         widget.insert(0,str(self.variables.programposstart))
-            self.variables.internalEvents['RefreshStartEnd'] = False
-        
+        self.variables.internalEvents['RefreshStartEnd'] = False
+
         

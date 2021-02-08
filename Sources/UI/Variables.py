@@ -30,3 +30,11 @@ class Variables():
         self.processtime = 0
         self.currentposition = 0
         self.progress = 0
+        self.ProgramActive = False
+
+        self.ProcessVariables = {
+            'auto':self.auto,
+            'processtime':self.processtime,
+            'currentposition':self.currentposition,
+            'progress':self.progress
+        }
