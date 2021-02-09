@@ -1,5 +1,5 @@
 
-class Variables():
+class Variables(dict):
     def __init__(self):
         self.jsonpath = ''
         self.currentProgram = ''
@@ -38,3 +38,5 @@ class Variables():
             'currentposition':self.currentposition,
             'progress':self.progress
         }
+
+        self['ImportantMessages'] = 'ass\n\n\nd\n\n\n\n\nas'

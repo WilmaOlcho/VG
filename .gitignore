@@ -13,3 +13,6 @@ Sources/UI/__pycache__/Home.cpython-37.pyc
 Sources/UI/__pycache__/Settings.cpython-37.pyc
 Sources/UI/__pycache__/Table.cpython-37.pyc
 Sources/UI/__pycache__/Variables.cpython-37.pyc
+Sources/UI/Widgets/__pycache__/__init__.cpython-37.pyc
+Sources/UI/Widgets/__pycache__/ScrolledTable.cpython-37.pyc
+Sources/UI/Widgets/__pycache__/ScrolledText.cpython-37.pyc

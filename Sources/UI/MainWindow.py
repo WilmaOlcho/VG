@@ -4,6 +4,7 @@ from Home import HomeScreen
 from Settings import SettingsScreen
 from Table import TableScreen
 from Variables import Variables
+from Widgets.ScrolledText import LabelledScrolledText
 
 class Frame(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
@@ -11,12 +12,16 @@ class Frame(tk.Frame):
         self.variables = variables
         self.OverallNotebook = ttk.Notebook(self)
         self.widgets = [
+            LabelledScrolledText(master = self, variables = self.variables, InternalVariable= 'ImportantMessages', scrolltype='vertical', height=5, text = 'Błędy i powiadomienia'),
             HomeScreen(master = self.OverallNotebook, variables = self.variables),
             SettingsScreen(master = self.OverallNotebook, variables = self.variables),
             TableScreen(master = self.OverallNotebook, variables = self.variables) ]
         for widget in self.widgets:
-            self.OverallNotebook.add(widget, text=widget.name)
-        self.OverallNotebook.pack(side = tk.LEFT, expand = tk.Y, fill='both')
+            if hasattr(widget, 'name'):
+                self.OverallNotebook.add(widget, text=widget.name)
+            else:
+                widget.pack(side = tk.BOTTOM, expand = tk.NO, fill = tk.X)
+        self.OverallNotebook.pack(side = tk.LEFT, expand = tk.YES, fill=tk.BOTH)
 
     def update(self):
         super().update()
