@@ -37,4 +37,68 @@ class Variables(dict):
         self['ProgramActive'] = False
 
 
-        self['ImportantMessages'] = 'ass\n\n\nd\n\n\n\n\nas'
+        self['ImportantMessages'] = ''
+        self['troley'] = {
+            'pushingpiston':False,
+            'sensorpushingpistonback':False,
+            'sensorpushingpistonfront':False,
+            'servoON':False,
+            'servoCOIN':False,
+            'servoREADY':False,
+            'servoSTEP':False,
+            'servoHOMING':False,
+            'servoRESET':False,
+            'servoTGON':False,
+            'sealpiston':False,
+            'sensorsealpistonup':False,
+            'sensorsealpistondown':False
+        }
+        self['pistoncontrol'] = {
+            'seal':{
+                'Left':{
+                    'coil':True,
+                    'sensor':False},
+                'Center':{
+                    'coil':False,
+                    'sensor':False}
+            },
+            'shieldinggas':{
+                'Right':{
+                    'coil':True},
+                'Center':{}
+            },
+            'crossjet':{
+                'Right':{
+                    'coil':True},
+                'Center':{}
+            },
+            'headcooling':{
+                'Right':{
+                    'coil':True},
+                'Center':{}
+            },
+            'pusher':{
+                'Left':{
+                    'coil':False,
+                    'sensor':False},
+                'Right':{
+                    'coil':False,
+                    'sensor':False},
+                'Center':{}
+            }
+        }
+        self['servocontrol'] = {
+            'buttons':{
+                'Włącz':'servoON',
+                'Wyłącz':'-servoON',
+                'Krok':'servoSTEP',
+                'Bazowanie':'servoHOMING',
+                'Reset':'servoRESET'},
+            'lamps':{
+                'Serwo włączone':'servoON',
+                'Serwo na pozycji':'servoCOIN',
+                'Servo gotowe':'servoREADY',
+                'Serwo w ruchu':'servoTGON'}}
+
+    def update(self):
+        pass
