@@ -11,7 +11,11 @@ class Variables(dict):
         self.internalEvents = {
             'RefreshStartEnd':False,
             'TableRefresh':False,
-            'DumpProgramToFile':False
+            'DumpProgramToFile':False,
+            'ack' : False,
+            'error': True,
+            'start':False,
+            'stop':False
         }
 
         self.statusindicators = {
@@ -26,17 +30,11 @@ class Variables(dict):
         }
         self.displayedprogramtableheight = 1000
 
-        self.auto = False
-        self.processtime = 0
-        self.currentposition = 0
-        self.progress = 0
-        self.ProgramActive = False
+        self['auto'] = False
+        self['processtime'] = 0
+        self['currentposition'] = 0
+        self['progress'] = 0
+        self['ProgramActive'] = False
 
-        self.ProcessVariables = {
-            'auto':self.auto,
-            'processtime':self.processtime,
-            'currentposition':self.currentposition,
-            'progress':self.progress
-        }
 
         self['ImportantMessages'] = 'ass\n\n\nd\n\n\n\n\nas'

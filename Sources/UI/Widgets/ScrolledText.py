@@ -37,7 +37,7 @@ class LabelledScrolledText(ScrolledText):
     def __init__(self, master = None, variables = Variables(), text = '', InternalVariable = None, scrolltype = 'both', height=200, width=200):
         self.frame = tk.LabelFrame(master = master, text = text)
         super().__init__(master = self.frame, variables = variables, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
-        self.frame.pack(fill = tk.BOTH)
+        self.frame.grid()
 
     def update(self):
         super().update()

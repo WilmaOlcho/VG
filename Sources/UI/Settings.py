@@ -7,5 +7,5 @@ class SettingsScreen(tk.Frame):
         super().__init__(master = master)
         self.variables = variables
         self.master = master
-        self.name = 'Settings'
+        self.name = 'Ustawienia i tryb ręczny'
         self.pack()

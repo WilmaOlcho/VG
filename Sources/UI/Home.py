@@ -9,7 +9,7 @@ class HomeScreen(tk.Frame):
         super().__init__(master = master)
         self.variables = variables
         self.master = master
-        self.name = 'home'
+        self.name = 'Ekran główny'
         self.widgets = [
             FirstColumn(self, variables = self.variables),
             SecondColumn(self, variables = self.variables),
@@ -49,11 +49,11 @@ class ProcessVariables(tk.LabelFrame):
         self.leftFrame = tk.Frame(self)
         self.rightFrame = tk.Frame(self)
         self.widgets = [
-            variablesFrame(master = self.leftFrame, text = 'Pozycja w tabeli', key = 'currentposition'),
-            variablesFrame(master = self.leftFrame, text = 'Czas cyklu', key = 'processtime'),
-            tk.Button(master = self.rightFrame, text = "Krok", command = self.stepclick),
-            tk.Button(master = self.rightFrame, text = 'Uruchom', command = self.startclick),
-            tk.Button(master = self.rightFrame, text = 'Zatrzymaj', command = self.stopclick),
+            variablesFrame(master = self.leftFrame, text = 'Pozycja w tabeli:', key = 'currentposition', width = 25),
+            variablesFrame(master = self.leftFrame, text = 'Czas cyklu:', key = 'processtime', width = 25),
+            tk.Button(master = self.rightFrame, bg = 'lightgrey', text = "Praca krokowa", width = 35, height = 3, command = self.stepclick),
+            tk.Button(master = self.rightFrame, text = 'Uruchom', width = 35, height = 3, command = self.startclick),
+            tk.Button(master = self.rightFrame, text = 'Zatrzymaj', width = 35, height = 3, command = self.stopclick),
             self.leftFrame,
             self.rightFrame
         ]
@@ -62,28 +62,43 @@ class ProcessVariables(tk.LabelFrame):
         self.pack()
 
     def stepclick(self):
-        self.variables.auto != self.variables.auto
+        if not self.variables['ProgramActive']:
+            self.variables['auto'] = not self.variables['auto']
 
     def startclick(self):
-        self.variables.ProgramActive = True
+        self.variables['ProgramActive'] = True
+        self.variables.internalEvents['start'] = True
 
     def stopclick(self):
-        self.variables.ProgramActive = False
+        self.variables['ProgramActive'] = False
+        self.variables.internalEvents['stop'] = True
 
     def update(self):
         super().update()
         for widget in self.widgets:
+            if isinstance(widget, tk.Button):
+                button = widget.cget('text')
+                if button == 'Praca krokowa':
+                    if self.variables['auto']:
+                        widget.configure(text = 'Praca automatyczna')
+                elif button == 'Praca automatyczna':
+                    if not self.variables['auto']:
+                        widget.configure(text = 'Praca krokowa')
+                elif button == 'Uruchom':
+                    widget.configure(bg = 'lightgreen' if self.variables['ProgramActive'] else 'green')
+                elif button == 'Zatrzymaj':
+                    widget.configure(bg = 'red' if self.variables['ProgramActive'] else 'red')
             widget.update()
 
 class variablesFrame(tk.Frame):
-    def __init__(self, master = None, variables = Variables(), text = 'Pozycja w tabeli', key = 'auto'):
+    def __init__(self, master = None, variables = Variables(), text = 'Pozycja w tabeli', key = 'auto', width = 20):
         super().__init__(master = master)
         self.variables = variables
         self.key = key
         self.master = master
         self.widgets = [
             tk.Label(master = self, text = text),
-            tk.Entry(master = self, text = self.variables.ProcessVariables[self.key], width = 10)
+            tk.Entry(master = self, text = self.variables[self.key], width = width)
         ]
         for widget in self.widgets:
             widget.pack()
@@ -94,7 +109,7 @@ class variablesFrame(tk.Frame):
         for widget in self.widgets:
             if isinstance(widget,tk.Entry):
                 widget.delete(0,tk.END)
-                widget.insert(0,self.variables.ProcessVariables[self.key])
+                widget.insert(0,self.variables[self.key])
             widget.update()
 
 

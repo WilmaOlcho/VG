@@ -12,21 +12,29 @@ class Frame(tk.Frame):
         self.variables = variables
         self.OverallNotebook = ttk.Notebook(self)
         self.widgets = [
-            LabelledScrolledText(master = self, variables = self.variables, InternalVariable= 'ImportantMessages', scrolltype='vertical', height=5, text = 'Błędy i powiadomienia'),
+            LabelledScrolledText(master = self, variables = self.variables, InternalVariable= 'ImportantMessages', scrolltype='vertical', height=5, width = 200, text = 'Błędy i powiadomienia'),
+            tk.Button(master = self, text = 'Potwierdź\nstatus', command = self.ack, bg = 'yellow', width = 14, height = 6),
             HomeScreen(master = self.OverallNotebook, variables = self.variables),
             SettingsScreen(master = self.OverallNotebook, variables = self.variables),
             TableScreen(master = self.OverallNotebook, variables = self.variables) ]
+        col = 0
         for widget in self.widgets:
             if hasattr(widget, 'name'):
                 self.OverallNotebook.add(widget, text=widget.name)
             else:
-                widget.pack(side = tk.BOTTOM, expand = tk.NO, fill = tk.X)
-        self.OverallNotebook.pack(side = tk.LEFT, expand = tk.YES, fill=tk.BOTH)
+                widget.grid(column = col, row=0)
+                col +=1
+        self.OverallNotebook.grid(columnspan = col-1, row = 1)
 
     def update(self):
         super().update()
         for widget in self.widgets:
+            if isinstance(widget, tk.Button):
+                widget.config(bg = 'red' if self.variables.internalEvents['error'] else 'yellow')
             widget.update()
+
+    def ack(self):
+        self.variables.internalEvents['ack'] = True
 
 class Window():
     def __init__(self, lockerinstance):
@@ -35,6 +43,7 @@ class Window():
         self.window.title('Spawanie Lusterkowe VG')
         self.window.attributes('-fullscreen', True)
         self.master = tk.Frame(self.window)
+        self.interfaceControl = InterfaceControl(lockerinstance, self.variables)
         self.widgets = [
             Frame(master = self.master, variables = self.variables) ]
         for widget in self.widgets:
@@ -48,6 +57,17 @@ class Window():
             self.window.update()
             for widget in self.widgets:
                 widget.update()
+            self.interfaceControl.update()
+
+class InterfaceControl(object):
+    def __init__(self, lockerinstance, variables = Variables()):
+        self.variables = variables
+        pass
+
+    def update(self):
+        if self.variables.internalEvents['ack']:
+            self.variables.internalEvents['error'] = False
+            self.variables.internalEvents['ack'] = False
 
 if __name__ == '__main__':
     Window(object)

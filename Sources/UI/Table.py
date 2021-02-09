@@ -9,7 +9,7 @@ class TableScreen(tk.Frame):
         super().__init__(master = master)
         self.variables = variables
         self.master = master
-        self.name = 'Table'
+        self.name = 'Tabela programu'
         self.widgets = [
             ScrolledWidget(PosTable, text = 'Tabela programu:', variables=self.variables, master = self),
             tk.Button(master = self, command = lambda v = self: v.btnclick(), text = 'Zapisz')
