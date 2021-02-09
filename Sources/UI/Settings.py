@@ -66,7 +66,7 @@ class ServoControl(tk.LabelFrame):
             if widget.master == self:
                 widget.pack(side = tk.LEFT, anchor = tk.W)
             else:
-                widget.pack()
+                widget.pack(anchor = tk.N)
         self.pack()
     
     def update(self):
@@ -93,7 +93,7 @@ class TroleyButton(tk.Button):
 
 class TroleyLamp(tk.Frame):
     def __init__(self, master = None, text = '', variables = Variables(), masterkey = '', key = '', width = 25, height = 3):
-        super().__init__(master = master)
+        super().__init__(master = master, relief = 'ridge', borderwidth = 2)
         self.lamp = tk.Canvas(master = self, width = width, height = height)
         self.caption = tk.Label(master = self, text = text, width = 19)
         self.caption.pack(side = tk.LEFT)
@@ -161,28 +161,34 @@ class PistonControl(tk.Frame):
         
     def Center(self):
         if 'Right' in self.elements:
-            if 'sensor' in self.elements['Right']: 
-                self.elements['Right']['coil'] = False
+            self.elements['Right']['coil'] = False
         if 'Left' in self.elements:
-            if 'sensor' in self.elements['Left']: 
-                self.elements['Left']['coil'] = False
+            self.elements['Left']['coil'] = False
         
-    def Update(self):
+    def update(self):
         super().update()
         if 'Left' in self.elements.keys():
             color = '#84bdac'
+            bd = 1
             if 'coil' in self.elements['Left']:
                 if self.elements['Left']['coil']: color = '#f2fc45'
             if 'sensor' in self.elements['Left']:
-                if self.elements['Left']['sensor']: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
-            self.buttonLeft.configure(background = color)
+                if self.elements['Left']['sensor']: 
+                    color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
+                    bd = 8
+                else: bd = 1
+            self.buttonLeft.configure(background = color, borderwidth = bd)
         if 'Right' in self.elements.keys():
             color = '#84bdac'
+            bd = 1
             if 'coil' in self.elements['Right']:
                 if self.elements['Right']['coil']: color = '#f2fc45'
             if 'sensor' in self.elements['Right']:
-                if self.elements['Right']['sensor']: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
-            self.buttonRight.configure(background = color)
+                if self.elements['Right']['sensor']: 
+                    color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
+                    bd = 8
+                else: bd = 1
+            self.buttonRight.configure(background = color, borderwidth = bd)
         if 'Center' in self.elements.keys():
             if 'sensor' in self.elements['Center']:
                 self.buttonCenter.configure(background = '#84ffac' if self.elements['Center']['sensor'] else '#84bdac')

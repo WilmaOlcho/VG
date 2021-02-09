@@ -173,15 +173,15 @@ class StatusIndicators(tk.LabelFrame):
 
     class line(tk.Frame):
         def __init__(self, master = None, variables = Variables(), label = '', indicator = ''):
-            super().__init__(master = master, height='15', width='150')
+            super().__init__(master = master, height='30', width='135', borderwidth = 2, relief = 'ridge')
             self.key = indicator
             self.variables = variables
             self.label = tk.Label(self)
             self.label.config(text=label)
-            self.label.place(anchor='w', x='3', y='5')
+            self.label.place(anchor='w', x='3', y='13')
             self.indicator = tk.Canvas(self)
-            self.indicator.config(background='Black', height='10', width='10')
-            self.indicator.place(anchor='e', x='120', y='5')
+            self.indicator.config(background='Black', height='22', width='22', bd = 0)
+            self.indicator.place(anchor='e', x='130', y='14')
             self.pack()
         
         def update(self):

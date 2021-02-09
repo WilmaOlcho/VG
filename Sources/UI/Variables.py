@@ -57,7 +57,7 @@ class Variables(dict):
             'seal':{
                 'Left':{
                     'coil':True,
-                    'sensor':False},
+                    'sensor':True},
                 'Center':{
                     'coil':False,
                     'sensor':False}
