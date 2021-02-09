@@ -10,7 +10,7 @@ class Frame(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master)
         self.variables = variables
-        self.OverallNotebook = ttk.Notebook(self)
+        self.OverallNotebook = ttk.Notebook(self, width = 1800)
         self.widgets = [
             LabelledScrolledText(master = self, variables = self.variables, InternalVariable= 'ImportantMessages', scrolltype='vertical', height=5, width = 200, text = 'Błędy i powiadomienia'),
             tk.Button(master = self, text = 'Potwierdź\nstatus', command = self.ack, bg = 'yellow', width = 14, height = 6),
@@ -22,9 +22,9 @@ class Frame(tk.Frame):
             if hasattr(widget, 'name'):
                 self.OverallNotebook.add(widget, text=widget.name)
             else:
-                widget.grid(column = col, row=0)
+                widget.grid(column = col, row=0, sticky = tk.NSEW)
                 col +=1
-        self.OverallNotebook.grid(columnspan = col-1, row = 1)
+        self.OverallNotebook.grid(column = 0, columnspan = col, row = 1, sticky = tk.NSEW)
 
     def update(self):
         super().update()

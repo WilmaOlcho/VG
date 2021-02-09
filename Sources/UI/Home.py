@@ -17,7 +17,7 @@ class HomeScreen(tk.Frame):
         ]
         for widget in self.widgets:
             widget.pack(side = tk.LEFT, expand = tk.Y)
-        self.pack()
+        self.pack(expand = tk.YES, fill=tk.BOTH)
 
     def update(self):
         super().update()

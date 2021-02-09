@@ -16,7 +16,7 @@ class TableScreen(tk.Frame):
                     ]
         for widget in self.widgets:
             widget.pack()
-        self.pack()
+        self.pack(expand = tk.YES, fill=tk.BOTH)
     
     def update(self):
         super().update()

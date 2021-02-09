@@ -21,7 +21,7 @@ class SettingsScreen(tk.Frame):
                 widget.pack(side = tk.LEFT, anchor = tk.NW)
             else:
                 widget.pack(anchor = tk.NW)
-        self.pack()
+        self.pack(expand = tk.YES, fill=tk.BOTH)
     
     def update(self):
         super().update()
