@@ -1,16 +1,39 @@
 import tkinter as tk
+
 from tkinter import ttk
+from tkinter.font import Font as tkFont
 from Home import HomeScreen
 from Settings import SettingsScreen
 from Table import TableScreen
 from Variables import Variables
+import json
 from Widgets.ScrolledText import LabelledScrolledText
+from pathlib import Path
+
+class Font(tkFont):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __call__(self):
+        params = []
+        for param in ['family','size','weight','slant','underline','overstrike']:
+            result = self.actual(param)
+            if result:
+                params.append(result)
+            else:
+                break
+        return tuple(params)
 
 class Frame(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master)
         self.variables = variables
-        self.OverallNotebook = ttk.Notebook(self, width = 1800)
+        notebookconstructor = self.variables['widgetsettings']['MainWindowNotebook']['constructor']
+        notebookgrid = self.variables['widgetsettings']['MainWindowNotebook']['grid']
+        font = Font(**self.variables['widgetsettings']['MainWindowNotebook']['font'])
+        style = ttk.Style()
+        style.configure('.',font = font())
+        self.OverallNotebook = ttk.Notebook(self, **notebookconstructor)
         self.widgets = [
             LabelledScrolledText(master = self, variables = self.variables, InternalVariable= 'ImportantMessages', scrolltype='vertical', height=5, width = 200, text = 'Błędy i powiadomienia'),
             tk.Button(master = self, text = 'Potwierdź\nstatus', command = self.ack, bg = 'yellow', width = 14, height = 6),
@@ -24,7 +47,7 @@ class Frame(tk.Frame):
             else:
                 widget.grid(column = col, row=0, sticky = tk.NSEW)
                 col +=1
-        self.OverallNotebook.grid(column = 0, columnspan = col, row = 1, sticky = tk.NSEW)
+        self.OverallNotebook.grid(**notebookgrid)
 
     def update(self):
         super().update()
@@ -39,7 +62,8 @@ class Frame(tk.Frame):
 class Window():
     def __init__(self, lockerinstance):
         self.window = tk.Tk()
-        self.variables = Variables()
+        widgetsettings = json.load(open(str(Path(__file__).parent.absolute())+'//widgetsettings.json','r'))
+        self.variables = Variables(**widgetsettings)
         self.window.title('Spawanie Lusterkowe VG')
         self.window.attributes('-fullscreen', True)
         self.master = tk.Frame(self.window)
