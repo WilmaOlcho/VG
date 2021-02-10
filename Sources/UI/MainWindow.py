@@ -9,14 +9,13 @@ import json
 from Widgets.ScrolledText import LabelledScrolledText
 from pathlib import Path
 
-
 class Frame(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master)
         self.variables = variables
         notebookconstructor = self.variables['widgetsettings']['MainWindowNotebook']['constructor']
         notebookgrid = self.variables['widgetsettings']['MainWindowNotebook']['grid']
-        font = Font(**self.variables['widgetsettings']['MainWindowNotebook']['font'])
+        font = Font(root = self, **self.variables['widgetsettings']['MainWindowNotebook']['font'])
         style = ttk.Style()
         style.configure('.',font = font())
         self.OverallNotebook = ttk.Notebook(self, **notebookconstructor)

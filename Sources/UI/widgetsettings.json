@@ -14,5 +14,23 @@
             "columnspan":2,
             "row":1,
             "sticky":"nsew"}
+    },
+    "SettingsScreen":{
+        "font":{
+            "family":"Helvetica",
+            "size":12,
+            "weight":"bold"}
+    },
+    "HomeScreen":{
+        "font":{
+            "family":"Helvetica",
+            "size":12,
+            "weight":"bold"}
+    },
+    "TableScreen":{
+        "font":{
+            "family":"Helvetica",
+            "size":12,
+            "weight":"bold"}
     }
 }

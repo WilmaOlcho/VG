@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from Variables import Variables
+from Widgets.callableFont import Font
 
 class SettingsScreen(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
@@ -10,7 +11,7 @@ class SettingsScreen(tk.Frame):
         self.name = 'Ustawienia i tryb ręczny'
         self.miscpneumaticsframe = tk.LabelFrame(master = self, text = 'Osłony pneumatyczne')
         self.widgets = [
-            Troley(self, text = 'Wózek'),
+            Troley(self, variables = self.variables, text = 'Wózek'),
             PistonControl(master = self.miscpneumaticsframe, variables = self.variables, buttontext = 'Gaz osłonowy', masterkey = 'pistoncontrol', key = 'shieldinggas'),
             PistonControl(master = self.miscpneumaticsframe, variables = self.variables, buttontext = 'Nóż powietrzny', masterkey = 'pistoncontrol', key = 'crossjet'),
             PistonControl(master = self.miscpneumaticsframe, variables = self.variables, buttontext = 'Chłodzenie głowicy', masterkey = 'pistoncontrol', key = 'headcooling'),
@@ -30,7 +31,9 @@ class SettingsScreen(tk.Frame):
 
 class Troley(tk.LabelFrame):
     def __init__(self, master = None, variables = Variables(), text = 'text'):
-        super().__init__(master = master, text = text)
+        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
+        font = Font(root = master, **fontsettings)
+        super().__init__(master = master, text = text, font = font)
         self.variables = variables
         self.master = master
         self.pistonlabeledFrame = tk.LabelFrame(self, text = 'Siłowniki')
@@ -51,7 +54,9 @@ class Troley(tk.LabelFrame):
 
 class ServoControl(tk.LabelFrame):
     def __init__(self, master = None, text = '', variables = Variables(),  buttons = {}, lamps = {}):
-        super().__init__(master = master, text = text)
+        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
+        font = Font(root = master, **fontsettings)
+        super().__init__(master = master, text = text, font = font)
         self.variables = variables
         self.master = master
         self.buttonsframe = tk.Frame(self)
@@ -76,7 +81,9 @@ class ServoControl(tk.LabelFrame):
 
 class TroleyButton(tk.Button):
     def __init__(self, master = None, variables = Variables(), masterkey = '', text = '', key = '', width = 25, height = 3):
-        super().__init__(master = master, text = text, command = self.click, width = width, height = height)
+        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
+        font = Font(root = master, **fontsettings)
+        super().__init__(master = master, font = font(), text = text, command = self.click, width = width, height = height)
         self.key = key
         self.variables = variables
         self.master = master
@@ -95,7 +102,9 @@ class TroleyLamp(tk.Frame):
     def __init__(self, master = None, text = '', variables = Variables(), masterkey = '', key = '', width = 25, height = 3):
         super().__init__(master = master, relief = 'ridge', borderwidth = 2)
         self.lamp = tk.Canvas(master = self, width = width, height = height)
-        self.caption = tk.Label(master = self, text = text, width = 19)
+        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
+        font = Font(root = master, **fontsettings)
+        self.caption = tk.Label(master = self, font = font(), text = text, width = 19)
         self.caption.pack(side = tk.LEFT)
         self.lamp.pack(side = tk.LEFT)
         self.key = key
@@ -120,8 +129,10 @@ class PistonControl(tk.Frame):
         self.master = master
         self.masterkey = masterkey,
         self.key = key
+        fontsettings = self.variables['widgetsettings']['SettingsScreen']['font']
+        font = Font(root = master, **fontsettings)
         if 'Left' in self.elements.keys():
-            self.buttonLeft = tk.Button(self)
+            self.buttonLeft = tk.Button(self, font = font())
             self.buttonLeft.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', justify='center', text='<--')
             self.buttonLeft.place(anchor='nw', height='90', width='90', x='0', y='0')
             self.buttonLeft.configure(command=self.Left)
@@ -129,7 +140,7 @@ class PistonControl(tk.Frame):
             self.buttonLeft = tk.Canvas(self, bg='#74ad9c', borderwidth=1, relief = 'ridge', width = '90', height = '90')
             self.buttonLeft.place(anchor='nw', x='0', y='0')
         if 'Right' in self.elements.keys():
-            self.buttonRight = tk.Button(self)
+            self.buttonRight = tk.Button(self, font = font())
             self.buttonRight.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', justify='left', text='-->')
             self.buttonRight.place(anchor='nw', height='90', width='90', x='270', y='0')
             self.buttonRight.configure(command=self.Right)
@@ -137,7 +148,7 @@ class PistonControl(tk.Frame):
             self.buttonRight = tk.Canvas(self, bg='#74ad9c', borderwidth=4, relief = 'ridge', width = '90', height = '90')
             self.buttonRight.place(anchor='nw', x='270', y='0')
         if 'Center' in self.elements.keys():
-            self.buttonCenter = tk.Button(self)
+            self.buttonCenter = tk.Button(self, font = font())
             self.buttonCenter.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', text=buttontext)
             self.buttonCenter.place(anchor='nw', height='90', width='180', x='90', y='0')
             self.buttonCenter.configure(command=self.Center)

@@ -2,7 +2,6 @@ import tkinter as tk
 from Variables import Variables
 import json
 
-#Działa nie tykać
 class ScrolledWidget(tk.LabelFrame):
     def __init__(self, widgetCls, text = '', master = None, variables = Variables(), height = 600, scrolltype = 'both'):
         self.variables = variables
