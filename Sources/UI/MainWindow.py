@@ -1,7 +1,6 @@
 import tkinter as tk
-
 from tkinter import ttk
-from tkinter.font import Font as tkFont
+from Widgets.callableFont import Font
 from Home import HomeScreen
 from Settings import SettingsScreen
 from Table import TableScreen
@@ -10,19 +9,6 @@ import json
 from Widgets.ScrolledText import LabelledScrolledText
 from pathlib import Path
 
-class Font(tkFont):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def __call__(self):
-        params = []
-        for param in ['family','size','weight','slant','underline','overstrike']:
-            result = self.actual(param)
-            if result:
-                params.append(result)
-            else:
-                break
-        return tuple(params)
 
 class Frame(tk.Frame):
     def __init__(self, master = None, variables = Variables()):
