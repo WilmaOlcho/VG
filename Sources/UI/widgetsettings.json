@@ -1,0 +1,18 @@
+{
+    "ackbutton":{
+        
+    },
+    "MainWindowNotebook":{
+        "font":{
+            "family":"Helvetica",
+            "size":15,
+            "weight":"bold"},
+        "constructor":{
+            "width":1800},
+        "grid":{
+            "column":0,
+            "columnspan":2,
+            "row":1,
+            "sticky":"nsew"}
+    }
+}

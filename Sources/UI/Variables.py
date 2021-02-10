@@ -1,6 +1,7 @@
 
 class Variables(dict):
-    def __init__(self):
+    def __init__(self, **widgetsettings):
+        self['widgetsettings'] = widgetsettings
         self.jsonpath = ''
         self.currentProgram = ''
         self.programposstart = 0
