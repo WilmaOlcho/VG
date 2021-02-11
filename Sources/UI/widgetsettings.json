@@ -1,36 +1,237 @@
 {
-    "ackbutton":{
-        
+    "widget":{
+        "pistonbutton":{
+            "frame":{
+                "width":360,
+                "height":90
+            },
+            "Color":{
+                "normal":"#84bdac",
+                "active":"#f2fc45",
+                "highlighted":"#80ffaa",
+                "empowered":"#ffdc45"
+            },
+            "Left":{
+                "Button":{
+                    "highlightbackground":"#84bdac",
+                    "borderwidth":1,
+                    "relief":"ridge",
+                    "activebackground":"#f96348",
+                    "background":"#84bdac",
+                    "justify":"center",
+                    "width":90,
+                    "height":90,
+                    "text":"<--"
+                },
+                "Canvas":{
+                    "bg":"",
+                    "borderwidth":4,
+                    "relief":"ridge",
+                    "width":90,
+                    "height":90
+                },
+                "place":{
+                    "anchor":"nw",
+                    "x":0,
+                    "y":0
+                }
+            },
+            "Center":{
+                "Button":{
+                    "highlightbackground":"#84bdac",
+                    "borderwidth":1,
+                    "relief":"ridge",
+                    "activebackground":"#f96348",
+                    "background":"#84bdac",
+                    "justify":"center",
+                    "width":180,
+                    "height":90
+                },
+                "Canvas":{
+                    "bg":"",
+                    "borderwidth":4,
+                    "relief":"ridge",
+                    "width":180,
+                    "height":90
+                },
+                "place":{
+                    "anchor":"nw",
+                    "x":90,
+                    "y":0
+                }
+            },
+            "Right":{
+                "Button":{
+                    "highlightbackground":"#84bdac",
+                    "borderwidth":1,
+                    "relief":"ridge",
+                    "activebackground":"#f96348",
+                    "background":"#84bdac",
+                    "justify":"center",
+                    "width":90,
+                    "height":90,
+                    "text":"-->"
+                },
+                "Canvas":{
+                    "bg":"",
+                    "borderwidth":4,
+                    "relief":"ridge",
+                    "width":90,
+                    "height":90
+                },
+                "place":{
+                    "anchor":"nw",
+                    "x":270,
+                    "y":0
+                }
+            }
+        }
     },
-    "MainWindowNotebook":{
-        "font":{
-            "family":"Helvetica",
-            "size":15,
-            "weight":"bold"},
-        "constructor":{
-            "width":1800},
-        "grid":{
-            "column":0,
-            "columnspan":2,
-            "row":1,
-            "sticky":"nsew"}
+    "title":"Spawanie Lusterkowe VG",
+    "MainFont":{
+        "family":"Arial",
+        "size":15,
+        "weight":"bold"
     },
+    "MainWindow":{
+        "ackbutton":{
+            "constructor":{
+                "width":14,
+                "height":6,
+            "text":"Potwierd\u017A\nstatus"}
+        },
+        "Notebook":{
+            "constructor":{
+                "width":1800},
+            "grid":{
+                "column":0,
+                "columnspan":2,
+                "row":1,
+                "sticky":"nsew"}
+        },
+        "ErrorTextArea":{
+            "constructor":{
+                "scrolltype":"vertical",
+                "InternalVariable":"ImportantMessages",
+                "width":155,
+                "height":5,
+                "text":"B\u0142\u0119dy i powiadomienia"},
+            "grid":{
+                "column":0,
+                "columnspan":2,
+                "row":1,
+                "sticky":"nsew"}
+        }},
     "SettingsScreen":{
-        "font":{
-            "family":"Helvetica",
-            "size":12,
-            "weight":"bold"}
+        "Name":"Ustawienia i tryb r\u0119czny",
+        "Troley":{
+            "Label":"W\u00F3zek",
+            "Pneumatics":{
+                "Label":"Si\u0142owniki",
+                "DockingStation":{
+                    "buttontext":"Si\u0142owniki w\u00D3zka",
+                    "masterkey":"pistoncontrol",
+                    "key":"pusher",
+                    "Button":{}
+                },
+                "Seal":{
+                    "buttontext":"Si\u0142ownik uszczelnienia",
+                    "masterkey":"pistoncontrol",
+                    "key":"seal"
+                }
+            },
+            "Servo":{
+                "Label":"Serwo",
+                "Button":{
+                    "masterkey":"troley",
+                    "width":25,
+                    "height":2
+                },
+                "Lamp":{
+                    "masterkey":"troley",
+                    "width":40,
+                    "height":40,
+                    "frame":{
+                        "relief":"ridge",
+                        "borderwidth":2
+                    },
+                    "caption":{
+                        "width":19
+                    },
+                    "Color":{
+                        "normal":"black",
+                        "active":"green"
+                    }
+                }
+            }
+        },
+        "Pneumatics":{
+            "Label":"Os\u0142ony pneumatyczne",
+            "ShieldingGas":{
+                "Button":{
+                    "Label":"Gaz os\u0142onowy",
+                    "masterkey":"pistoncontrol",
+                    "key":"shieldinggas"
+                }
+            },
+            "CrossJet":{
+                "Button":{
+                    "Label":"N\u00F3\u017C powietrzny",
+                    "masterkey":"pistoncontrol",
+                    "key":"crossjet"
+                }
+            },
+            "HeadCooling":{
+                "Button":{
+                    "Label":"Ch\u0142odzenie g\u0142owicy",
+                    "masterkey":"pistoncontrol",
+                    "key":"headcooling"
+                }
+            }
+        }
     },
     "HomeScreen":{
-        "font":{
-            "family":"Helvetica",
-            "size":12,
-            "weight":"bold"}
+        "Name":"Ekran g\u0142\u00D3wny",
+        "FirstColumn":{
+
+        },
+        "SecondColumn":{
+
+        },
+        "ThirdColumn":{
+            "ProcessVariables":{
+                "Label":"Proces",
+                "currentposition":{
+                    "Label":"Pozycja w tabeli:",
+                    "width":25 
+                },
+                "processtime":{
+                    "Label":"Czas cyklu:",
+                    "width":25 
+                },
+                "button":{
+                    "step":{
+                        "bg":"lightgrey",
+                        "width":35,
+                        "heught":3
+                    },
+                    "start":{
+                        "text":"Uruchom",
+                        "bg":"green",
+                        "width":35,
+                        "heught":3
+                    },
+                    "stop":{
+                        "text":"Zatrzymaj",
+                        "bg":"red",
+                        "width":35,
+                        "heught":3
+                    }
+                    
+                }
+            }
+        }
     },
     "TableScreen":{
-        "font":{
-            "family":"Helvetica",
-            "size":12,
-            "weight":"bold"}
     }
 }

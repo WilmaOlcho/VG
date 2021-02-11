@@ -1,36 +1,55 @@
 import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
-from Variables import Variables
 import json
 
-class HomeScreen(tk.Frame):
-    def __init__(self, master = None, variables = Variables()):
-        super().__init__(master = master)
-        self.variables = variables
-        self.master = master
-        self.name = 'Ekran główny'
+def getroot(obj):
+    while True:
+        if hasattr(obj,'master'):
+            if obj.master:
+                obj = obj.master
+            else:
+                break
+        else:
+            break
+    return obj
+
+class HomeScreen(dict):
+    def __init__(self, master = None):
+        super().__init__()
+        self['settings'] = master.settings['HomeScreen']
+        self.frame = ttk.Frame(master = master)
+        self.frame.__setattr__('settings',self['settings'])
+        self.root = getroot(master)
+        self.name = self['settings']['Name']
+        self.font = self.root.font
         self.widgets = [
-            FirstColumn(self, variables = self.variables),
-            SecondColumn(self, variables = self.variables),
-            ThirdColumn(self, variables = self.variables)
+            FirstColumn(self),
+            SecondColumn(self),
+            ThirdColumn(self)
         ]
         for widget in self.widgets:
             widget.pack(side = tk.LEFT, expand = tk.Y)
         self.pack(expand = tk.YES, fill=tk.BOTH)
+
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
     def update(self):
         super().update()
         for widget in self.widgets:
             widget.update()
 
-class ThirdColumn(tk.Frame):
-    def __init__(self, master = None, variables = Variables()):
-        super().__init__(master = master)
-        self.variables = variables
-        self.master = master
+class ThirdColumn(dict):
+    def __init__(self, master = None):
+        super().__init__()
+        self['settings'] = master.settings['ThirdColumn']
+        self.frame = tk.Frame(master = master)
+        self.frame.__setattr__('settings',self['settings'])
+        self.root = getroot(master)
+        self.font = self.root.font
         self.widgets = [
-            ProcessVariables(self, variables = self.variables)
+            ProcessVariables(self)
         ]
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
@@ -41,37 +60,46 @@ class ThirdColumn(tk.Frame):
         for widget in self.widgets:
             widget.update()
 
-class ProcessVariables(tk.LabelFrame):
-    def __init__(self, master = None, variables = Variables()):
-        super().__init__(master = master, text = 'Proces')
-        self.variables = variables
-        self.master = master
-        self.leftFrame = tk.Frame(self)
-        self.rightFrame = tk.Frame(self)
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
+
+class ProcessVariables(dict):
+    def __init__(self, master = None):
+        super().__init__()
+        self.root = getroot(master)
+        self['settings'] = master.settings['ProcessVariables']
+        self.frame = ttk.LabelFrame(master = master, text = self['settings']['Label'])
+        self.frame.__setattr__('settings',self['settings'])
+        self.font = master.font
+        self.leftFrame = ttk.Frame(self.frame)
+        self.rightFrame = ttk.Frame(self.frame)
         self.widgets = [
-            variablesFrame(master = self.leftFrame, text = 'Pozycja w tabeli:', key = 'currentposition', width = 25),
-            variablesFrame(master = self.leftFrame, text = 'Czas cyklu:', key = 'processtime', width = 25),
-            tk.Button(master = self.rightFrame, bg = 'lightgrey', text = "Praca krokowa", width = 35, height = 3, command = self.stepclick),
-            tk.Button(master = self.rightFrame, text = 'Uruchom', width = 35, height = 3, command = self.startclick),
-            tk.Button(master = self.rightFrame, text = 'Zatrzymaj', width = 35, height = 3, command = self.stopclick),
+            variablesFrame(master = self.leftFrame, key = 'currentposition'),
+            variablesFrame(master = self.leftFrame, key = 'processtime'),
+            tk.Button(master = self.rightFrame, font = self.font(), command = self.stepclick, **self['settings']['button']['step']),
+            tk.Button(master = self.rightFrame, font = self.font(), command = self.startclick, **self['settings']['button']['start']),
+            tk.Button(master = self.rightFrame, font = self.font(), command = self.stopclick, **self['settings']['button']['stop']),
             self.leftFrame,
             self.rightFrame
         ]
         for widget in self.widgets:
             widget.pack(side = tk.LEFT if widget.master == self else tk.TOP, fill ='x', anchor = tk.S)
-        self.pack()
+        self.frame.pack()
+
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
     def stepclick(self):
-        if not self.variables['ProgramActive']:
-            self.variables['auto'] = not self.variables['auto']
+        if not self.root.variables['ProgramActive']:
+            self.root.variables['auto'] = not self.root.variables['auto']
 
     def startclick(self):
-        self.variables['ProgramActive'] = True
-        self.variables.internalEvents['start'] = True
+        self.root.variables['ProgramActive'] = True
+        self.root.variables.internalEvents['start'] = True
 
     def stopclick(self):
-        self.variables['ProgramActive'] = False
-        self.variables.internalEvents['stop'] = True
+        self.root.variables['ProgramActive'] = False
+        self.root.variables.internalEvents['stop'] = True
 
     def update(self):
         super().update()
@@ -79,26 +107,29 @@ class ProcessVariables(tk.LabelFrame):
             if isinstance(widget, tk.Button):
                 button = widget.cget('text')
                 if button == 'Praca krokowa':
-                    if self.variables['auto']:
+                    if self.root.variables['auto']:
                         widget.configure(text = 'Praca automatyczna')
                 elif button == 'Praca automatyczna':
-                    if not self.variables['auto']:
+                    if not self.root.variables['auto']:
                         widget.configure(text = 'Praca krokowa')
                 elif button == 'Uruchom':
-                    widget.configure(bg = 'lightgreen' if self.variables['ProgramActive'] else 'green')
+                    widget.configure(bg = 'lightgreen' if self.root.variables['ProgramActive'] else 'green')
                 elif button == 'Zatrzymaj':
-                    widget.configure(bg = 'red' if self.variables['ProgramActive'] else 'red')
+                    widget.configure(bg = 'red' if self.root.variables['ProgramActive'] else 'red')
             widget.update()
 
-class variablesFrame(tk.Frame):
-    def __init__(self, master = None, variables = Variables(), text = 'Pozycja w tabeli', key = 'auto', width = 20):
-        super().__init__(master = master)
-        self.variables = variables
+class variablesFrame(dict):
+    def __init__(self, master = None, key = 'auto'):
+        super().__init__()
+        self.frame = tk.Frame(master = master)
         self.key = key
-        self.master = master
+        self['settings'] = master.settings[key]
+        self.frame.__setattr__('settings',self['settings'])
+        self.root = getroot(master)
+        self.font = self.root.font
         self.widgets = [
-            tk.Label(master = self, text = text),
-            tk.Entry(master = self, text = self.variables[self.key], width = width)
+            ttk.Label(master = self.frame, text = self['settings']['Label']),
+            ttk.Entry(master = self, text =self.root.variables[self.key], width = self['settings']['width'])
         ]
         for widget in self.widgets:
             widget.pack()
@@ -109,17 +140,19 @@ class variablesFrame(tk.Frame):
         for widget in self.widgets:
             if isinstance(widget,tk.Entry):
                 widget.delete(0,tk.END)
-                widget.insert(0,self.variables[self.key])
+                widget.insert(0,self.root.variables[self.key])
             widget.update()
 
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
-class SecondColumn(tk.Frame):
-    def __init__(self, master = None, variables = Variables()):
+class SecondColumn(ttk.Frame):
+    def __init__(self, master = None):
         super().__init__(master = master)
-        self.variables = variables
+        self.root.variables = variables
         self.master = master
         self.widgets = [
-            StatusIndicators(self, variables = self.variables)
+            StatusIndicators(self, variables = self.root.variables)
         ]
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
@@ -130,14 +163,17 @@ class SecondColumn(tk.Frame):
         for widget in self.widgets:
             widget.update()
 
-class FirstColumn(tk.Frame):
-    def __init__(self, master = None, variables = Variables()):
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
+
+class FirstColumn(ttk.Frame):
+    def __init__(self, master = None):
         super().__init__(master = master)
-        self.variables = variables
+        self.root.variables = variables
         self.master = master
         self.widgets = [
-            ProgramSelect(self, variables = self.variables),
-            Positions(self, variables = self.variables)
+            ProgramSelect(self, variables = self.root.variables),
+            Positions(self, variables = self.root.variables)
         ]
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
@@ -147,20 +183,23 @@ class FirstColumn(tk.Frame):
         super().update()
         for widget in self.widgets:
             widget.update()
+    
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
-class StatusIndicators(tk.LabelFrame):
-    def __init__(self, master = None, variables = Variables()):
+class StatusIndicators(ttk.LabelFrame):
+    def __init__(self, master = None):
         super().__init__(master = master, text = 'Status')
-        self.variables = variables
+        self.root.variables = variables
         self.widgets = [
-            StatusIndicators.line(self, variables = self.variables, label = 'Bezpieczeństwo:', indicator = 'Safety'),
-            StatusIndicators.line(self, variables = self.variables, label = 'Gaz osłonowy:', indicator = 'ShieldingGas'),
-            StatusIndicators.line(self, variables = self.variables, label = 'Filtrowentylator:', indicator = 'VacuumFilter'),
-            StatusIndicators.line(self, variables = self.variables, label = 'Powietrze:', indicator = 'Air'),
-            StatusIndicators.line(self, variables = self.variables, label = 'Krosdżet:', indicator = 'Crossjet'),
-            StatusIndicators.line(self, variables = self.variables, label = 'Wózek', indicator = 'Troley'),
-            StatusIndicators.line(self, variables = self.variables, label = 'Oświetlenie:', indicator = 'Light'),
-            StatusIndicators.line(self, variables = self.variables, label = 'Robot', indicator = 'Robot')
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Bezpieczeństwo:', indicator = 'Safety'),
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Gaz osłonowy:', indicator = 'ShieldingGas'),
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Filtrowentylator:', indicator = 'VacuumFilter'),
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Powietrze:', indicator = 'Air'),
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Krosdżet:', indicator = 'Crossjet'),
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Wózek', indicator = 'Troley'),
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Oświetlenie:', indicator = 'Light'),
+            StatusIndicators.line(self, variables = self.root.variables, label = 'Robot', indicator = 'Robot')
         ]
         for widget in self.widgets:
             widget.pack()
@@ -170,13 +209,16 @@ class StatusIndicators(tk.LabelFrame):
         super().update()
         for widget in self.widgets:
             widget.update()
+        
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
-    class line(tk.Frame):
+    class line(ttk.Frame):
         def __init__(self, master = None, variables = Variables(), label = '', indicator = ''):
             super().__init__(master = master, height='30', width='135', borderwidth = 2, relief = 'ridge')
             self.key = indicator
-            self.variables = variables
-            self.label = tk.Label(self)
+            self.root.variables = variables
+            self.label = ttk.Label(self)
             self.label.config(text=label)
             self.label.place(anchor='w', x='3', y='13')
             self.indicator = tk.Canvas(self)
@@ -186,15 +228,15 @@ class StatusIndicators(tk.LabelFrame):
         
         def update(self):
             super().update()
-            self.indicator.config(bg = 'lightgreen' if self.variables.statusindicators[self.key]==1 else 'black' if self.variables.statusindicators[self.key]==0 else 'red')
+            self.indicator.config(bg = 'lightgreen' if self.root.variables.statusindicators[self.key]==1 else 'black' if self.root.variables.statusindicators[self.key]==0 else 'red')
 
-class ProgramSelect(tk.LabelFrame):
+class ProgramSelect(ttk.LabelFrame):
     def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master, text = 'Program')
         self.menubutton = tk.Menubutton(master = self, text = 'Program')
-        self.variables = variables
-        self.variables.jsonpath = str(Path(__file__).parent.absolute())+'\\Programs.json'
-        self.programs = json.load(open(self.variables.jsonpath))
+        self.root.variables = variables
+        self.root.variables.jsonpath = str(Path(__file__).parent.absolute())+'\\Programs.json'
+        self.programs = json.load(open(self.root.variables.jsonpath))
         self.menu = tk.Menu(master = self.menubutton, tearoff = 0)
         self.menubutton['menu'] = self.menu
         for program in self.programs["Programs"]:
@@ -203,26 +245,29 @@ class ProgramSelect(tk.LabelFrame):
 
     def command(self, program):
         self.menubutton.config(text = program)
-        self.variables.currentProgram = program
+        self.root.variables.currentProgram = program
         for prog in self.programs['Programs']:
             if prog['Name'] == program:
-                self.variables.programposstart = min(int(item[1]) for item in prog['Table'])
-                self.variables.programposend = max(int(item[1]) for item in prog['Table'])
+                self.root.variables.programposstart = min(int(item[1]) for item in prog['Table'])
+                self.root.variables.programposend = max(int(item[1]) for item in prog['Table'])
                 break
-        self.variables.internalEvents['RefreshStartEnd'] = True
-        self.variables.internalEvents['TableRefresh'] = True
+        self.root.variables.internalEvents['RefreshStartEnd'] = True
+        self.root.variables.internalEvents['TableRefresh'] = True
 
-class Positions(tk.LabelFrame):
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
+
+class Positions(ttk.LabelFrame):
     def __init__(self, master = None, variables = Variables()):
         super().__init__(master = master, text = 'Wybór pozycji')
-        self.variables = variables
-        self.programs = json.load(open(self.variables.jsonpath))
+        self.root.variables = variables
+        self.programs = json.load(open(self.root.variables.jsonpath))
         self.program = {}
         self.widgets = [
-            tk.Label(master = self, text = 'OD '),
-            tk.Entry(master = self, text = ''),
-            tk.Label(master = self, text = 'DO '),
-            tk.Entry(master = self, text = '')
+            ttk.Label(master = self, text = 'OD '),
+            ttk.Entry(master = self, text = ''),
+            ttk.Label(master = self, text = 'DO '),
+            ttk.Entry(master = self, text = '')
         ]
         for widget in self.widgets:
             if isinstance(widget, tk.Entry):
@@ -236,6 +281,9 @@ class Positions(tk.LabelFrame):
         attemptlist.sort(key = lambda element, v = int(value): abs(v - int(element)))
         return attemptlist[0]
 
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
+
     def setvalue(self):
         for widget in self.widgets:
             if isinstance(widget, tk.Entry):
@@ -246,24 +294,24 @@ class Positions(tk.LabelFrame):
                 if not value in positionsintable:
                     value = self.nearest(value, positionsintable)
                 if '2' in widget._name:
-                    self.variables.programposend = value
+                    self.root.variables.programposend = value
                 else:
-                    self.variables.programposstart = value
-        self.variables.internalEvents['RefreshStartEnd'] = True
+                    self.root.variables.programposstart = value
+        self.root.variables.internalEvents['RefreshStartEnd'] = True
         
     def update(self):
         super().update()
         for program in self.programs['Programs']:
-            if program['Name'] == self.variables.currentProgram:
+            if program['Name'] == self.root.variables.currentProgram:
                 self.program = program
-        if self.variables.internalEvents['RefreshStartEnd']:
+        if self.root.variables.internalEvents['RefreshStartEnd']:
             for widget in self.widgets:
                 if 'entry' in widget._name:
                     widget.delete(0,tk.END)
                     if '2' in widget._name:
-                        widget.insert(0,str(self.variables.programposend))
+                        widget.insert(0,str(self.root.variables.programposend))
                     else:
-                        widget.insert(0,str(self.variables.programposstart))
-        self.variables.internalEvents['RefreshStartEnd'] = False
+                        widget.insert(0,str(self.root.variables.programposstart))
+        self.root.variables.internalEvents['RefreshStartEnd'] = False
 
         

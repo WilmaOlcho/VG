@@ -1,13 +1,25 @@
 import json
 from Variables import Variables
 import tkinter as tk
+import tkinter.ttk as ttk
 
-class ScrolledText(tk.Frame):
-    def __init__(self, master = None, variables = Variables(), InternalVariable = None, scrolltype = 'both', height=200, width=200):
+def getroot(obj):
+    while True:
+        if hasattr(obj, 'master'):
+            if obj.master:
+                obj = obj.master
+            else:
+                break
+        else:
+            break
+    return obj
+
+class ScrolledText(ttk.Frame):
+    def __init__(self, font = ('arial',10), master = None, InternalVariable = None, scrolltype = 'both', height=200, width=200):
         super().__init__(master = master, width = width, height = height)
         self.key = InternalVariable
-        self.variables = variables
-        self.textInstance = tk.Text(self, height=height, width=width)
+        self.root = getroot(master)
+        self.textInstance = tk.Text(self, height=height, width=width, font = font)
         if scrolltype in ('vertical','both'):
             self.vsb = tk.Scrollbar(self, orient='vertical', command = self.textInstance.yview)#, yscrollcommand = lambda f, l, obj = self:obj.autoscroll(self.vsb, f, l))
             self.vsb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -21,7 +33,7 @@ class ScrolledText(tk.Frame):
         self.vtext = ''
 
     def update(self):
-        text = self.variables[self.key]
+        text = self.root['variables'][self.key]
         if self.vtext != text:
             vpos, hpos = self.vsb.get() if hasattr(self,'vsb') else [0,0], self.hsb.get() if hasattr(self,'hsb') else [0,0]
             prevw, prevh = self.textInstance.winfo_width(), self.textInstance.winfo_height()
@@ -34,9 +46,9 @@ class ScrolledText(tk.Frame):
             self.vtext = text
 
 class LabelledScrolledText(ScrolledText):
-    def __init__(self, master = None, variables = Variables(), text = '', InternalVariable = None, scrolltype = 'both', height=200, width=200):
-        self.frame = tk.LabelFrame(master = master, text = text)
-        super().__init__(master = self.frame, variables = variables, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
+    def __init__(self, font = ('arial',10), master = None, text = '', InternalVariable = None, scrolltype = 'both', height=200, width=200):
+        self.frame = ttk.LabelFrame(master = master, text = text)
+        super().__init__(master = self.frame, font = font InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
         self.frame.grid()
 
     def update(self):
