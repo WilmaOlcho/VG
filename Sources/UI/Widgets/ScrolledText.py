@@ -1,18 +1,7 @@
 import json
-from Variables import Variables
 import tkinter as tk
 import tkinter.ttk as ttk
-
-def getroot(obj):
-    while True:
-        if hasattr(obj, 'master'):
-            if obj.master:
-                obj = obj.master
-            else:
-                break
-        else:
-            break
-    return obj
+from . import getroot
 
 class ScrolledText(ttk.Frame):
     def __init__(self, font = ('arial',10), master = None, InternalVariable = None, scrolltype = 'both', height=200, width=200):
@@ -48,7 +37,7 @@ class ScrolledText(ttk.Frame):
 class LabelledScrolledText(ScrolledText):
     def __init__(self, font = ('arial',10), master = None, text = '', InternalVariable = None, scrolltype = 'both', height=200, width=200):
         self.frame = ttk.LabelFrame(master = master, text = text)
-        super().__init__(master = self.frame, font = font InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
+        super().__init__(master = self.frame, font = font, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
         self.frame.grid()
 
     def update(self):

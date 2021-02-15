@@ -193,10 +193,90 @@
     "HomeScreen":{
         "Name":"Ekran g\u0142\u00D3wny",
         "FirstColumn":{
-
+            "ProgramSelect":{
+                "Label":"Program"
+            },
+            "Positions":{
+                "Label":"Wybór pozycji:",
+                "from":"OD  ",
+                "to":"DO  "
+            }
         },
         "SecondColumn":{
-
+            "StatusIndicators":{
+                "Safety":{
+                    "Label":"Bezpieczeństwo:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                },
+                "ShieldingGas":{
+                    "Label":"Gaz osłonowy:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                },
+                "VacuumFilter":{
+                    "Label":"Filtrowentylator:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                },
+                "Air":{
+                    "Label":"Powietrze:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                },
+                "Crossjet":{
+                    "Label":"Nóż powietrzny:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                },
+                "Troley":{
+                    "Label":"Wózek:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                },
+                "Light":{
+                    "Label":"Oświetlenie:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                },
+                "Robot":{
+                    "Label":"Robot:",
+                    "Frame":{
+                        "height":30,
+                        "width":150,
+                        "borderwidth":2,
+                        "relief":"ridge"
+                    }
+                }
+            }
         },
         "ThirdColumn":{
             "ProcessVariables":{
@@ -233,5 +313,30 @@
         }
     },
     "TableScreen":{
+        "ScrolledWidget":{
+            "PosTable":{
+                "ContextMenu":[
+                    {
+                        "label":"Dodaj wiersz przed",
+                        "command":"self.AddRowBefore"
+                    },{
+                        "label":"Dodaj wiersz za",
+                        "command":"self.AddRowAfter"
+                    },{
+                        "label":"Usuń wiersz",
+                        "command":"self.DeleteRow"
+                    },
+                    "separator",
+                    {
+                        "label":"Sortuj Tabelę",
+                        "command":"self.SortTable"
+                    }
+                ]
+            }
+        },
+        "Button":{
+            "Label":"Zapisz",
+            "action":"save"
+        }
     }
 }

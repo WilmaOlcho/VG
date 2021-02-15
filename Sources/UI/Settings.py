@@ -2,27 +2,17 @@ import tkinter as tk
 from tkinter import ttk
 from Variables import Variables
 from Widgets.callableFont import Font
-
-def getroot(obj):
-    while True:
-        if hasattr(obj, 'master'):
-            if obj.master:
-                obj = obj.master
-            else:
-                break
-        else:
-            break
-    return obj
+from . import getroot
 
 class SettingsScreen(dict):
     def __init__(self, master = None, variables = Variables()):
         self.frame = ttk.Frame(master = master)
-        self['settings'] = master['settings']['SettingsScreen']
-        self.frame.__setattr__('settings',self['settings'])
+        self.settings = master.settings['SettingsScreen']
+        self.frame.__setattr__('settings',self.settings)
         self.root = getroot(self)
         self.font = self.root.font
-        self.name = self['settings']['Name']
-        self.miscpneumaticsframe = ttk.LabelFrame(master = self.frame, text = self['settings']["Pneumatics"]['Label'])
+        self.name = self.settings['Name']
+        self.miscpneumaticsframe = ttk.LabelFrame(master = self.frame, text = self.settings["Pneumatics"]['Label'])
         self.widgets = [
             Troley(self.frame),
             PistonControl(master = self.miscpneumaticsframe, button = 'ShieldinGas'),
@@ -38,24 +28,27 @@ class SettingsScreen(dict):
         self.frame.pack(expand = tk.YES, fill=tk.BOTH)
     
     def update(self):
-        super().update()
+        self.frame.update()
         for widget in self.widgets:
             widget.update()
 
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
+
 class Troley(dict):
-    def __init__(self, master = None, text = 'text'):
+    def __init__(self, master = None):
         super().__init__()
         self.root = getroot(master)
-        self['settings'] = master.settings['Troley']
+        self.settings = master.settings['Troley']
         self.font = self.root.font
-        self.frame = ttk.LabelFrame(master = master, text = self['settings']['Label'])
-        self.frame.__setattr__('settings', self['settings'])
-        self.pistonlabeledFrame = ttk.LabelFrame(self.frame, text = self['settings']['Pneumatics']['Label'])
+        self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
+        self.frame.__setattr__('settings', self.settings)
+        self.pistonlabeledFrame = ttk.LabelFrame(self.frame, text = self.settings['Pneumatics']['Label'])
         self.pistonlabeledFrame.__setattr__('settings', master.settings["Troley"]['Pneumatics'])
         self.widgets = [
             ServoControl(master = self.frame, buttons = self.root.variables['servocontrol']['buttons'], lamps = self.root.variables['servocontrol']['lamps']),
-            PistonControl(master = self.pistonlabeledFrame, **self['settings']['Pneumatics']['DockingStation']),
-            PistonControl(master = self.pistonlabeledFrame, **self['settings']['Pneumatics']['Seal']),
+            PistonControl(master = self.pistonlabeledFrame, **self.settings['Pneumatics']['DockingStation']),
+            PistonControl(master = self.pistonlabeledFrame, **self.settings['Pneumatics']['Seal']),
             self.pistonlabeledFrame
                     ]
         for widget in self.widgets:
@@ -72,17 +65,17 @@ class ServoControl(dict):
         super().__init__()
         self.root = getroot(master)
         self.font = self.root.font
-        self['settings'] = master['settings']['Servo']
-        self.frame = ttk.LabelFrame(master = master, text = self['settings']['Label'])
-        self.frame.__setattr__('settings',self['settings'])
+        self.settings = master.settings['Servo']
+        self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
+        self.frame.__setattr__('settings',self.settings)
         self.master = master
         self.buttonsframe = tk.Frame(self)
         self.lampsframe = tk.Frame(self)
         self.widgets = [self.buttonsframe, self.lampsframe]
         for key, value in buttons.items():
-            self.widgets.append(TroleyButton(self.buttonsframe, text = key, key = value, **self['settings']['Button']))
+            self.widgets.append(TroleyButton(self.buttonsframe, text = key, key = value, **self.settings['Button']))
         for key, value in lamps.items():
-            self.widgets.append(TroleyLamp(self.lampsframe, text = key, key = value, **self['settings']['Lamp']))
+            self.widgets.append(TroleyLamp(self.lampsframe, text = key, key = value, **self.settings['Lamp']))
         
         for widget in self.widgets:
             if widget.master == self:
@@ -101,12 +94,12 @@ class TroleyButton(dict):
         super().__init__()
         self.root = getroot(master)
         self.font = self.root.font
-        self['settings'] = master.settings['Button']
-        self.frame = tk.Button(master = master, font = self.font(), text = text, command = self.click, width = self['settings']['width'], height = self['settings']['height'])
-        self.frame.__setattr__('settings',self['settings'])
+        self.settings = master.settings['Button']
+        self.frame = tk.Button(master = master, font = self.font(), text = text, command = self.click, width = self.settings['width'], height = self.settings['height'])
+        self.frame.__setattr__('settings',self.settings)
         self.key = key
         self.master = master
-        self.masterkey = self['settings']['masterkey']
+        self.masterkey = self.settings['masterkey']
 
     def click(self):
         if self.key[0] == '-':
@@ -122,14 +115,14 @@ class TroleyLamp(dict):
         super().__init__()
         self.root = getroot(master)
         self.font = self.root.font
-        self['settings'] = master.settings['Lamp']
-        self.frame = tk.Frame(master, **self['settings']['frame'])
-        self.frame.__setattr__('settings',self['settings'])
-        self.lamp = tk.Canvas(master = self.frame, width = self['settings']['width'], height = self['settings']['height'])
-        self.caption = ttk.Label(master = self.frame, text = text, **self['settings']['caption'])
+        self.settings = master.settings['Lamp']
+        self.frame = tk.Frame(master, **self.settings['frame'])
+        self.frame.__setattr__('settings',self.settings)
+        self.lamp = tk.Canvas(master = self.frame, width = self.settings['width'], height = self.settings['height'])
+        self.caption = ttk.Label(master = self.frame, text = text, **self.settings['caption'])
         self.key = key
         self.master = master
-        self.masterkey = self['settings']['masterkey']
+        self.masterkey = self.settings['masterkey']
         self.caption.pack(side = tk.LEFT)
         self.lamp.pack(side = tk.LEFT)
         self.lit = False
@@ -140,16 +133,16 @@ class TroleyLamp(dict):
             self.lit = not self.root.variables[self.masterkey][self.key[1:]]
         else:
             self.lit = self.root.variables[self.masterkey][self.key]
-        self.lamp.config(bg = self['settings']['Color']['active'] if self.lit else self['settings']['Color']['normal'])
+        self.lamp.config(bg = self.settings['Color']['active'] if self.lit else self.settings['Color']['normal'])
 
 class PistonControl(dict):
     def __init__(self, master = None, button = ""):
         super().__init__()
         self.frame = tk.Frame(master = master)
-        self['settings'] = master.settings[button]
-        self.frame.__setattr__('settings',self['settings'])
+        self.settings = master.settings[button]
+        self.frame.__setattr__('settings',self.settings)
         self.root = getroot(master)
-        self.elements = self.root.variables[self['settings']['masterkey']][self['settings']['key']]
+        self.elements = self.root.variables[self.settings['masterkey']][self.settings['key']]
         self.font = self.root.font
         config = self.root.settings['widget']['pistonbutton']
         if 'Left' in self.elements.keys():
@@ -168,7 +161,7 @@ class PistonControl(dict):
         self.buttonRight.place(**config['Right']['place'])
         if 'Center' in self.elements.keys():
             self.buttonCenter = tk.Button(self.frame, font = self.font())
-            self.buttonCenter.config(text=self['settings']['Button']['Label'], **config['Center']['Button'])
+            self.buttonCenter.config(text=self.settings['Button']['Label'], **config['Center']['Button'])
             self.buttonCenter.configure(command=self.Center)
         else:
             self.buttonCenter = tk.Canvas(self.frame, **config['Center']['Canvas'])

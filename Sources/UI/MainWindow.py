@@ -1,35 +1,20 @@
 import tkinter as tk
 from tkinter import ttk
-from Widgets.callableFont import Font
-from Home import HomeScreen
-from Settings import SettingsScreen
-from Table import TableScreen
-from Variables import Variables
+from Widgets import Font, LabelledScrolledText
 import json
-from Widgets.ScrolledText import LabelledScrolledText
 from pathlib import Path
-
-def getroot(obj):
-    while True:
-        if hasattr(obj, 'master'):
-            if obj.master:
-                obj = obj.master
-            else:
-                break
-        else:
-            break
-    return obj
+from . import getroot, SettingsScreen, HomeScreen, TableScreen, Variables
 
 class Frame(dict):
     def __init__(self, master = None):
         self.frame = tk.Frame(master = master)
         dict.__init__(self)
-        self['settings'] = master['settings']['MainWindow']
+        self.settings = master.settings['MainWindow']
         self.root = getroot(master) 
-        self.OverallNotebook = ttk.Notebook(self.frame, **self['settings']['Notebook']['constructor'])
+        self.OverallNotebook = ttk.Notebook(self.frame, **self.settings['Notebook']['constructor'])
         self.widgets = [
-            LabelledScrolledText(master = self.frame, **self['settings']['ErrorTextArea']['constructor']),
-            tk.Button(master = self.frame, command = self.ack, **self['settings']['ackbutton']['constructor']),
+            LabelledScrolledText(master = self.frame, **self.settings['ErrorTextArea']['constructor']),
+            tk.Button(master = self.frame, command = self.ack, **self.settings['ackbutton']['constructor']),
             HomeScreen(master = self.OverallNotebook),
             SettingsScreen(master = self.OverallNotebook),
             TableScreen(master = self.OverallNotebook) 
@@ -41,7 +26,7 @@ class Frame(dict):
             else:
                 widget.grid(column = col, row=0, sticky = tk.NSEW)
                 col +=1
-        self.OverallNotebook.grid(**self['settings']['Notebook']['grid'])
+        self.OverallNotebook.grid(**self.settings['Notebook']['grid'])
         self.frame.pack()
 
     def update(self):
@@ -62,10 +47,11 @@ class Window(dict):
         widgetsettings = json.load(open(str(Path(__file__).parent.absolute())+'//widgetsettings.json','r'))
         root.__setattr__('variables', Variables(**widgetsettings))
         root.__setattr__('settings', root['variables']['widgetsettings'])
-        root.__setattr__('font',Font(root = self.window, **self['settings']['MainFont']))
+        self.settings = root.settings
+        root.__setattr__('font',Font(root = self.window, **self.settings['MainFont']))
         rootstyle = ttk.Style()
         rootstyle.configure('.',font = root.font())
-        root.title(self['settings']['title'])
+        root.title(self.settings['title'])
         root.attributes('-fullscreen', True)
         self.interfaceControl = InterfaceControl(lockerinstance, root['variables'])
         self.widgets = [
