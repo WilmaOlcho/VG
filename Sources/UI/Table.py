@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from Widgets import ScrolledWidget, PosTable
 import json
-from . import getroot
+from getroot import getroot
 
 class TableScreen(dict):
     def __init__(self, master = None):

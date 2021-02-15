@@ -24,7 +24,7 @@
                     "text":"<--"
                 },
                 "Canvas":{
-                    "bg":"",
+                    "bg":"#84bdac",
                     "borderwidth":4,
                     "relief":"ridge",
                     "width":90,
@@ -48,7 +48,7 @@
                     "height":90
                 },
                 "Canvas":{
-                    "bg":"",
+                    "bg":"#84bdac",
                     "borderwidth":4,
                     "relief":"ridge",
                     "width":180,
@@ -73,7 +73,7 @@
                     "text":"-->"
                 },
                 "Canvas":{
-                    "bg":"",
+                    "bg":"#84bdac",
                     "borderwidth":4,
                     "relief":"ridge",
                     "width":90,
@@ -107,7 +107,216 @@
                 "column":0,
                 "columnspan":2,
                 "row":1,
-                "sticky":"nsew"}
+                "sticky":"nsew"},
+            "SettingsScreen":{
+                "Name":"Ustawienia i tryb r\u0119czny",
+                "Troley":{
+                    "Label":"W\u00F3zek",
+                    "Pneumatics":{
+                        "Label":"Si\u0142owniki",
+                        "DockingStation":{
+                            "Label":"Si\u0142owniki w\u00D3zka",
+                            "masterkey":"pistoncontrol",
+                            "key":"pusher"
+                        },
+                        "Seal":{
+                            "Label":"Si\u0142ownik uszczelnienia",
+                            "masterkey":"pistoncontrol",
+                            "key":"seal"
+                        }
+                    },
+                    "Servo":{
+                        "Label":"Serwo",
+                        "Button":{
+                            "masterkey":"troley",
+                            "width":25,
+                            "height":2
+                        },
+                        "Lamp":{
+                            "masterkey":"troley",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green"
+                            }
+                        }
+                    }
+                },
+                "Pneumatics":{
+                    "Label":"Os\u0142ony pneumatyczne",
+                    "ShieldingGas":{
+                        "Label":"Gaz os\u0142onowy",
+                        "masterkey":"pistoncontrol",
+                        "key":"shieldinggas"
+                    },
+                    "CrossJet":{
+                        "Label":"N\u00F3\u017C powietrzny",
+                        "masterkey":"pistoncontrol",
+                        "key":"crossjet"
+                    },
+                    "HeadCooling":{
+                        "Label":"Ch\u0142odzenie g\u0142owicy",
+                        "masterkey":"pistoncontrol",
+                        "key":"headcooling"
+                    }
+                }
+            },
+            "HomeScreen":{
+                "Name":"Ekran g\u0142\u00D3wny",
+                "FirstColumn":{
+                    "ProgramSelect":{
+                        "Label":"Program"
+                    },
+                    "Positions":{
+                        "Label":"Wybór pozycji:",
+                        "from":"OD  ",
+                        "to":"DO  "
+                    }
+                },
+                "SecondColumn":{
+                    "StatusIndicators":{
+                        "Safety":{
+                            "Label":"Bezpieczeństwo:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "ShieldingGas":{
+                            "Label":"Gaz osłonowy:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "VacuumFilter":{
+                            "Label":"Filtrowentylator:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "Air":{
+                            "Label":"Powietrze:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "Crossjet":{
+                            "Label":"Nóż powietrzny:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "Troley":{
+                            "Label":"Wózek:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "Light":{
+                            "Label":"Oświetlenie:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "Robot":{
+                            "Label":"Robot:",
+                            "Frame":{
+                                "height":30,
+                                "width":150,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        }
+                    }
+                },
+                "ThirdColumn":{
+                    "ProcessVariables":{
+                        "Label":"Proces",
+                        "currentposition":{
+                            "Label":"Pozycja w tabeli:",
+                            "width":25 
+                        },
+                        "processtime":{
+                            "Label":"Czas cyklu:",
+                            "width":25 
+                        },
+                        "button":{
+                            "step":{
+                                "bg":"lightgrey",
+                                "width":35,
+                                "heught":3
+                            },
+                            "start":{
+                                "text":"Uruchom",
+                                "bg":"green",
+                                "width":35,
+                                "heught":3
+                            },
+                            "stop":{
+                                "text":"Zatrzymaj",
+                                "bg":"red",
+                                "width":35,
+                                "heught":3
+                            }                        
+                        }
+                    }
+                }
+            },
+            "TableScreen":{
+                "ScrolledWidget":{
+                    "PosTable":{
+                        "ContextMenu":[
+                            {
+                                "label":"Dodaj wiersz przed",
+                                "command":"self.AddRowBefore"
+                            },{
+                                "label":"Dodaj wiersz za",
+                                "command":"self.AddRowAfter"
+                            },{
+                                "label":"Usuń wiersz",
+                                "command":"self.DeleteRow"
+                            },
+                            "separator",
+                            {
+                                "label":"Sortuj Tabelę",
+                                "command":"self.SortTable"
+                            }
+                        ]
+                    }
+                },
+                "Button":{
+                    "Label":"Zapisz",
+                    "action":"save"
+                }
+            }
         },
         "ErrorTextArea":{
             "constructor":{
@@ -121,222 +330,6 @@
                 "columnspan":2,
                 "row":1,
                 "sticky":"nsew"}
-        }},
-    "SettingsScreen":{
-        "Name":"Ustawienia i tryb r\u0119czny",
-        "Troley":{
-            "Label":"W\u00F3zek",
-            "Pneumatics":{
-                "Label":"Si\u0142owniki",
-                "DockingStation":{
-                    "buttontext":"Si\u0142owniki w\u00D3zka",
-                    "masterkey":"pistoncontrol",
-                    "key":"pusher",
-                    "Button":{}
-                },
-                "Seal":{
-                    "buttontext":"Si\u0142ownik uszczelnienia",
-                    "masterkey":"pistoncontrol",
-                    "key":"seal"
-                }
-            },
-            "Servo":{
-                "Label":"Serwo",
-                "Button":{
-                    "masterkey":"troley",
-                    "width":25,
-                    "height":2
-                },
-                "Lamp":{
-                    "masterkey":"troley",
-                    "width":40,
-                    "height":40,
-                    "frame":{
-                        "relief":"ridge",
-                        "borderwidth":2
-                    },
-                    "caption":{
-                        "width":19
-                    },
-                    "Color":{
-                        "normal":"black",
-                        "active":"green"
-                    }
-                }
-            }
-        },
-        "Pneumatics":{
-            "Label":"Os\u0142ony pneumatyczne",
-            "ShieldingGas":{
-                "Button":{
-                    "Label":"Gaz os\u0142onowy",
-                    "masterkey":"pistoncontrol",
-                    "key":"shieldinggas"
-                }
-            },
-            "CrossJet":{
-                "Button":{
-                    "Label":"N\u00F3\u017C powietrzny",
-                    "masterkey":"pistoncontrol",
-                    "key":"crossjet"
-                }
-            },
-            "HeadCooling":{
-                "Button":{
-                    "Label":"Ch\u0142odzenie g\u0142owicy",
-                    "masterkey":"pistoncontrol",
-                    "key":"headcooling"
-                }
-            }
-        }
-    },
-    "HomeScreen":{
-        "Name":"Ekran g\u0142\u00D3wny",
-        "FirstColumn":{
-            "ProgramSelect":{
-                "Label":"Program"
-            },
-            "Positions":{
-                "Label":"Wybór pozycji:",
-                "from":"OD  ",
-                "to":"DO  "
-            }
-        },
-        "SecondColumn":{
-            "StatusIndicators":{
-                "Safety":{
-                    "Label":"Bezpieczeństwo:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                },
-                "ShieldingGas":{
-                    "Label":"Gaz osłonowy:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                },
-                "VacuumFilter":{
-                    "Label":"Filtrowentylator:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                },
-                "Air":{
-                    "Label":"Powietrze:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                },
-                "Crossjet":{
-                    "Label":"Nóż powietrzny:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                },
-                "Troley":{
-                    "Label":"Wózek:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                },
-                "Light":{
-                    "Label":"Oświetlenie:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                },
-                "Robot":{
-                    "Label":"Robot:",
-                    "Frame":{
-                        "height":30,
-                        "width":150,
-                        "borderwidth":2,
-                        "relief":"ridge"
-                    }
-                }
-            }
-        },
-        "ThirdColumn":{
-            "ProcessVariables":{
-                "Label":"Proces",
-                "currentposition":{
-                    "Label":"Pozycja w tabeli:",
-                    "width":25 
-                },
-                "processtime":{
-                    "Label":"Czas cyklu:",
-                    "width":25 
-                },
-                "button":{
-                    "step":{
-                        "bg":"lightgrey",
-                        "width":35,
-                        "heught":3
-                    },
-                    "start":{
-                        "text":"Uruchom",
-                        "bg":"green",
-                        "width":35,
-                        "heught":3
-                    },
-                    "stop":{
-                        "text":"Zatrzymaj",
-                        "bg":"red",
-                        "width":35,
-                        "heught":3
-                    }
-                    
-                }
-            }
-        }
-    },
-    "TableScreen":{
-        "ScrolledWidget":{
-            "PosTable":{
-                "ContextMenu":[
-                    {
-                        "label":"Dodaj wiersz przed",
-                        "command":"self.AddRowBefore"
-                    },{
-                        "label":"Dodaj wiersz za",
-                        "command":"self.AddRowAfter"
-                    },{
-                        "label":"Usuń wiersz",
-                        "command":"self.DeleteRow"
-                    },
-                    "separator",
-                    {
-                        "label":"Sortuj Tabelę",
-                        "command":"self.SortTable"
-                    }
-                ]
-            }
-        },
-        "Button":{
-            "Label":"Zapisz",
-            "action":"save"
         }
     }
 }

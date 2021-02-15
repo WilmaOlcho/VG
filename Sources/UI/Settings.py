@@ -2,20 +2,21 @@ import tkinter as tk
 from tkinter import ttk
 from Variables import Variables
 from Widgets.callableFont import Font
-from . import getroot
+from getroot import getroot
 
 class SettingsScreen(dict):
     def __init__(self, master = None, variables = Variables()):
         self.frame = ttk.Frame(master = master)
         self.settings = master.settings['SettingsScreen']
         self.frame.__setattr__('settings',self.settings)
-        self.root = getroot(self)
+        self.root = getroot(master)
         self.font = self.root.font
         self.name = self.settings['Name']
         self.miscpneumaticsframe = ttk.LabelFrame(master = self.frame, text = self.settings["Pneumatics"]['Label'])
+        self.miscpneumaticsframe.__setattr__('settings', self.settings['Pneumatics'])
         self.widgets = [
             Troley(self.frame),
-            PistonControl(master = self.miscpneumaticsframe, button = 'ShieldinGas'),
+            PistonControl(master = self.miscpneumaticsframe, button = 'ShieldingGas'),
             PistonControl(master = self.miscpneumaticsframe, button = 'CrossJet'),
             PistonControl(master = self.miscpneumaticsframe, button = 'HeadCooling'),
             self.miscpneumaticsframe
@@ -44,13 +45,14 @@ class Troley(dict):
         self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
         self.frame.__setattr__('settings', self.settings)
         self.pistonlabeledFrame = ttk.LabelFrame(self.frame, text = self.settings['Pneumatics']['Label'])
-        self.pistonlabeledFrame.__setattr__('settings', master.settings["Troley"]['Pneumatics'])
+        self.pistonlabeledFrame.__setattr__('settings', self.settings['Pneumatics'])
         self.widgets = [
             ServoControl(master = self.frame, buttons = self.root.variables['servocontrol']['buttons'], lamps = self.root.variables['servocontrol']['lamps']),
-            PistonControl(master = self.pistonlabeledFrame, **self.settings['Pneumatics']['DockingStation']),
-            PistonControl(master = self.pistonlabeledFrame, **self.settings['Pneumatics']['Seal']),
             self.pistonlabeledFrame
                     ]
+        for piston in self.settings['Pneumatics']:
+            if piston == 'Label': continue
+            PistonControl(master = self.pistonlabeledFrame, button=piston)
         for widget in self.widgets:
             widget.pack(anchor = tk.NW)
         self.frame.pack()
@@ -59,6 +61,9 @@ class Troley(dict):
         super().update()
         for widget in self.widgets:
             widget.update()
+
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
 class ServoControl(dict):
     def __init__(self, master = None, buttons = {}, lamps = {}):
@@ -69,13 +74,15 @@ class ServoControl(dict):
         self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
         self.frame.__setattr__('settings',self.settings)
         self.master = master
-        self.buttonsframe = tk.Frame(self)
-        self.lampsframe = tk.Frame(self)
+        self.buttonsframe = tk.Frame(self.frame)
+        self.buttonsframe.__setattr__('settings', self.settings)
+        self.lampsframe = tk.Frame(self.frame)
+        self.lampsframe.__setattr__('settings', self.settings)
         self.widgets = [self.buttonsframe, self.lampsframe]
         for key, value in buttons.items():
-            self.widgets.append(TroleyButton(self.buttonsframe, text = key, key = value, **self.settings['Button']))
+            self.widgets.append(TroleyButton(self.buttonsframe, text = key, key = value))
         for key, value in lamps.items():
-            self.widgets.append(TroleyLamp(self.lampsframe, text = key, key = value, **self.settings['Lamp']))
+            self.widgets.append(TroleyLamp(self.lampsframe, text = key, key = value))
         
         for widget in self.widgets:
             if widget.master == self:
@@ -88,6 +95,9 @@ class ServoControl(dict):
         super().update()
         for widget in self.widgets:
             widget.update()
+
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
 class TroleyButton(dict):
     def __init__(self, master = None, text = '', key = ''):
@@ -110,8 +120,11 @@ class TroleyButton(dict):
     def update(self):
         super().update()
 
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
+
 class TroleyLamp(dict):
-    def __init__(self, master = None, text = '', variables = Variables(), masterkey = '', key = '', width = 25, height = 3):
+    def __init__(self, master = None, text = '', key = ''):
         super().__init__()
         self.root = getroot(master)
         self.font = self.root.font
@@ -135,8 +148,11 @@ class TroleyLamp(dict):
             self.lit = self.root.variables[self.masterkey][self.key]
         self.lamp.config(bg = self.settings['Color']['active'] if self.lit else self.settings['Color']['normal'])
 
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
+
 class PistonControl(dict):
-    def __init__(self, master = None, button = ""):
+    def __init__(self, master = None, button = "", **kwargs):
         super().__init__()
         self.frame = tk.Frame(master = master)
         self.settings = master.settings[button]
@@ -161,7 +177,7 @@ class PistonControl(dict):
         self.buttonRight.place(**config['Right']['place'])
         if 'Center' in self.elements.keys():
             self.buttonCenter = tk.Button(self.frame, font = self.font())
-            self.buttonCenter.config(text=self.settings['Button']['Label'], **config['Center']['Button'])
+            self.buttonCenter.config(text=self.settings['Label'])
             self.buttonCenter.configure(command=self.Center)
         else:
             self.buttonCenter = tk.Canvas(self.frame, **config['Center']['Canvas'])
@@ -247,3 +263,6 @@ class PistonControl(dict):
             else:
                 color = config['Color']['normal']
             self.buttonCenter.configure(background = color, borderwidth = bd)
+
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)

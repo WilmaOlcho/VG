@@ -22,7 +22,7 @@ class ScrolledWidget(tk.LabelFrame):
             self.yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.cnv.pack(expand = tk.YES, fill = tk.BOTH)
         self.container = tk.Frame(master= self.cnv, width = self.width, height = height)
-        self.content = widgetCls(master = self.container, variables =  self.root.variables)
+        self.content = widgetCls(master = self.container)
         self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
         self.intid1 = self.cnv.create_window((0,0),window = self.container, anchor = tk.NW )
         self.cnv.config(scrollregion = (0,0,self.width, height), highlightthickness = 0)

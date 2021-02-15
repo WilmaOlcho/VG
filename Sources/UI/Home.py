@@ -2,21 +2,22 @@ import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
 import json
-from . import getroot
+from getroot import getroot
 
 class HomeScreen(dict):
     def __init__(self, master = None):
         super().__init__()
         self.frame = ttk.Frame(master = master)
-        self.frame.__setattr__('settings',self['settings'])
+        self.settings = master.settings['HomeScreen']
+        self.frame.__setattr__('settings',self.settings)
         self.root = getroot(master)
-        self.settings = master.settings['SecondColumn']
         self.frame.__setattr__('settings', self.settings)
         self.name = self.settings['Name']
         self.font = self.root.font
         self.widgets = []
-        for key in self.settings:
-            self.widgets.append(eval(key)(self))
+        for key in self.settings.keys():
+            if not key == 'Name':
+                self.widgets.append(eval(key)(self.frame))
         for widget in self.widgets:
             widget.pack(side = tk.LEFT, expand = tk.Y)
         self.pack(expand = tk.YES, fill=tk.BOTH)
@@ -165,8 +166,8 @@ class FirstColumn(dict):
         self.settings = master.settings['FirstColumn']
         self.frame.__setattr__('settings', self.settings)
         self.widgets = [
-            ProgramSelect(self),
-            Positions(self)
+            ProgramSelect(self.frame),
+            Positions(self.frame)
         ]
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
@@ -189,7 +190,7 @@ class StatusIndicators(dict):
         self.frame.__setattr__('settings', self.settings)
         self.widgets = []
         for key, indicator in self.settings.items():
-            StatusIndicators.line(self, label = indicator['Label'], indicator = key.key())
+            StatusIndicators.line(self, label = indicator['Label'], indicator = key)
         for widget in self.widgets:
             widget.pack()
         self.pack()

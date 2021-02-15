@@ -3,7 +3,11 @@ from tkinter import ttk
 from Widgets import Font, LabelledScrolledText
 import json
 from pathlib import Path
-from . import getroot, SettingsScreen, HomeScreen, TableScreen, Variables
+from getroot import getroot
+from Settings import SettingsScreen
+from Home import HomeScreen
+from Table import TableScreen
+from Variables import Variables
 
 class Frame(dict):
     def __init__(self, master = None):
@@ -12,6 +16,7 @@ class Frame(dict):
         self.settings = master.settings['MainWindow']
         self.root = getroot(master) 
         self.OverallNotebook = ttk.Notebook(self.frame, **self.settings['Notebook']['constructor'])
+        self.OverallNotebook.__setattr__('settings',self.settings['Notebook'])
         self.widgets = [
             LabelledScrolledText(master = self.frame, **self.settings['ErrorTextArea']['constructor']),
             tk.Button(master = self.frame, command = self.ack, **self.settings['ackbutton']['constructor']),
@@ -46,14 +51,14 @@ class Window(dict):
         root = self.window
         widgetsettings = json.load(open(str(Path(__file__).parent.absolute())+'//widgetsettings.json','r'))
         root.__setattr__('variables', Variables(**widgetsettings))
-        root.__setattr__('settings', root['variables']['widgetsettings'])
+        root.__setattr__('settings', root.variables['widgetsettings'])
         self.settings = root.settings
         root.__setattr__('font',Font(root = self.window, **self.settings['MainFont']))
         rootstyle = ttk.Style()
         rootstyle.configure('.',font = root.font())
         root.title(self.settings['title'])
         root.attributes('-fullscreen', True)
-        self.interfaceControl = InterfaceControl(lockerinstance, root['variables'])
+        self.interfaceControl = InterfaceControl(lockerinstance,root.variables)
         self.widgets = [
             Frame(master = root)
         ]
