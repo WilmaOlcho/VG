@@ -35,6 +35,7 @@ class SharedLocker(object):
             'events':manager.dict({
                 'somethingchanged':False,
                 'ack':False,
+                'erroracknowledge':False,
                 'Error':False,
                 'stepComplete':False,
                 'RobotHomingComplete':False,
@@ -110,11 +111,21 @@ class SharedLocker(object):
                 'stop':False,
                 'positionNumber':-1,
                 'moving':False,
-                'active':False}),
+                'active':False,
+                'iocoin':False,  #bint it to servo control signals
+                'ioready':False, #
+                'iotgon':False   #
+                }),
+            'troley':manager.dict({
+                'Alive':False,
+                'docked':False,
+                'error':False
+                }),
             'robot':manager.dict({
                 'CommandControl':False,
                 'PositionControl':False,
                 'Alive':False,
+                'error':False,
                 'homepos':False,
                 'homing':False,
                 'go':False,

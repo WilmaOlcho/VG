@@ -4,11 +4,11 @@ import tkinter.ttk as ttk
 from . import getroot
 
 class ScrolledText(ttk.Frame):
-    def __init__(self, font = ('arial',10), master = None, InternalVariable = None, scrolltype = 'both', height=200, width=200):
+    def __init__(self, master = None, InternalVariable = None, scrolltype = 'both', height=200, width=200):
         super().__init__(master = master, width = width, height = height)
         self.key = InternalVariable
         self.root = getroot(master)
-        self.textInstance = tk.Text(self, height=height, width=width, font = font)
+        self.textInstance = tk.Text(self, height=height, width=width, font = self.root.font())
         if scrolltype in ('vertical','both'):
             self.vsb = tk.Scrollbar(self, orient='vertical', command = self.textInstance.yview)#, yscrollcommand = lambda f, l, obj = self:obj.autoscroll(self.vsb, f, l))
             self.vsb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -35,9 +35,9 @@ class ScrolledText(ttk.Frame):
             self.vtext = text
 
 class LabelledScrolledText(ScrolledText):
-    def __init__(self, font = ('arial',10), master = None, text = '', InternalVariable = None, scrolltype = 'both', height=200, width=200):
+    def __init__(self, master = None, text = '', InternalVariable = None, scrolltype = 'both', height=200, width=200):
         self.frame = ttk.LabelFrame(master = master, text = text)
-        super().__init__(master = self.frame, font = font, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
+        super().__init__(master = self.frame, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
         self.frame.grid()
 
     def update(self):

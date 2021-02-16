@@ -50,7 +50,7 @@ class Window(dict):
         self.window = tk.Tk()
         root = self.window
         widgetsettings = json.load(open(str(Path(__file__).parent.absolute())+'//widgetsettings.json','r'))
-        root.__setattr__('variables', Variables(**widgetsettings))
+        root.__setattr__('variables', Variables(lockerinstance, **widgetsettings))
         root.__setattr__('settings', root.variables['widgetsettings'])
         self.settings = root.settings
         root.__setattr__('font',Font(root = self.window, **self.settings['MainFont']))
@@ -58,7 +58,6 @@ class Window(dict):
         rootstyle.configure('.',font = root.font())
         root.title(self.settings['title'])
         root.attributes('-fullscreen', True)
-        self.interfaceControl = InterfaceControl(lockerinstance,root.variables)
         self.widgets = [
             Frame(master = root)
         ]
@@ -70,17 +69,8 @@ class Window(dict):
             self.window.update()
             for widget in self.widgets:
                 widget.update()
-            self.interfaceControl.update()
-
-class InterfaceControl(object):
-    def __init__(self, lockerinstance, variables = Variables()):
-        self.variables = variables
-        pass
-
-    def update(self):
-        if self.variables.internalEvents['ack']:
-            self.variables.internalEvents['error'] = False
-            self.variables.internalEvents['ack'] = False
+            self.window.variables.update()
+            self.Alive = self.window.variables.Alive
 
 if __name__ == '__main__':
     Window(object)

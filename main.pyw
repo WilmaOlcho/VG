@@ -4,7 +4,8 @@ from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
 from Sources.Kawasaki import RobotVG
 from Sources.Pneumatics import PneumaticsVG
 from Sources.Servo import Servo
-from gui import console
+#from gui import console
+from Sources.UI.MainWindow import Window
 from pathlib import Path
 
 class ApplicationManager(object):
@@ -19,7 +20,7 @@ class ApplicationManager(object):
         self.ServoConfigurationFile = path + 'ServoSettings.json'
         self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
         self.processes = [
-            Process(name = 'console', target = console, args=(self.lock,)),
+            Process(name = 'Window', target = Window, args=(self.lock,)),
             Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
             Process(name = 'Servo', target = Servo, args=(self.lock, self.ServoConfigurationFile,)),
             Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
@@ -33,7 +34,7 @@ class ApplicationManager(object):
     def EventLoop(self, *args, **kwargs):
         while True:
             self.lock[0].lock.acquire()
-            console = list(filter(lambda f:f.name == 'console',self.processes))[0].is_alive()
+            console = list(filter(lambda f:f.name == 'Window',self.processes))[0].is_alive()
             if not console:
                 self.lock[0].events['closeApplication'] = True
             self.ApplicationAlive = not self.lock[0].events['closeApplication']

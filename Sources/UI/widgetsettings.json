@@ -96,8 +96,8 @@
     "MainWindow":{
         "ackbutton":{
             "constructor":{
-                "width":1,
-                "height":5,
+                "width":10,
+                "height":4,
             "text":"Potwierd\u017A\nstatus"}
         },
         "Notebook":{
@@ -294,6 +294,7 @@
                                 "action":"step",
                                 "result":"self.root.variables['auto'] \u003D not self.root.variables['auto']",
                                 "condition":"self.root.variables['auto']",
+                                "anticondition":"self.root.variables['ProgramActive']",
                                 "active":{
                                     "text":"Praca automatyczna"
                                 },
@@ -305,6 +306,7 @@
                                 "action":"start",
                                 "result":"self.root.variables['ProgramActive'] \u003D True\nself.root.variables.internalEvents['start'] \u003D True",
                                 "condition":"self.root.variables['ProgramActive']",
+                                "anticondition":"self.root.variables['ProgramActive']",
                                 "active":{
                                     "bg":"lightgreen"
                                 },
@@ -314,6 +316,7 @@
                             },
                             "stop":{
                                 "action":"stop",
+                                "anticondition":"not self.root.variables['ProgramActive']",
                                 "result":"self.root.variables['ProgramActive'] \u003D False\nself.root.variables.internalEvents['stop'] \u003D True"
                             }                   
                         }
@@ -358,7 +361,7 @@
             "constructor":{
                 "scrolltype":"vertical",
                 "InternalVariable":"ImportantMessages",
-                "width":155,
+                "width":150,
                 "height":5,
                 "text":"B\u0142\u0119dy i powiadomienia"},
             "grid":{
@@ -367,5 +370,22 @@
                 "row":1,
                 "sticky":"nsew"}
         }
+    },
+    "ErrorCodes":{
+        "0":"Błąd krytyczny aplikacji\n",
+        "1":"Błąd połączenia z modułem ",
+        "2":"Błąd połączenia z modułem {}",
+        "3":"Błąd robota",
+        "4":"Błąd robota {}",
+        "5":"Błąd SCOUTa",
+        "6":"Błąd SCOUTa {}",
+        
+        "100":"Przekroczenie czasu taktu ",
+        "101":"Przekroczenie czasu taktu {}",
+        "200":"Błąd serwo, serwo zostało zatrzymane",
+        "201":"Błąd lasera, nie można przypisać kanału",
+        "202":""
+
+
     }
 }

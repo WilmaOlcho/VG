@@ -5,7 +5,7 @@ from Widgets.callableFont import Font
 from getroot import getroot
 
 class SettingsScreen(dict):
-    def __init__(self, master = None, variables = Variables()):
+    def __init__(self, master = None):
         self.frame = ttk.Frame(master = master)
         self.settings = master.settings['SettingsScreen']
         self.frame.__setattr__('settings',self.settings)
@@ -52,7 +52,7 @@ class Troley(dict):
                     ]
         for piston in self.settings['Pneumatics']:
             if piston == 'Label': continue
-            PistonControl(master = self.pistonlabeledFrame, button=piston)
+            self.widgets.append(PistonControl(master = self.pistonlabeledFrame, button=piston))
         for widget in self.widgets:
             widget.pack(anchor = tk.NW)
         self.frame.pack()
@@ -201,7 +201,7 @@ class PistonControl(dict):
             self.elements['Left']['coil'] = False
         
     def update(self):
-        super().update()
+        self.frame.update()
         config = self.root.settings['widget']['pistonbutton']
         if 'Left' in self.elements.keys():
             bd = 1

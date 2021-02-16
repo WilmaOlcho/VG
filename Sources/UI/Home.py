@@ -86,7 +86,8 @@ class ProcessVariables(dict):
         for widget in self.widgets:
             if 'action' in widget.settings:
                 action = widget.settings['action']
-                if action == key:
+                anticondition = eval(widget.settings['anticondition']) if 'anticondition' in widget.settings else False
+                if action == key and not anticondition:
                     result = widget.settings['result'].split('\n')
                     for line in result:
                         if '=' in line:
@@ -187,7 +188,7 @@ class StatusIndicators(dict):
         self.frame.__setattr__('settings', self.settings)
         self.widgets = []
         for key, indicator in self.settings.items():
-            StatusIndicators.line(self.frame, label = indicator['Label'], indicator = key)
+            self.widgets.append(StatusIndicators.line(self.frame, label = indicator['Label'], indicator = key))
         for widget in self.widgets:
             widget.pack()
         self.pack()
@@ -216,7 +217,6 @@ class StatusIndicators(dict):
             self.indicator = tk.Canvas(self.frame)
             self.indicator.config(background='Black', height=self.cwidth, width=self.cwidth, bd = 0)
             self.indicator.place(anchor='e', x=self.settings['Frame']['width'], y=self.place)
-            self.frame.pack()
         
         def update(self):
             self.frame.update()
