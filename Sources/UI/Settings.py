@@ -85,8 +85,8 @@ class ServoControl(dict):
             self.widgets.append(TroleyLamp(self.lampsframe, text = key, key = value))
         
         for widget in self.widgets:
-            if widget.master == self:
-                widget.frame.pack(side = tk.LEFT, anchor = tk.W)
+            if widget.master == self.frame:
+                widget.pack(side = tk.LEFT, anchor = tk.N)
             else:
                 widget.pack(anchor = tk.N)
         self.frame.pack()
@@ -154,47 +154,44 @@ class TroleyLamp(dict):
 class PistonControl(dict):
     def __init__(self, master = None, button = "", **kwargs):
         super().__init__()
-        self.frame = tk.Frame(master = master)
         self.settings = master.settings[button]
-        self.frame.__setattr__('settings',self.settings)
         self.root = getroot(master)
+        config = self.root.settings['widget']['pistonbutton']
+        self.frame = tk.Frame(master = master, **config['frame'])
+        self.frame.__setattr__('settings',self.settings)
         self.elements = self.root.variables[self.settings['masterkey']][self.settings['key']]
         self.font = self.root.font
-        config = self.root.settings['widget']['pistonbutton']
         if 'Left' in self.elements.keys():
-            self.buttonLeft = tk.Button(self.frame, font = self.font())
-            self.buttonLeft.config(**config['Left']['Button'])
+            self.buttonLeft = tk.Button(self.frame, font = self.font(), **config['Left']['Button'])
             self.buttonLeft.configure(command=self.Left)
         else:
             self.buttonLeft = tk.Canvas(self.frame, **config['Left']['Canvas'])
         self.buttonLeft.place(**config['Left']['place'])
         if 'Right' in self.elements.keys():
-            self.buttonRight = tk.Button(self.frame, font = self.font())
-            self.buttonRight.config(**config['Right']['Button'])
+            self.buttonRight = tk.Button(self.frame, font = self.font(), **config['Right']['Button'])
             self.buttonRight.configure(command=self.Right)
         else:
             self.buttonRight = tk.Canvas(self.frame, **config['Right']['Canvas'])
         self.buttonRight.place(**config['Right']['place'])
         if 'Center' in self.elements.keys():
-            self.buttonCenter = tk.Button(self.frame, font = self.font())
+            self.buttonCenter = tk.Button(self.frame, font = self.font(), **config['Center']['Button'])
             self.buttonCenter.config(text=self.settings['Label'])
             self.buttonCenter.configure(command=self.Center)
         else:
             self.buttonCenter = tk.Canvas(self.frame, **config['Center']['Canvas'])
         self.buttonCenter.place(**config['Center']['place'])
-        self.frame.config(**config['frame'])
         self.frame.pack()
 
     def Left(self):
         self.elements['Left']['coil'] = not self.elements['Left']['coil']
         if 'Right' in self.elements:
-            if 'sensor' in self.elements['Right']: 
+            if 'coil' in self.elements['Right']: 
                self.elements['Right']['coil'] = False
 
     def Right(self):
         self.elements['Right']['coil'] = not self.elements['Right']['coil']
         if 'Left' in self.elements:
-            if 'sensor' in self.elements['Left']: 
+            if 'coil' in self.elements['Left']: 
                 self.elements['Left']['coil'] = False
         
     def Center(self):
@@ -229,7 +226,7 @@ class PistonControl(dict):
             color = []
             bd = 1
             if 'coil' in self.elements['Right']:
-                if self.elements['Left']['coil']:
+                if self.elements['Right']['coil']:
                     color.append('coil')
             if 'sensor' in self.elements['Right']:
                 if self.elements['Left']['sensor']: 

@@ -34,13 +34,13 @@ class ThirdColumn(dict):
     def __init__(self, master = None):
         super().__init__()
         self.root = getroot(master)
-        self.settings = master.settings['SecondColumn']
+        self.settings = master.settings['ThirdColumn']
         self.frame = tk.Frame(master = master)
         self.frame.__setattr__('settings', self.settings)
         self.font = self.root.font
         self.widgets = []
         for key in self.settings:
-            self.widgets.append(eval(key)(self))
+            self.widgets.append(eval(key)(master = self.frame))
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
         self.pack()
@@ -58,71 +58,68 @@ class ProcessVariables(dict):
         super().__init__()
         self.root = getroot(master)
         self.settings = master.settings['ProcessVariables']
-        self.frame = ttk.LabelFrame(master = master, text = self['settings']['Label'])
-        self.frame.__setattr__('settings',self['settings'])
-        self.font = master.font
-        self.leftFrame = ttk.Frame(self.frame)
-        self.rightFrame = ttk.Frame(self.frame)
+        self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
+        self.frame.__setattr__('settings',self.settings)
+        self.font = self.root.font
+        self.leftFrame = ttk.Frame(master = self.frame)
+        self.leftFrame.__setattr__('settings',self.settings)
+        self.rightFrame = ttk.Frame(master = self.frame)
+        self.rightFrame.__setattr__('settings',self.settings)
         self.widgets = [
-            variablesFrame(master = self.leftFrame, key = 'currentposition'),
-            variablesFrame(master = self.leftFrame, key = 'processtime'),
-            tk.Button(master = self.rightFrame, font = self.font(), command = self.stepclick, **self['settings']['button']['step']),
-            tk.Button(master = self.rightFrame, font = self.font(), command = self.startclick, **self['settings']['button']['start']),
-            tk.Button(master = self.rightFrame, font = self.font(), command = self.stopclick, **self['settings']['button']['stop']),
             self.leftFrame,
             self.rightFrame
         ]
+        for key in self.settings['variablesFrame'].keys():
+            self.widgets.append(variablesFrame(master = self.leftFrame, key = key))
+        for key in self.settings['Button'].keys():
+            button = tk.Button(master = self.rightFrame, font = self.font(), command = lambda obj = self, k = key: obj.click(k), **self.settings['Button'][key])
+            button.__setattr__('settings',self.settings['interactive'][key])
+            self.widgets.append(button)
         for widget in self.widgets:
-            widget.pack(side = tk.LEFT if widget.master == self else tk.TOP, fill ='x', anchor = tk.S)
+            widget.pack(side = tk.LEFT if isinstance(widget, ttk.Frame) else tk.TOP, fill ='x', anchor = tk.N)
         self.pack()
 
     def pack(self, *args, **kwargs):
         self.frame.pack(*args, **kwargs)
 
-    def stepclick(self):
-        if not self.root.variables['ProgramActive']:
-            self.root.variables['auto'] = not self.root.variables['auto']
-
-    def startclick(self):
-        self.root.variables['ProgramActive'] = True
-        self.root.variables.internalEvents['start'] = True
-
-    def stopclick(self):
-        self.root.variables['ProgramActive'] = False
-        self.root.variables.internalEvents['stop'] = True
+    def click(self, key):
+        for widget in self.widgets:
+            if 'action' in widget.settings:
+                action = widget.settings['action']
+                if action == key:
+                    result = widget.settings['result'].split('\n')
+                    for line in result:
+                        if '=' in line:
+                            exec(line)
+                        else:
+                            eval(line)
 
     def update(self):
         self.frame.update()
         for widget in self.widgets:
             if isinstance(widget, tk.Button):
-                button = widget.cget('text')
-                if button == 'Praca krokowa':
-                    if self.root.variables['auto']:
-                        widget.configure(text = 'Praca automatyczna')
-                elif button == 'Praca automatyczna':
-                    if not self.root.variables['auto']:
-                        widget.configure(text = 'Praca krokowa')
-                elif button == 'Uruchom':
-                    widget.configure(bg = 'lightgreen' if self.root.variables['ProgramActive'] else 'green')
-                elif button == 'Zatrzymaj':
-                    widget.configure(bg = 'red' if self.root.variables['ProgramActive'] else 'red')
-            widget.update()
+                if 'condition' in widget.settings.keys():
+                    condition = eval(widget.settings['condition'])
+                    if condition:
+                        widget.config(widget.settings['active'])
+                    else:
+                        widget.config(widget.settings['inactive'])
 
 class variablesFrame(dict):
     def __init__(self, master = None, key = 'auto'):
         super().__init__()
         self.frame = tk.Frame(master = master)
         self.key = key
-        self.settings = master.settings[key]
+        self.settings = master.settings['variablesFrame'][key]
         self.frame.__setattr__('settings',self.settings)
         self.root = getroot(master)
         self.font = self.root.font
         self.widgets = [
             ttk.Label(master = self.frame, text = self.settings['Label']),
-            ttk.Entry(master = self, text = self.root.variables[self.key], width = self.settings['width'])
+            ttk.Entry(master = self.frame, text = self.root.variables[self.key], width = self.settings['width'])
         ]
         for widget in self.widgets:
-            widget.pack()
+            widget.pack(side = tk.TOP)
         self.pack()
 
     def update(self):
@@ -144,7 +141,7 @@ class SecondColumn(dict):
         self.settings = master.settings['SecondColumn']
         self.frame.__setattr__('settings', self.settings)
         self.widgets = [
-            StatusIndicators(self)
+            StatusIndicators(master = self.frame)
         ]
         for widget in self.widgets:
             widget.frame.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
@@ -190,7 +187,7 @@ class StatusIndicators(dict):
         self.frame.__setattr__('settings', self.settings)
         self.widgets = []
         for key, indicator in self.settings.items():
-            StatusIndicators.line(self, label = indicator['Label'], indicator = key)
+            StatusIndicators.line(self.frame, label = indicator['Label'], indicator = key)
         for widget in self.widgets:
             widget.pack()
         self.pack()
@@ -210,13 +207,15 @@ class StatusIndicators(dict):
             self.root = getroot(master)
             self.settings = master.settings[indicator]
             self.frame = ttk.Frame(master = master, **self.settings['Frame'])
+            self.cwidth = self.settings['Frame']['height']
+            self.place = self.cwidth//2
             self.frame.__setattr__('settings', self.settings)
-            self.label = ttk.Label(self)
+            self.label = ttk.Label(self.frame)
             self.label.config(text=label)
-            self.label.place(anchor='w', x='3', y='13')
-            self.indicator = tk.Canvas(self)
-            self.indicator.config(background='Black', height='22', width='22', bd = 0)
-            self.indicator.place(anchor='e', x=self.settings['Frame']['width'], y='14')
+            self.label.place(anchor='w', x='3', y=self.place)
+            self.indicator = tk.Canvas(self.frame)
+            self.indicator.config(background='Black', height=self.cwidth, width=self.cwidth, bd = 0)
+            self.indicator.place(anchor='e', x=self.settings['Frame']['width'], y=self.place)
             self.frame.pack()
         
         def update(self):
@@ -262,7 +261,6 @@ class ProgramSelect(dict):
 class Positions(dict):
     def __init__(self, master = None):
         super().__init__()
-        
         self.root = getroot(master)
         self.settings = master.settings['Positions']
         self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
@@ -270,10 +268,10 @@ class Positions(dict):
         self.programs = json.load(open(self.root.variables.jsonpath))
         self.program = {}
         self.widgets = [
-            ttk.Label(master = self, text = self.settings['from']),
-            ttk.Entry(master = self, text = ''),
-            ttk.Label(master = self, text = self.settings['to']),
-            ttk.Entry(master = self, text = '')
+            ttk.Label(master = self.frame, text = self.settings['from']),
+            ttk.Entry(master = self.frame, text = ''),
+            ttk.Label(master = self.frame, text = self.settings['to']),
+            ttk.Entry(master = self.frame, text = '')
         ]
         for widget in self.widgets:
             if isinstance(widget, tk.Entry):

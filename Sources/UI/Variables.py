@@ -59,9 +59,9 @@ class Variables(dict):
                 'Left':{
                     'coil':True,
                     'sensor':True},
-                'Center':{
-                    'coil':False,
-                    'sensor':False}
+                'Center':{},
+                'Right':{
+                    'coil':True}
             },
             'shieldinggas':{
                 'Right':{

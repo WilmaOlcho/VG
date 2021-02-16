@@ -2,7 +2,7 @@
     "widget":{
         "pistonbutton":{
             "frame":{
-                "width":360,
+                "width":410,
                 "height":90
             },
             "Color":{
@@ -19,8 +19,6 @@
                     "activebackground":"#f96348",
                     "background":"#84bdac",
                     "justify":"center",
-                    "width":90,
-                    "height":90,
                     "text":"<--"
                 },
                 "Canvas":{
@@ -33,7 +31,9 @@
                 "place":{
                     "anchor":"nw",
                     "x":0,
-                    "y":0
+                    "y":0,
+                    "width":90,
+                    "height":90
                 }
             },
             "Center":{
@@ -43,21 +43,21 @@
                     "relief":"ridge",
                     "activebackground":"#f96348",
                     "background":"#84bdac",
-                    "justify":"center",
-                    "width":180,
-                    "height":90
+                    "justify":"center"
                 },
                 "Canvas":{
                     "bg":"#84bdac",
                     "borderwidth":4,
                     "relief":"ridge",
-                    "width":180,
+                    "width":230,
                     "height":90
                 },
                 "place":{
                     "anchor":"nw",
                     "x":90,
-                    "y":0
+                    "y":0,
+                    "width":230,
+                    "height":90
                 }
             },
             "Right":{
@@ -68,8 +68,6 @@
                     "activebackground":"#f96348",
                     "background":"#84bdac",
                     "justify":"center",
-                    "width":90,
-                    "height":90,
                     "text":"-->"
                 },
                 "Canvas":{
@@ -81,8 +79,10 @@
                 },
                 "place":{
                     "anchor":"nw",
-                    "x":270,
-                    "y":0
+                    "x":320,
+                    "y":0,
+                    "width":90,
+                    "height":90
                 }
             }
         }
@@ -96,8 +96,8 @@
     "MainWindow":{
         "ackbutton":{
             "constructor":{
-                "width":14,
-                "height":6,
+                "width":1,
+                "height":5,
             "text":"Potwierd\u017A\nstatus"}
         },
         "Notebook":{
@@ -115,7 +115,7 @@
                     "Pneumatics":{
                         "Label":"Si\u0142owniki",
                         "DockingStation":{
-                            "Label":"Si\u0142owniki w\u00D3zka",
+                            "Label":"Si\u0142owniki w\u00F3zka",
                             "masterkey":"pistoncontrol",
                             "key":"pusher"
                         },
@@ -170,13 +170,13 @@
                 }
             },
             "HomeScreen":{
-                "Name":"Ekran g\u0142\u00D3wny",
+                "Name":"Ekran g\u0142\u00F3wny",
                 "FirstColumn":{
                     "ProgramSelect":{
                         "Label":"Program"
                     },
                     "Positions":{
-                        "Label":"Wybór pozycji:",
+                        "Label":"Wyb\u00F3r pozycji:",
                         "from":"OD  ",
                         "to":"DO  "
                     }
@@ -184,19 +184,19 @@
                 "SecondColumn":{
                     "StatusIndicators":{
                         "Safety":{
-                            "Label":"Bezpieczeństwo:",
+                            "Label":"Bezpiecze\u0144stwo:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
                         },
                         "ShieldingGas":{
-                            "Label":"Gaz osłonowy:",
+                            "Label":"Gaz os\u0142onowy:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
@@ -204,8 +204,8 @@
                         "VacuumFilter":{
                             "Label":"Filtrowentylator:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
@@ -213,35 +213,35 @@
                         "Air":{
                             "Label":"Powietrze:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
                         },
                         "Crossjet":{
-                            "Label":"Nóż powietrzny:",
+                            "Label":"N\u00F3\u017C powietrzny:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
                         },
                         "Troley":{
-                            "Label":"Wózek:",
+                            "Label":"W\u00F3zek:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
                         },
                         "Light":{
-                            "Label":"Oświetlenie:",
+                            "Label":"O\u015Bwietlenie:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
@@ -249,8 +249,8 @@
                         "Robot":{
                             "Label":"Robot:",
                             "Frame":{
-                                "height":30,
-                                "width":150,
+                                "height":45,
+                                "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
                             }
@@ -260,38 +260,74 @@
                 "ThirdColumn":{
                     "ProcessVariables":{
                         "Label":"Proces",
-                        "currentposition":{
-                            "Label":"Pozycja w tabeli:",
-                            "width":25 
+                        "variablesFrame":{
+                            "currentposition":{
+                                "Label":"Pozycja w tabeli:",
+                                "width":25 
+                            },
+                            "processtime":{
+                                "Label":"Czas cyklu:",
+                                "width":25 
+                            }
                         },
-                        "processtime":{
-                            "Label":"Czas cyklu:",
-                            "width":25 
-                        },
-                        "button":{
+                        "Button":{
                             "step":{
                                 "bg":"lightgrey",
                                 "width":35,
-                                "heught":3
+                                "height":3
                             },
                             "start":{
                                 "text":"Uruchom",
                                 "bg":"green",
                                 "width":35,
-                                "heught":3
+                                "height":3
                             },
                             "stop":{
                                 "text":"Zatrzymaj",
                                 "bg":"red",
                                 "width":35,
-                                "heught":3
-                            }                        
+                                "height":3
+                            }
+                        },
+                        "interactive":{
+                            "step":{
+                                "action":"step",
+                                "result":"self.root.variables['auto'] \u003D not self.root.variables['auto']",
+                                "condition":"self.root.variables['auto']",
+                                "active":{
+                                    "text":"Praca automatyczna"
+                                },
+                                "inactive":{
+                                    "text":"Praca krokowa"
+                                }
+                            },
+                            "start":{
+                                "action":"start",
+                                "result":"self.root.variables['ProgramActive'] \u003D True\nself.root.variables.internalEvents['start'] \u003D True",
+                                "condition":"self.root.variables['ProgramActive']",
+                                "active":{
+                                    "bg":"lightgreen"
+                                },
+                                "inactive":{
+                                    "bg":"green"
+                                }
+                            },
+                            "stop":{
+                                "action":"stop",
+                                "result":"self.root.variables['ProgramActive'] \u003D False\nself.root.variables.internalEvents['stop'] \u003D True"
+                            }                   
                         }
                     }
                 }
             },
             "TableScreen":{
                 "ScrolledWidget":{
+                    "scrolltype":"vertical",
+                    "LabelFrame":{
+                        "text":"",
+                        "width":0,
+                        "height":600
+                    },
                     "PosTable":{
                         "ContextMenu":[
                             {
@@ -301,12 +337,12 @@
                                 "label":"Dodaj wiersz za",
                                 "command":"self.AddRowAfter"
                             },{
-                                "label":"Usuń wiersz",
+                                "label":"Usu\u0144 wiersz",
                                 "command":"self.DeleteRow"
                             },
                             "separator",
                             {
-                                "label":"Sortuj Tabelę",
+                                "label":"Sortuj Tabel\u0119",
                                 "command":"self.SortTable"
                             }
                         ]

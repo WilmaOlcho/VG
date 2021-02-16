@@ -22,7 +22,7 @@ class ScrolledText(ttk.Frame):
         self.vtext = ''
 
     def update(self):
-        text = self.root['variables'][self.key]
+        text = self.root.variables[self.key]
         if self.vtext != text:
             vpos, hpos = self.vsb.get() if hasattr(self,'vsb') else [0,0], self.hsb.get() if hasattr(self,'hsb') else [0,0]
             prevw, prevh = self.textInstance.winfo_width(), self.textInstance.winfo_height()

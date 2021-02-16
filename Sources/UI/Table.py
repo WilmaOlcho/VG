@@ -10,6 +10,7 @@ class TableScreen(dict):
         self.root = getroot(master)
         self.settings = master.settings['TableScreen']
         self.frame = tk.Frame(master = master)
+        self.frame.__setattr__('settings',self.settings)
         self.name = 'Tabela programu'
         self.widgets = [
             ScrolledWidget(PosTable, master = self.frame),

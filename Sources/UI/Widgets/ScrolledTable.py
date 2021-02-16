@@ -2,18 +2,23 @@ import tkinter as tk
 import json
 from . import getroot
 
-class ScrolledWidget(tk.LabelFrame):
+class ScrolledWidget(dict):
     def __init__(self, widgetCls, text = '', master = None, height = 600, scrolltype = 'both'):
+        super().__init__()
         self.root = getroot(master)
-        self.master = master
+        self.settings = master.settings['ScrolledWidget']
+        self.frame = tk.LabelFrame(master = master, **self.settings['LabelFrame'])
+        self.frame.__setattr__('settings',self.settings)
         self.width, self.height = 0, self.root.variables.displayedprogramtableheight
+        self.widgetheight = self.settings['LabelFrame']['height']
         for i, state in enumerate(self.root.variables.displayedprogramcolumns):
             if state: self.width += (self.root.variables.columnwidths[i]*6)
-        super().__init__(master = master, text = text, width = self.width, height = height)
-        self.pack(expand = tk.N)
-        self.cnv = tk.Canvas(master = self, width = self.width, height = height)
-        self.xscrollbar = tk.Scrollbar(master = self, orient='horizontal', command = self.cnv.xview) if scrolltype in ['h', 'horizontal', 'x', 'xy', 'yx', 'both'] else False
-        self.yscrollbar = tk.Scrollbar(master = self, orient='vertical', command = self.cnv.yview) if scrolltype in ['v', 'vertical', 'y', 'xy', 'yx', 'both'] else False
+        self.frame['width'] = self.width
+        self.frame.pack(expand = tk.N)
+        self.cnv = tk.Canvas(master = self.frame, width = self.width, height = self.widgetheight)
+        self.cnv.__setattr__('settings',self.settings)
+        self.xscrollbar = tk.Scrollbar(master = self.frame, orient='horizontal', command = self.cnv.xview) if self.settings['scrolltype'] in ['h', 'horizontal', 'x', 'xy', 'yx', 'both'] else False
+        self.yscrollbar = tk.Scrollbar(master = self.frame, orient='vertical', command = self.cnv.yview) if self.settings['scrolltype'] in ['v', 'vertical', 'y', 'xy', 'yx', 'both'] else False
         if self.xscrollbar:
             self.cnv.configure(xscrollcommand=self.xscrollbar.set)
             self.xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -21,11 +26,12 @@ class ScrolledWidget(tk.LabelFrame):
             self.cnv.configure(yscrollcommand=self.yscrollbar.set)
             self.yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.cnv.pack(expand = tk.YES, fill = tk.BOTH)
-        self.container = tk.Frame(master= self.cnv, width = self.width, height = height)
+        self.container = tk.Frame(master= self.cnv, width = self.width, height = self.widgetheight)
+        self.container.__setattr__('settings',self.settings)
         self.content = widgetCls(master = self.container)
         self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
         self.intid1 = self.cnv.create_window((0,0),window = self.container, anchor = tk.NW )
-        self.cnv.config(scrollregion = (0,0,self.width, height), highlightthickness = 0)
+        self.cnv.config(scrollregion = (0,0,self.width, self.widgetheight), highlightthickness = 0)
 
     def update(self):
         if self.content.update():
@@ -35,18 +41,21 @@ class ScrolledWidget(tk.LabelFrame):
             self.cnv.config(scrollregion = (0,0,self.width,self.height), highlightthickness = 0)
             self.cnv.xview_moveto(0)
             self.cnv.yview_moveto(0)
-        super().update()
+        self.frame.update()
         
+    def pack(self, *args, **kwargs):
+        self.frame.pack(*args, **kwargs)
 
 class PosTable(dict):
     def __init__(self, master = None):
         super().__init__()
-        self.frame = tk.Frame(self)
-        self.menu = self.CreateContextMenu()
+        self.master = master
+        self.frame = tk.Frame(master = self.master)
         self.root = getroot(master)
         self.settings = master.settings['PosTable']
         self.frame.__setattr__('settings', self.settings)
         self.freeze = False
+        self.menu = self.CreateContextMenu()
         self.table = []
         self.program = []
         self.entries = []
@@ -120,8 +129,8 @@ class PosTable(dict):
 
     def __reframe(self):
         self.frame.destroy()
-        self.frame = tk.Frame(self)
-        self.menu['master'] = self.frame
+        self.frame = tk.Frame(master = self.master)
+        self.menu = self.CreateContextMenu()
         self.frame.__setattr__('settings', self.settings)
         self.frame.pack()
 
