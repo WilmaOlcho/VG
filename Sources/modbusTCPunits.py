@@ -1412,6 +1412,9 @@ class KawasakiVG(ModbusClient):
         try:
             return self.addresses[parameterName][0]
         except:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             raise ParameterDictionaryError(lockerinstance, 'KawasakiVG __getAddress, parameter = ' + str(parameterName))
 
     def read_coils(self, lockerinstance, input = 'I1', NumberOfCoils = 1, **kwargs):
@@ -1423,27 +1426,45 @@ class KawasakiVG(ModbusClient):
                     ParameterTuple = self.addresses['I' + ''.join(re.findall(r'\d',input))]
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].robot['error'] = True
+                    lockerinstance[0].lock.release()
                     raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
             elif 'O' in input:
                 try:
                     ParameterTuple = self.addresses['O' + ''.join(re.findall(r'\d',input))]
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].robot['error'] = True
+                    lockerinstance[0].lock.release()
                     raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
             else:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].robot['error'] = True
+                lockerinstance[0].lock.release()
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
         if isinstance(input,int):
             try:
                 ParameterTuple = self.addresses['I' + str(input)]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].robot['error'] = True
+                lockerinstance[0].lock.release()
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
         if 'r' not in access:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
         try:
             result = super().read_coils(address, NumberOfCoils, **kwargs)
             assert (not isinstance(result,Exception))
         except Exception as e:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
@@ -1461,21 +1482,36 @@ class KawasakiVG(ModbusClient):
                     ParameterTuple = self.addresses['O' + ''.join(re.findall(r'\d',Coil))]
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
                 except:
+                    lockerinstance[0].lock.acquire()
+                    lockerinstance[0].robot['error'] = True
+                    lockerinstance[0].lock.release()
                     raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
             else:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].robot['error'] = True
+                lockerinstance[0].lock.release()
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         if isinstance(Coil,int):
             try:
                 ParameterTuple = self.addresses['O' + str(Coil)]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].robot['error'] = True
+                lockerinstance[0].lock.release()
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         if access == 'r':
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
         try:
             result = super().write_coil(address, value, **kwargs)
             assert (not isinstance(result,Exception))
         except Exception as e:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
@@ -1492,15 +1528,27 @@ class KawasakiVG(ModbusClient):
                 ParameterTuple = self.addresses[registerToStartFrom]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].robot['error'] = True
+                lockerinstance[0].lock.release()
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + registerToStartFrom)
         else:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         if access == 'w':
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
         try:
             result = super().read_holding_registers(address, count, **kwargs)
             assert (not isinstance(result,Exception))
         except Exception as e:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
@@ -1518,15 +1566,27 @@ class KawasakiVG(ModbusClient):
                 ParameterTuple = self.addresses[register]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
             except:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].robot['error'] = True
+                lockerinstance[0].lock.release()
                 raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         else:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         if access == 'r':
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
         try:
             result = super().write_register(address, value, **kwargs)
             assert (not isinstance(result,Exception))
         except Exception as e:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].robot['error'] = True
+            lockerinstance[0].lock.release()
             errstring = str(e)
             lockerinstance[0].lock.acquire()
             if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
@@ -1534,7 +1594,3 @@ class KawasakiVG(ModbusClient):
             result = []
         finally:
             return result
-
-
-
-
