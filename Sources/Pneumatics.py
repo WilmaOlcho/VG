@@ -1,5 +1,6 @@
 ##Pneumatics.py
 import json
+from Sources import ErrorEventWrite
 from Sources.TactWatchdog import TactWatchdog as WDT
 
 class Pneumatic(object):
@@ -36,11 +37,7 @@ class Piston(Pneumatic):
                 self.childobjects.append(Class(lockerinstance, child, self))
             except:
                 errstring = ('\nPiston init error - Error while creating subobject: ' + str(child['class'])) if Class is not None else ('\nParent = ' + str(self))
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events['Error'] = True
-                lockerinstance[0].errorlevel[10] = True
-                if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-                lockerinstance[0].lock.release()
+                ErrorEventWrite(lockerinstance, errstring)
 
 class Sensor(PneumaticActive):
     def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
@@ -97,11 +94,7 @@ class Valve(Pneumatic):
                 self.childobjects.append(Class(lockerinstance, child, self))
             except:
                 errstring = ('\nValve init error - Error while creating subobject: ' + str(child['class'])) if Class is not None else ('\nParent = ' + str(self))
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events['Error'] = True
-                lockerinstance[0].errorlevel[10] = True
-                if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-                lockerinstance[0].lock.release()
+                ErrorEventWrite(lockerinstance, errstring)
 
 class PneumaticsVG(object):
     def __init__(self, lockerinstance, jsonFile, *args, **kwargs):
@@ -110,11 +103,7 @@ class PneumaticsVG(object):
             self.parameters = json.load(open(jsonFile))
         except:
             errstring = '\nPneumaticsVG init error - Error while parsing config file'
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].events['Error'] = True
-            lockerinstance[0].errorlevel[10] = True
-            if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-            lockerinstance[0].lock.release()
+            ErrorEventWrite(lockerinstance, errstring)
         else:
             self.childobjects = []
             for child in self.parameters['objects']:#root.findall('piston'):
@@ -127,11 +116,7 @@ class PneumaticsVG(object):
                     self.childobjects.append(Class(lockerinstance, child, self))
                 except:
                     errstring = ('\nPneumaticsVG init error - Error while creating subobject: ' + str(child['class'])) if Class is not None else ('\nParent = ' + str(self))
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].events['Error'] = True
-                    lockerinstance[0].errorlevel[10] = True
-                    if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-                    lockerinstance[0].lock.release()
+                    ErrorEventWrite(lockerinstance, errstring)
             lockerinstance[0].lock.acquire()
             lockerinstance[0].pistons['Alive'] = True
             lockerinstance[0].lock.release()

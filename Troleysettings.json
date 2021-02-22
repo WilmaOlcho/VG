@@ -1,0 +1,16 @@
+{
+    "Docksensor":"I17",
+    "Troleynumberbits":["I10","I11","I12","I13"],
+    "Troleynumberparity":"I14",
+    "dockreleaseswitch":"I18",
+    "TroleyTrigger":[
+        {"masterkey":"safety",
+        "key":"THCPushed"},
+        {"masterkey":"program",
+        "key":"/running"}
+    ],
+    "TroleyPistons":{
+        "dock":"TroleyPusherFront",
+        "undock":"TroleyPusherBack"
+    }
+}

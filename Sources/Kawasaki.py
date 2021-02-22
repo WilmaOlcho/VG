@@ -13,20 +13,12 @@ class RobotVG(KawasakiVG):
             try:
                 self.parameters = json.load(open(configFile))
             except:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events['Error'] = True
-                lockerinstance[0].errorlevel[10] = True
-                lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Config file not found'
-                lockerinstance[0].lock.release()
+                ErrorEventWrite(lockerinstance, 'RobotVG init error - Config file not found')
             try:
                 self.IPAddress = self.parameters['RobotParameters']['IPAddress']
                 self.Port = self.parameters['RobotParameters']['Port']
             except:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events['Error'] = True
-                lockerinstance[0].errorlevel[10] = True
-                lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Error while reading config file'
-                lockerinstance[0].lock.release()
+                ErrorEventWrite(lockerinstance, 'RobotVG init error - Error while reading config file')
             else:
                 super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
                 lockerinstance[0].lock.acquire()

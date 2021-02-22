@@ -144,4 +144,7 @@ class Bits():
             result = TypeError('Bits cannot be' + str(values))
         return result
 
+    def __call__(self, values):
+        self.Bits(values)
+
             

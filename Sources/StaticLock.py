@@ -119,7 +119,13 @@ class SharedLocker(object):
             'troley':manager.dict({
                 'Alive':False,
                 'docked':False,
-                'error':False
+                'number':0,
+                'dockreleaseswitch':False,
+                'error':False,
+                'push':False,
+                'dock':False,
+                'undock':False,
+                'rotate':False
                 }),
             'robot':manager.dict({
                 'CommandControl':False,
@@ -166,8 +172,19 @@ class SharedLocker(object):
                 'O25':False, 'O26':False, 'O27':False, 'O28':False,
                 'O29':False, 'O30':False, 'O31':False, 'O32':False}),
             'SICKGMOD0':manager.dict({
-                'Alive':False})})
+                'Alive':False}),
+            'program':manager.dict({
+                'Alive':False,
+                'stepmode':False,
+                'automode':False,
+                'running':False,
+                '/running':True,
+                'programname':''
+                })
+                })
+            
         self.wdt = self.shared['wdt']
+        self.troley = self.shared['troley']
         self.ect = self.shared['ect']
         self.lcon = self.shared['lcon'] 
         self.lock = Lock()

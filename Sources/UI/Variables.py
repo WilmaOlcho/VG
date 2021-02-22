@@ -50,6 +50,7 @@ class Variables(dict):
             'servoHOMING':False,
             'servoRESET':False,
             'servoTGON':False,
+            'TroleyDocked':False
         }
         self['pistoncontrol'] = {
             'seal':{
@@ -102,8 +103,9 @@ class Variables(dict):
             'lamps':{
                 'Serwo włączone':'servoON',
                 'Serwo na pozycji':'servoCOIN',
-                'Servo gotowe':'servoREADY',
-                'Serwo w ruchu':'servoTGON'}}
+                'Serwo gotowe':'servoREADY',
+                'Serwo w ruchu':'servoTGON',
+                'Wózek zadokowany':'TroleyDocked'}}
         self.Alive = True
 
     def update(self):
@@ -119,6 +121,7 @@ class Variables(dict):
         self['troley']['servoCOIN'] = lockerinstance[0].servo['iocoin']
         self['troley']['servoREADY'] = lockerinstance[0].servo['ioready']
         self['troley']['servoTGON'] = lockerinstance[0].servo['iotgon']
+        self['troley']['TroleyDocked'] = lockerinstance[0].troley['docked']        
         self.internalEvents['error'] = lockerinstance[0].events['Error']
         self['ImportantMessages'] = lockerinstance[0].shared['Errors']
         self.alive = lockerinstance[0].console['Alive']

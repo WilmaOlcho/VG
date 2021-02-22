@@ -4,6 +4,7 @@ from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
 from Sources.Kawasaki import RobotVG
 from Sources.Pneumatics import PneumaticsVG
 from Sources.Servo import Servo
+from Sources.Troley import Troley
 #from gui import console
 from Sources.UI.MainWindow import Window
 from pathlib import Path
@@ -18,6 +19,7 @@ class ApplicationManager(object):
         self.LconConfigurationFile = path + 'amuxConfiguration.json'
         self.RobotConfigurationFile = path + 'robotConfiguration.json'
         self.ServoConfigurationFile = path + 'ServoSettings.json'
+        self.TroleyConfigurationFile = path + 'Troleysettings.json'
         self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
         self.processes = [
             Process(name = 'Window', target = Window, args=(self.lock,)),
@@ -25,7 +27,8 @@ class ApplicationManager(object):
             Process(name = 'Servo', target = Servo, args=(self.lock, self.ServoConfigurationFile,)),
             Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
             Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
-            Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,))
+            Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
+            Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,))
         ]    
         for process in self.processes: 
             process.start()
