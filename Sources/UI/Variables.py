@@ -185,5 +185,13 @@ class Variables(dict):
             self.statusindicators['Robot'] = -1
         else:
             self.statusindicators['Robot'] = 0
-        #TODO safety
+        safety = lockerinstance[0].safety
+        if safety['EstopArmed'] and safety['ZoneArmed']:
+            self.statusindicators['safety'] = 1
+        elif not safety['EstopArmed']:
+            self.statusindicators['safety'] = -1
+        elif safety['Estopresetrecquired'] or safety['Zoneresetrecquired']:
+            self.statusindicators['safety'] = -2
+        else:
+            self.statusindicators['safety'] = 0
         lockerinstance[0].lock.release()

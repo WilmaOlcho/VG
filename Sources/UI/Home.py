@@ -220,7 +220,7 @@ class StatusIndicators(dict):
         
         def update(self):
             self.frame.update()
-            self.indicator.config(bg = 'lightgreen' if self.root.variables.statusindicators[self.key]==1 else 'black' if self.root.variables.statusindicators[self.key]==0 else 'red')
+            self.indicator.config(bg = 'lightgreen' if self.root.variables.statusindicators[self.key]==1 else 'black' if self.root.variables.statusindicators[self.key]==0 else 'red' if self.root.variables.statusindicators[self.key]==-1 else 'blue')
 
         def pack(self, *args, **kwargs):
             self.frame.pack(*args, **kwargs)

@@ -1,8 +1,36 @@
 {
-    "csv":"../FlexiSoftVG.csv",
-    "xml":"../FlexiSoftVG.xml",
+    "inputscsv":"FlexiSoftVG_in.csv",
+    "outputscsv":"FlexiSoftVG_out.csv",
     "basics":{
-        "address":"192.168.255.255",
+        "address":"192.168.4.201",
         "port":9100
-    }
+    },
+    "inputbinding":{
+        "SICKGMOD0":"sourcemasterkey",
+        "safety":"destinymasterkey",
+        "E-Stop_OK":"EstopArmed",
+        "DrzwiSerwisoweOT":"DoorClosed",
+        "DrzwiZaryglowane.XTIO[1].I5I6":"DoorLocked",
+        "WozekZadokowany.XTIO[1].I3I4":"TroleyInside",
+        "THC_pushed":"THCPushed",
+        "EDMErrorRobotEStop":"RobotError",
+        "EDMErrorLaserDrzwiowe":"LaserError",
+        "EDMErrorServoOn":"ServoError",
+        "EDMErrorZawórPowGłówny":"sValve1Error",
+        "ServoPowerONEDM.XTIO[2].I3":"ServoEDM",
+        "RobotEStopEDM.XTIO[2].I1":"RobotEDM",
+        "LaserDrzwioweEDM.XTIO[2].I4":"LaserEDM",
+        "StrefaWewn_OK":"ZoneArmed",
+        "RobotTeachMode.XTIO[1].I7":"RobotTeachMode",
+        "TrybRęczny_OK":"DeadMan",
+        "Reset.XTIO[2].I5":"resetbutton",
+        "E-StopWymagaResetu":"Estopresetrecquired",
+        "StrefaWewnWymagaResetu":"Zoneresetrecquired"
+    },
+    "outputbinding":{
+        "sourcemasterkey":"safety",
+        "destinymasterkey":"SICKGMOD0",
+        "DoorOpen":"OtwórzDrzwi",
+        "TroleyReady":"WózekGotowy"
+    }    
 }
