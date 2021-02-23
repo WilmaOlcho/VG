@@ -6,8 +6,8 @@
         "port":9100
     },
     "inputbinding":{
-        "SICKGMOD0":"sourcemasterkey",
-        "safety":"destinymasterkey",
+        "sourcemasterkey":"SICKGMOD0",
+        "destinymasterkey":"safety",
         "E-Stop_OK":"EstopArmed",
         "DrzwiSerwisoweOT":"DoorClosed",
         "DrzwiZaryglowane.XTIO[1].I5I6":"DoorLocked",

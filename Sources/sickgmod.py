@@ -1,7 +1,8 @@
 from Sources.modbusTCPunits import SICKGmod
-from Sources import ErrorEventWrite
+from Sources import ErrorEventWrite, dictKeyByVal
 import json
 import csv
+import re
 from xml.etree.ElementTree import ElementTree as ET
 
 class GMOD(SICKGmod):
@@ -11,12 +12,12 @@ class GMOD(SICKGmod):
                 self.parameters = json.load(open(configFile))
                 self.address = self.parameters['basics']['address']
                 self.port = self.parameters['basics']['port']
-                super().__init__(self.address, self.port, *args,**kwargs)
+                super().__init__(lockerinstance, self.address, self.port, *args,**kwargs)
             except json.JSONDecodeError:
-                errstring = 'GMOD init error - Error while parsing config file'
+                errstring = '\nGMOD init error - Error while parsing config file'
                 ErrorEventWrite(lockerinstance, errstring)
             except Exception as e:
-                errstring = 'GMOD init error - ' + str(e)
+                errstring = '\nGMOD init error - ' + str(e)
                 ErrorEventWrite(lockerinstance, errstring)
             else:
                 try:
@@ -27,36 +28,32 @@ class GMOD(SICKGmod):
                     self.inputs = []
                     self.outputs = []
                     for row in inputscsv:
-                        self.inputs.append([row.split(';')])
+                        self.inputs.append([*row])
                     for row in outputscsv:
-                        self.outputs.append([row.split(';')])
+                        self.outputs.append([*row])
                 except Exception as e:
-                    errstring = 'GMOD init error - CSV file parsing raised exception' + str(e)
+                    errstring = '\nGMOD init error - CSV file parsing raised exception ' + str(e)
                     ErrorEventWrite(lockerinstance, errstring)
                 else:
                     try:
-                        lockerinstance[0].lock.acquire()
-                        inputdictionary = lockerinstance[0].SICKGMOD0['inputs']
-                        outputdictionary = lockerinstance[0].SICKGMOD0['outputs']
-                        inputmap = lockerinstance[0].SICKGMOD0['inputmap']
-                        outputmap = lockerinstance[0].SICKGMOD0['outputmap']
-                        lockerinstance[0].lock.release()
                         for entry in self.inputs:
-                            if entry[1] and '.' in byte[0]:
-                                inputdictionary[entry[0]] = entry[1]
-                                inputmap[entry[0]] = False
+                            entry = entry[0].split(';')
+                            if len(entry)>1:
+                                if entry[1] and '.' in entry[0]:
+                                    lockerinstance[0].lock.acquire()
+                                    lockerinstance[0].SICKGMOD0['inputs'][entry[0]] = entry[1]
+                                    lockerinstance[0].SICKGMOD0['inputmap'][entry[0]] = False
+                                    lockerinstance[0].lock.release()
                         for entry in self.outputs:
-                            if entry[1] and '.' in byte[0]:
-                                outputdictionary[entry[0]] = entry[1]
-                                outputmap[entry[0]] = False
-                        lockerinstance[0].lock.acquire()
-                        lockerinstance[0].SICKGMOD0['inputs'] = inputdictionary
-                        lockerinstance[0].SICKGMOD0['outputs'] = outputdictionary
-                        lockerinstance[0].SICKGMOD0['inputmap'] = inputmap
-                        lockerinstance[0].SICKGMOD0['outputmap'] = outputmap
-                        lockerinstance[0].lock.release()
-                    except:
-                        errstring = 'GMOD init error - extending DictProxy failed' + str(e)
+                            entry = entry[0].split(';')
+                            if len(entry)>1:
+                                if entry[1] and '.' in entry[0]:
+                                    lockerinstance[0].lock.acquire()
+                                    lockerinstance[0].SICKGMOD0['outputs'][entry[0]] = entry[1]
+                                    lockerinstance[0].SICKGMOD0['outputmap'][entry[0]] = False
+                                    lockerinstance[0].lock.release()
+                    except Exception as e:
+                        errstring = '\nGMOD init error - extending DictProxy failed ' + str(e)
                         ErrorEventWrite(lockerinstance, errstring)
                     else:
                         try:
@@ -86,24 +83,33 @@ class GMOD(SICKGmod):
 
     def retrieveinputs(self, lockerinstance):
         lockerinstance[0].lock.acquire()
-        itemmap = lockerinstance[0].SICKGMOD0['inputs'].keys()
+        itemmap = lockerinstance[0].SICKGMOD0['inputmap'].keys()
         lockerinstance[0].lock.release()
         for item in itemmap:
             positionInDatablock = item.split('.')
-            address = 8*int(positionInDatablock[0])+int(positionInDatablock[1])
-            result = self.read_coils(address)
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].SICKGMOD0['inputmap']['item'] = result
-            lockerinstance[0].lock.release()
+            address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
+            try:
+                result = self.read_coils(address)
+            except Exception as e:
+                errstring = "\nGMOD error - can't retrieve inputs " + str(e)
+                ErrorEventWrite(lockerinstance, errstring)
+            else:
+                lockerinstance[0].lock.acquire()
+                lockerinstance[0].SICKGMOD0['inputmap']['item'] = result
+                lockerinstance[0].lock.release()
 
     def retrieveoutputs(self, lockerinstance):
         lockerinstance[0].lock.acquire()
-        itemmap = lockerinstance[0].SICKGMOD0['outputs']
+        itemmap = lockerinstance[0].SICKGMOD0['outputmap']
         lockerinstance[0].lock.release()
         for item in itemmap.items():
             positionInDatablock = item[0].split('.')
-            address = 8*int(positionInDatablock[0])+int(positionInDatablock[1])
-            self.write_coil(address, item[1])
+            address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
+            try:
+                self.write_coil(address, item[1])
+            except Exception as e:
+                errstring = "\nGMOD error - can't retrieve outputs " + str(e)
+                ErrorEventWrite(lockerinstance, errstring)
 
     def safetysignals(self, lockerinstance):
         for binding in [self.parameters['inputbinding'],self.parameters['outputbinding']]:
@@ -112,6 +118,13 @@ class GMOD(SICKGmod):
             for item in binding.items():
                 if item[1] in [src, dst]:
                     continue
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].shared[dst][item[1]] = lockerinstance[0].shared[src][item[0]]
-                lockerinstance[0].lock.release()
+                if src == 'safety':
+                    lockerinstance[0].lock.acquire()
+                    signal = dictKeyByVal(lockerinstance[0].shared[dst]['outputs'],item[1])
+                    lockerinstance[0].shared[dst]['outputmap'][signal] = lockerinstance[0].shared[src][item[0]]
+                    lockerinstance[0].lock.release()
+                else:
+                    lockerinstance[0].lock.acquire()
+                    signal = dictKeyByVal(lockerinstance[0].shared[src]['inputs'],item[0])
+                    lockerinstance[0].shared[dst][item[1]] = lockerinstance[0].shared[src]['inputmap'][signal]
+                    lockerinstance[0].lock.release()

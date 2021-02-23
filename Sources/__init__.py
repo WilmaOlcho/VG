@@ -12,6 +12,8 @@ def dictKeyByVal(dict, byVal): #There is no default method to search for keys in
     items = dict.items()
     for item in items: #item = [key, value]
         if item[1] == byVal: keys.append(item[0])
+    if len(keys) == 1:
+        return keys[0]
     return keys
 
 def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255):
@@ -136,6 +138,7 @@ class Bits():
         return result
 
     def Bits(self, values = [4*False]):
+        result = None
         if isinstance(values, list):
             result = self.BitListToInt(values)
         elif isinstance(values, int):
@@ -145,6 +148,6 @@ class Bits():
         return result
 
     def __call__(self, values):
-        self.Bits(values)
+        return self.Bits(values)
 
             

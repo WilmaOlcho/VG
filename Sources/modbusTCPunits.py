@@ -1165,9 +1165,10 @@ class FX0GMOD(object):
 
 class SICKGmod(FX0GMOD, ModbusClient):
     def __init__(self, lockerinstance, address = '192.168.255.255', port = 9100, *args, **kwargs):
-        super().__init__(address, *args, **kwargs)
-        self.InputDatablock = [[25*[0]],[16*[0]],[30*[0]],[30*[0]]]
-        self.OutputDatablock = [5*[5*[0]]]
+        FX0GMOD.__init__(self)
+        ModbusClient.__init__(self, address, port, *args, **kwargs)
+        self.InputDatablock = [25*[0]],[16*[0]],[30*[0]],[30*[0]]
+        self.OutputDatablock = 5*[5*[0]]
         self.Bits = Bits(len = 16)
 
     def read_datablock(self, datablockNumber): ##TODO errorhandling
@@ -1236,14 +1237,14 @@ class SICKGmod(FX0GMOD, ModbusClient):
 
     def write_coil(self, coil, value = True):
         #25words in 5 for datablock
-        bitsPerDatablock = (16*5) #bits per word * words in datablock
+        bitsPerDatablock = 16*5 #bits per word * words in datablock
         datablockToDealWith = coil//bitsPerDatablock
         wordToDealWith = coil//16 #bits per word
         bitToDealWith = coil%16
         valueToChange = self.OutputDatablock[datablockToDealWith][wordToDealWith]
-        bitlist = self.Bits.Bits(valueToChange)
+        bitlist = self.Bits(valueToChange)
         bitlist[bitToDealWith] = value
-        wordToWrite = self.Bits.Bits(bitlist)
+        wordToWrite = self.Bits(bitlist)
         self.OutputDatablock[datablockToDealWith][wordToDealWith] = wordToWrite
         self.write_datablock(datablockToDealWith+1) #numbers of datablocks in GMOD registers are starting from 1
 
