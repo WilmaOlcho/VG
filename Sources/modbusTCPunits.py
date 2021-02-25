@@ -1394,7 +1394,10 @@ class KawasakiRobot(object):
                 'NOP':0,
                 'homing':1,
                 'go':2
-            }} 
+            }}
+        self.postable = {
+            'table':(0x1020,('int',0),'rw') #4128
+            }
         self.addresses = {
             **self.command,
             **self.inputs,

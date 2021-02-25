@@ -24,7 +24,7 @@ def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255):
     lockerinstance[0].lock.release()
 
 class EventManager():
-    def __init__(self, lockerinstance, input = '', edge = None, event = ''):
+    def __init__(self, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
         if input and input[0] == '-':
             self.sign = True
             input = input[1:]
@@ -32,15 +32,18 @@ class EventManager():
             self.sign = False
         if '.' in input:
             path = input.split('.')
-            evalstring = 'lockerinstance[0].' + path[:-1] + '["' + path[::-1][:1] + '"]'
-            self.input = eval(evalstring)
+            self.inputpath = lockerinstance[0].shared[path[:-1]]
+            self.input = path[::-1][:1]
         else:
+            self.inputpath = lockerinstance[0].GPIO
             self.input = input
         self.edge = edge
+        self.callback = callback
+        self.callbackargs = callbackargs
         self.event = event
         lockerinstance[0].lock.acquire()
-        self.state = lockerinstance[0].GPIO[self.input]
-        self.Alive = lockerinstance[0].robot['Alive']
+        self.state = self.inputpath[self.input]
+        self.Alive = True
         self.name = currentThread().name
         lockerinstance[0].ect.append(self.name)
         lockerinstance[0].lock.release()
@@ -50,51 +53,56 @@ class EventManager():
         while self.Alive:
             lockerinstance[0].lock.acquire()
             self.Alive = lockerinstance[0].robot['Alive'] and self.name in lockerinstance[0].ect
-            currentstate = bool(lockerinstance[0].GPIO[self.input])
+            currentstate = self.inputpath[self.input]
             lockerinstance[0].lock.release()
             if not self.edge:
                 if (currentstate ^ self.sign):
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].events[self.event] = True
-                    lockerinstance[0].lock.release()
+                    if self.event:
+                        lockerinstance[0].lock.acquire()
+                        lockerinstance[0].events[self.event] = True
+                        lockerinstance[0].lock.release()
                     break
             elif self.edge == 'rising':
                 if self.state:
                     lockerinstance[0].lock.acquire()
-                    self.state = lockerinstance[0].GPIO[self.input]
+                    self.state = self.inputpath[self.input]
                     lockerinstance[0].lock.release()
                 elif currentstate:
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].events[self.event] = True
-                    lockerinstance[0].lock.release()
+                    if self.event:
+                        lockerinstance[0].lock.acquire()
+                        lockerinstance[0].events[self.event] = True
+                        lockerinstance[0].lock.release()
                     break
             elif self.edge == 'falling':
                 if not self.state:
                     lockerinstance[0].lock.acquire()
-                    self.state = lockerinstance[0].GPIO[self.input]
+                    self.state = self.inputpath[self.input]
                     lockerinstance[0].lock.release()
                 elif not currentstate:
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].events[self.event] = True
-                    lockerinstance[0].lock.release()
+                    if self.event:
+                        lockerinstance[0].lock.acquire()
+                        lockerinstance[0].events[self.event] = True
+                        lockerinstance[0].lock.release()
                     break
             elif self.edge == 'toggle':
                 if self.state != currentstate:
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].events[self.event] = True
-                    lockerinstance[0].lock.release()
+                    if self.event:
+                        lockerinstance[0].lock.acquire()
+                        lockerinstance[0].events[self.event] = True
+                        lockerinstance[0].lock.release()
                     break
+        self.callback(*self.callbackargs)
         lockerinstance[0].lock.acquire()
         if self.name in lockerinstance[0].ect: lockerinstance[0].ect.remove(self.name)
         lockerinstance[0].lock.release()
     
     @classmethod
-    def AdaptEvent(cls, lockerinstance, input = '', edge = None, event = ''):
+    def AdaptEvent(cls, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
         lockerinstance[0].lock.acquire()
         ectActive = str('EventCatcher: ' + event) in lockerinstance[0].ect
         lockerinstance[0].lock.release()
         if not ectActive:
-            EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event,))
+            EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event, callback, callbackargs))
             EventThread.setName('EventCatcher: ' + event)
             EventThread.start()
 

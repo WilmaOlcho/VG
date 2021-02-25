@@ -95,7 +95,7 @@ class Servo(object):
         def funconcatchServoEnd(lockerinstance = lockerinstance):
             lockerinstance[0].lock.acquire()
             pos = lockerinstance[0].servo['positionNumber']
-            lockerinstance[0].servo['positionNumber'] = (pos+1) if pos < 2 else 0
+            lockerinstance[0].servo['positionNumber'] = 0 if pos >= 2 else (-2 if pos == -1 else (pos+1))
             lockerinstance[0].lock.release()
         def funconcatch(object = self, lockerinstance = lockerinstance):
             EventManager.AdaptEvent(lockerinstance, input = '-'+object.coinAddress, event = 'ServoStepComplete')

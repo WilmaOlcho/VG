@@ -6,15 +6,23 @@
         "BindOutput":0
     },
     "LaserControl":{
-        "IPAddress":"192.168.4.20",
+        "IPAddress":"192.168.4.21",
         "moduleName":"ADAM6052",
         "Port":502,
-        "ResetError":5,
-        "LaserRequest":5,
-        "OpticalChannelbit0":6,
-        "OpticalChannelbit1":7,
-        "OpticalChannelbit2":7,
-        "OpticalChannelbit3":7,
-        "MyOpticalChannel":1
+        "LaserRequest":0,
+        "ResetError":1,
+        "LaserOn":2,
+        "OpticalChannelbit0":3,
+        "OpticalChannelbit1":4,
+        "OpticalChannelbit2":5,
+        "OpticalChannelbit3":6,
+        "MyOpticalChannel":1,
+        "LaserReady":0,
+        "LaserError":1,
+        "LaserAssigned":2,
+        "LaserIsOn":3,
+        "LaserWarning":4,
+        "ChillerWarning":5,
+        "ChillerError":6
     }
 }

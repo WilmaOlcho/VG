@@ -8,8 +8,8 @@ class Variables(dict):
         self.programposstart = 0
         self.programposend = 1
         self.programcolumns = ["ID","Nr","Program SCOUT","Warstwa SCOUT","Pozycja","Robot A","Robot X","Robot Y","Robot Z"]
-        self.displayedprogramcolumns = [False,True,True,True,True,False,False,False,False]
-        self.columnwidths = [4,4,30,15,10,8,8,8,8]
+        self.displayedprogramcolumns = [False,True,True,True,True,True,True,True,True]
+        self.columnwidths = [4,4,30,15,10,15,15,15,15]
         self.internalEvents = {
             'RefreshStartEnd':False,
             'TableRefresh':False,

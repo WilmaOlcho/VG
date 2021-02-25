@@ -31,8 +31,17 @@ class SharedLocker(object):
             'ect':manager.list(),
             'lcon':manager.dict({
                 'Alive':False,
-                'SetChannel':False}),
+                'SetChannel':False,
+                'LaserError':False,
+                'LaserWarning':False,
+                'ChillerError':False,
+                'ChillerWarning':False,
+                'LaserReady':False,
+                'LaserOn':False,
+                'LaserAssigned':False
+                }),
             'events':manager.dict({
+                'startprogram':False,
                 'somethingchanged':False,
                 'ack':False,
                 'erroracknowledge':False,
@@ -179,13 +188,17 @@ class SharedLocker(object):
             'program':manager.dict({
                 'Alive':False,
                 'stepmode':False,
+                'stepcomplete':False,
+                'initialising':False,
                 'automode':False,
                 'running':False,
                 '/running':True,
-                'programname':''
+                'programname':'',
+                'stepnumber':0,
+                'cycle':0
                 })
                 })
-            
+        self.program = self.shared['program']
         self.wdt = self.shared['wdt']
         self.troley = self.shared['troley']
         self.ect = self.shared['ect']
