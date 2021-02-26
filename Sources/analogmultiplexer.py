@@ -166,6 +166,7 @@ class LaserControl(ADAMDataAcquisitionModule):
 
     def acquireLightPath(self, lockerinstance):
         if not self.__prohibitedBehaviour(lockerinstance):
+            self.request(lockerinstance)
             try:
                 channel = self.Bits.Bits(self.LconParameters['MyOpticalChannel'])
                 for i in range(4):
@@ -174,6 +175,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             except Exception as e:
                 errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            self.release(lockerinstance)
 
     def releaseLightPath(self, lockerinstance):
         if not self.__prohibitedBehaviour(lockerinstance):
@@ -197,6 +199,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             except Exception as e:
                 errmessage = "SetChannel ResetErrors Error\n"+ str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            self.release(lockerinstance)
 
     def resetError(self, lockerinstance):
         self.getState(lockerinstance)
@@ -216,11 +219,22 @@ class LaserControl(ADAMDataAcquisitionModule):
                 errmessage = "SetChannel ResetErrors Error\n"+ str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
+    def StopLaser(self, lockerinstance):
+        self.getState(lockerinstance)
+        if not self.inputState[3] and not self.__prohibitedBehaviour(lockerinstance):
+            self.resetError(lockerinstance)
+            self.request(lockerinstance)
+            try:
+                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserOn']), False)
+                time.sleep(0.1)
+            except Exception as e:
+                errmessage = "SetChannel ResetErrors Error\n"+ str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            self.release(lockerinstance)
+
     def SetChannel(self, lockerinstance):
         self.resetError(lockerinstance)
-        self.acquireLightPath(lockerinstance)
         self.laserOn(lockerinstance)
-        self.release(lockerinstance)
 
 class MyMultiplexer(AnalogMultiplexer):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
@@ -338,11 +352,19 @@ class MyLaserControl(LaserControl):
             lockerinstance[0].lock.acquire()
             setchannel = lockerinstance[0].lcon['SetChannel']
             if setchannel: lockerinstance[0].lcon['SetChannel'] = False
+            startlaser = lockerinstance[0].lcon['LaserTurnOn']
+            if startlaser: lockerinstance[0].lcon['LaserTurnOn'] = False
+            stoplaser = lockerinstance[0].lcon['LaserTurnOff']
+            if stoplaser: lockerinstance[0].lcon['LaserTurnOff'] = False
+            resetlaser = lockerinstance[0].lcon['LaserReset']
+            if resetlaser: lockerinstance[0].lcon['LaserReset'] = False
             self.Alive = lockerinstance[0].lcon['Alive']
             lockerinstance[0].lock.release()
             if not self.Alive: break
             if setchannel: self.SetChannel(lockerinstance)
-
+            if startlaser: self.laserOn(lockerinstance)
+            if stoplaser: self.StopLaser(lockerinstance)
+            if resetlaser: self.resetError(lockerinstance)
 
 class LaserControlError(Exception):
     def __init__(self, lockerinstance, *args, **kwargs):

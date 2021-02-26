@@ -3,7 +3,7 @@ from functools import wraps, partial
 from pymodbus.transaction import ModbusAsciiFramer
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources import Bits
+from Sources import Bits, ErrorEventWrite
 import re
 
 class ADAMModule(object):
@@ -1124,28 +1124,19 @@ class ParameterDictionaryError(ValueError):
     def __init__(self, lockerinstance, *args, **kwargs):
         self.args = args
         errstring = '\nInvalid key for parameter dictionary in ' + ''.join(map(str, *args))
-        lockerinstance[0].lock.acquire()
-        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-        lockerinstance[0].errorlevel[2] = True #High errorLevel
-        lockerinstance[0].lock.release()
+        ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
     
 class ParameterIsNotReadable(TypeError):
     def __init__(self, lockerinstance, *args, **kwargs):
         self.args = args
         errstring = '\nTrying to read from write-only register in ' + ''.join(map(str, *args))
-        lockerinstance[0].lock.acquire()
-        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-        lockerinstance[0].errorlevel[2] = True #High errorLevel
-        lockerinstance[0].lock.release()
+        ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
 
 class ParameterIsNotWritable(TypeError):
     def __init__(self, lockerinstance, *args, **kwargs):
         errstring = '\nTrying to write to read-only register in ' + ''.join(map(str, *args))
         self.args = args
-        lockerinstance[0].lock.acquire()
-        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring
-        lockerinstance[0].errorlevel[2] = True #High errorLevel
-        lockerinstance[0].lock.release()
+        ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
     
 class FX0GMOD(object):
     def __init__(self, *args, **kwargs):

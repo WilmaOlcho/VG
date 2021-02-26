@@ -16,7 +16,6 @@ class programController(object):
         lockerinstance[0].lock.release()
         if automode: self.automode(lockerinstance)
         if stepmode: self.stepmode(lockerinstance)
-
         self.retrievestate(lockerinstance)
 
     def retrievestate(self, lockerinstance):

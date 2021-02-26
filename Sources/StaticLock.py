@@ -31,6 +31,9 @@ class SharedLocker(object):
             'ect':manager.list(),
             'lcon':manager.dict({
                 'Alive':False,
+                'LaserTurnOn':False,
+                'LaserTurnOff':False,
+                "LaserReset":False,
                 'SetChannel':False,
                 'LaserError':False,
                 'LaserWarning':False,

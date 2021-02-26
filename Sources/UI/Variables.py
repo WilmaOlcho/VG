@@ -52,6 +52,19 @@ class Variables(dict):
             'servoTGON':False,
             'TroleyDocked':False
         }
+        self['laser'] = {
+            'LaserOn':False,
+            'LaserIsOn':False,
+            'GetChannel':False,
+            'ResetErrors':False,
+            'LaserReady':False,
+            'LaserAssigned':False,
+            'LaserError':False,
+            'LaserWarning':False,
+            'ChillerError':False,
+            'ChillerWarning':False,
+            'LaserBusy':False
+        }
         self['pistoncontrol'] = {
             'seal':{
                 'Left':{
@@ -93,19 +106,6 @@ class Variables(dict):
                 'Center':{}
             }
         }
-        self['servocontrol'] = {
-            'buttons':{
-                'Włącz':'servoRUN',
-                'Wyłącz':'servoSTOP',
-                'Krok':'servoSTEP',
-                'Bazowanie':'servoHOMING',
-                'Reset':'servoRESET'},
-            'lamps':{
-                'Serwo włączone':'servoON',
-                'Serwo na pozycji':'servoCOIN',
-                'Serwo gotowe':'servoREADY',
-                'Serwo w ruchu':'servoTGON',
-                'Wózek zadokowany':'TroleyDocked'}}
         self.Alive = True
 
     def update(self):
@@ -117,6 +117,13 @@ class Variables(dict):
         self['pistoncontrol']['shieldinggas']['Center']['sensor'] = lockerinstance[0].pistons['ShieldingGas']
         self['pistoncontrol']['crossjet']['Center']['sensor'] = lockerinstance[0].pistons['sensorVacuumOk']
         self['pistoncontrol']['headcooling']['Center']['sensor'] = lockerinstance[0].pistons['sensorAirOk']
+        self['laser']['LaserIsOn'] = lockerinstance[0].lcon['LaserOn']
+        self['laser']['LaserBusy'] = lockerinstance[0].mux['busy']
+        self['laser']['LaserReady'] = lockerinstance[0].lcon['LaserReady']
+        self['laser']['LaserError'] = lockerinstance[0].lcon['LaserError']
+        self['laser']['LaserWarning'] = lockerinstance[0].lcon['LaserWarning']
+        self['laser']['ChillerError'] = lockerinstance[0].lcon['ChillerError']
+        self['laser']['ChillerWarning'] = lockerinstance[0].lcon['ChillerWarning']
         self['troley']['servoON'] = lockerinstance[0].servo['active']
         self['troley']['servoCOIN'] = lockerinstance[0].servo['iocoin']
         self['troley']['servoREADY'] = lockerinstance[0].servo['ioready']
@@ -129,18 +136,23 @@ class Variables(dict):
             lockerinstance[0].events['erroracknowledge'] = True
             self.internalEvents['ack'] = False
         if not self['ProgramActive']:
-            lockerinstance[0].pistons['TroleyPusherFront'] = self['pistoncontrol']['pusher']['Right']['coil']
-            lockerinstance[0].pistons['TroleyPusherBack'] = self['pistoncontrol']['pusher']['Left']['coil']
-            lockerinstance[0].pistons['SealUp'] = self['pistoncontrol']['seal']['Right']['coil']
-            lockerinstance[0].pistons['SealDown'] = self['pistoncontrol']['seal']['Right']['coil']
-            lockerinstance[0].pistons['ShieldingGas'] = self['pistoncontrol']['shieldinggas']['Right']['coil']
-            lockerinstance[0].pistons['HeadCooling'] = self['pistoncontrol']['headcooling']['Right']['coil']
-            lockerinstance[0].pistons['CrossJet'] = self['pistoncontrol']['crossjet']['Right']['coil']
-            lockerinstance[0].servo['homing'] = self['troley']['servoHOMING']
-            lockerinstance[0].servo['run'] = self['troley']['servoRUN']
-            lockerinstance[0].servo['stop'] = self['troley']['servoSTOP']
-            lockerinstance[0].servo['reset'] = self['troley']['servoRESET']
-            lockerinstance[0].servo['step'] = self['troley']['servoSTEP']
+            lockerinstance[0].pistons['TroleyPusherFront'] |= self['pistoncontrol']['pusher']['Right']['coil']
+            lockerinstance[0].pistons['TroleyPusherBack'] |= self['pistoncontrol']['pusher']['Left']['coil']
+            lockerinstance[0].pistons['SealUp'] |= self['pistoncontrol']['seal']['Right']['coil']
+            lockerinstance[0].pistons['SealDown'] |= self['pistoncontrol']['seal']['Right']['coil']
+            lockerinstance[0].pistons['ShieldingGas'] |= self['pistoncontrol']['shieldinggas']['Right']['coil']
+            lockerinstance[0].pistons['HeadCooling'] |= self['pistoncontrol']['headcooling']['Right']['coil']
+            lockerinstance[0].pistons['CrossJet'] |= self['pistoncontrol']['crossjet']['Right']['coil']
+            lockerinstance[0].servo['homing'] |= self['troley']['servoHOMING']
+            lockerinstance[0].servo['run'] |= self['troley']['servoRUN']
+            lockerinstance[0].servo['stop'] |= self['troley']['servoSTOP']
+            lockerinstance[0].servo['reset'] |= self['troley']['servoRESET']
+            lockerinstance[0].servo['step'] |= self['troley']['servoSTEP']
+            lockerinstance[0].lcon['SetChannel'] |= self['laser']['GetChannel']
+            lockerinstance[0].lcon['LaserTurnOn'] |= self['laser']['LaserOn'] & (not lockerinstance[0].lcon['LaserOn'])
+            lockerinstance[0].lcon['LaserTurnOff'] |= (not self['laser']['LaserOn']) & lockerinstance[0].lcon['LaserOn']
+            lockerinstance[0].lcon['LaserReset'] |= self['laser']['GetChannel']
+
 
             self['troley']['servoRUN'] = False
             self['troley']['servoSTOP'] = False

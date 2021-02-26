@@ -147,7 +147,19 @@
                                 "normal":"black",
                                 "active":"green"
                             }
-                        }
+                        },
+                        "buttons":{
+                            "W\u0142\u0105cz":"servoRUN",
+                            "Wy\u0142\u0105cz":"servoSTOP",
+                            "Krok":"servoSTEP",
+                            "Bazowanie":"servoHOMING",
+                            "Reset":"servoRESET"},
+                        "lamps":{
+                            "Serwo w\u0142\u0105czone":"servoON",
+                            "Serwo na pozycji":"servoCOIN",
+                            "Serwo gotowe":"servoREADY",
+                            "Serwo w ruchu":"servoTGON",
+                            "W\u00F3zek zadokowany":"TroleyDocked"}
                     }
                 },
                 "Pneumatics":{
@@ -167,6 +179,45 @@
                         "masterkey":"pistoncontrol",
                         "key":"headcooling"
                     }
+                },
+                "Laser":{
+                    "Label":"\u0179r\u00F3d\u0142o wi\u0105zki",
+                    "Button":{
+                        "masterkey":"laser",
+                        "width":25,
+                        "height":2
+                    },
+                    "Lamp":{
+                        "masterkey":"laser",
+                        "width":40,
+                        "height":40,
+                        "frame":{
+                            "relief":"ridge",
+                            "borderwidth":2
+                        },
+                        "caption":{
+                            "width":19
+                        },
+                        "Color":{
+                            "normal":"black",
+                            "active":"green",
+                            "error":"red"
+                        }
+                    },
+                    "buttons":{
+                        "W\u0142\u0105cz Laser":"LaserOn",
+                        "Wy\u0142\u0105cz Laser":"-LaserOn",
+                        "Przejmij kana\u0142":"GetChannel",
+                        "Reset b\u0142\u0119d\u00F3w":"ResetErrors"},
+                    "lamps":{
+                        "Laser zaj\u0119ty":"!LaserBusy",
+                        "Laser w\u0142\u0105czony":"LaserIsOn",
+                        "Kana\u0142 przypisany":"LaserAssigned",
+                        "Laser gotowy":"LaserReady",
+                        "B\u0142\u0105d lasera":"!LaserError",
+                        "Ostrze\u017Cenie lasera":"!LaserWarning",
+                        "B\u0142\u0105d ch\u0142odnicy":"!ChillerError",
+                        "Ostrze\u017Cenie ch\u0142odnicy":"!ChillerWarning"}
                 }
             },
             "HomeScreen":{
@@ -372,18 +423,18 @@
         }
     },
     "ErrorCodes":{
-        "0":"Błąd krytyczny aplikacji\n",
-        "1":"Błąd połączenia z modułem ",
-        "2":"Błąd połączenia z modułem {}",
-        "3":"Błąd robota",
-        "4":"Błąd robota {}",
-        "5":"Błąd SCOUTa",
-        "6":"Błąd SCOUTa {}",
+        "0":"B\u0142\u0105d krytyczny aplikacji\n",
+        "1":"B\u0142\u0105d po\u0142\u0105czenia z modu\u0142em ",
+        "2":"B\u0142\u0105d po\u0142\u0105czenia z modu\u0142em {}",
+        "3":"B\u0142\u0105d robota",
+        "4":"B\u0142\u0105d robota {}",
+        "5":"B\u0142\u0105d SCOUTa",
+        "6":"B\u0142\u0105d SCOUTa {}",
         
         "100":"Przekroczenie czasu taktu ",
         "101":"Przekroczenie czasu taktu {}",
-        "200":"Błąd serwo, serwo zostało zatrzymane",
-        "201":"Błąd lasera, nie można przypisać kanału",
+        "200":"B\u0142\u0105d serwo, serwo zosta\u0142o zatrzymane",
+        "201":"B\u0142\u0105d lasera, nie mo\u017Cna przypisa\u0107 kana\u0142u",
         "202":""
 
 
