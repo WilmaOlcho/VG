@@ -11,35 +11,30 @@ class Troley(object):
             else:
                 self.BitConverter = Bits(len = 4)
                 self.Alive = True
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].troley['Alive'] = self.Alive
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    lockerinstance[0].troley['Alive'] = self.Alive
                 self.loop(lockerinstance)
             finally:
-                lockerinstance[0].lock.acquire()
-                self.Alive = lockerinstance[0].troley['Alive']
-                closeapp = lockerinstance[0].events['closeApplication']
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    self.Alive = lockerinstance[0].troley['Alive']
+                    closeapp = lockerinstance[0].events['closeApplication']
                 if closeapp: break
 
     def TroleyTrigger(self, lockerinstance):
         triggered = True
         for condition in self.config['TroleyTrigger']:
-            lockerinstance[0].lock.acquire()
-            triggered &= lockerinstance[0].shared[condition['masterkey']][condition['key']]
-            lockerinstance[0].lock.release()
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].troley['push'] = triggered
-        lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                triggered &= lockerinstance[0].shared[condition['masterkey']][condition['key']]
+        with lockerinstance[0].lock:
+            lockerinstance[0].troley['push'] = triggered
 
     def loop(self, lockerinstance):
         while self.Alive:
-            lockerinstance[0].lock.acquire()
-            dock, undock, rotate = lockerinstance[0].troley['dock'], lockerinstance[0].troley['undock'], lockerinstance[0].troley['rotate']
-            lockerinstance[0].troley['dock'] = lockerinstance[0].troley['undock'] = lockerinstance[0].troley['rotate'] = False
-            pistonsready = lockerinstance[0].pistons['Alive']
-            servoready = lockerinstance[0].servo['Alive']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                dock, undock, rotate = lockerinstance[0].troley['dock'], lockerinstance[0].troley['undock'], lockerinstance[0].troley['rotate']
+                lockerinstance[0].troley['dock'] = lockerinstance[0].troley['undock'] = lockerinstance[0].troley['rotate'] = False
+                pistonsready = lockerinstance[0].pistons['Alive']
+                servoready = lockerinstance[0].servo['Alive']
             if pistonsready:
                 if dock: self.dockTroley(lockerinstance)
                 if undock: self.undockTroley(lockerinstance)
@@ -53,23 +48,21 @@ class Troley(object):
 
     def statecontrol(self, lockerinstance):
         self.TroleyTrigger(lockerinstance)
-        lockerinstance[0].lock.acquire()
-        push = lockerinstance[0].troley['push']
-        lockerinstance[0].troley['dockreleaseswitch'] = lockerinstance[0].GPIO[self.config['dockreleaseswitch']]
-        lockerinstance[0].troley['docked'] = lockerinstance[0].GPIO[self.config['Docksensor']]
-        if push:
-            lockerinstance[0].troley['push'] = False
-            if lockerinstance[0].troley['dockreleaseswitch']:
-                lockerinstance[0].troley['dock'] = True
-            else:
-                lockerinstance[0].troley['undock'] = True
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            push = lockerinstance[0].troley['push']
+            lockerinstance[0].troley['dockreleaseswitch'] = lockerinstance[0].GPIO[self.config['dockreleaseswitch']]
+            lockerinstance[0].troley['docked'] = lockerinstance[0].GPIO[self.config['Docksensor']]
+            if push:
+                lockerinstance[0].troley['push'] = False
+                if lockerinstance[0].troley['dockreleaseswitch']:
+                    lockerinstance[0].troley['dock'] = True
+                else:
+                    lockerinstance[0].troley['undock'] = True
         try:
             self.getTroleynumber(lockerinstance)
         except Exception as e:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].troley['error'] = True
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].troley['error'] = True
             ErrorEventWrite(lockerinstance, 'Trolley Number Read Failed\n' + str(e))
 
     def __parity(self, values = []):
@@ -79,47 +72,38 @@ class Troley(object):
         return carry
 
     def getTroleynumber(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        bits = [lockerinstance[0].GPIO[bit] for bit in self.config['Troleynumberbits']]
-        parity = lockerinstance[0].GPIO[self.config['Troleynumberparity']]
-        docked = lockerinstance[0].troley['docked']
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            bits = [lockerinstance[0].GPIO[bit] for bit in self.config['Troleynumberbits']]
+            parity = lockerinstance[0].GPIO[self.config['Troleynumberparity']]
+            docked = lockerinstance[0].troley['docked']
         if docked:
             if self.__parity([*bits, parity]):
                 number = self.BitConverter(bits)
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].troley['number'] = number
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    lockerinstance[0].troley['number'] = number
         else:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].troley['number'] = 'NA'
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].troley['number'] = 'NA'
 
     def dockTroley(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].pistons[self.config['TroleyPistons']['dock']] = True
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            lockerinstance[0].pistons[self.config['TroleyPistons']['dock']] = True
 
     def undockTroley(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].pistons[self.config['TroleyPistons']['undock']] = True
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            lockerinstance[0].pistons[self.config['TroleyPistons']['undock']] = True
 
     def rotatechamber(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        position = lockerinstance[0].servo['positionNumber']
-        ready = lockerinstance[0].servo['iocoin']
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            position = lockerinstance[0].servo['positionNumber']
+            ready = lockerinstance[0].servo['iocoin']
         if position == -1 and ready:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].servo['homing'] = True
-            lockerinstance[0].troley['rotate'] = True
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].servo['homing'] = True
+                lockerinstance[0].troley['rotate'] = True
         elif not ready:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].troley['rotate'] = True
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].troley['rotate'] = True
         else:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].servo['step'] = True
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].servo['step'] = True

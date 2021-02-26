@@ -31,16 +31,14 @@ class IOBar(tk.LabelFrame):
              
     def click(self):
         for key in self.elements.keys():
-            self.locker[0].lock.acquire()
-            if not self.locker[0].shared[self.masterkey][key] == self.elements[key].get() and not 'I' in key:
-                self.locker[0].shared[self.masterkey][key] = self.elements[key].get()
-            self.locker[0].lock.release()
+            with self.locker[0].lock:
+                if not self.locker[0].shared[self.masterkey][key] == self.elements[key].get() and not 'I' in key:
+                    self.locker[0].shared[self.masterkey][key] = self.elements[key].get()
 
     def Update(self):
         for key in self.elements.keys():
-            self.locker[0].lock.acquire()
-            self.elements[key].configure(bg='green' if self.locker[0].shared[self.masterkey][key] else 'black')
-            self.locker[0].lock.release()
+            with self.locker[0].lock:
+                self.elements[key].configure(bg='green' if self.locker[0].shared[self.masterkey][key] else 'black')
 
 class ScrolledTextbox(tk.LabelFrame):
     def __init__(self, lockerinstance, masterkey = 'Errors', master = None, scrolltype = 'both', height=200, width=200, text = 'Errors'):
@@ -63,9 +61,8 @@ class ScrolledTextbox(tk.LabelFrame):
         self.vtext = ''
 
     def Update(self):
-        self.locker[0].lock.acquire()
-        text = self.locker[0].shared[self.masterkey]
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            text = self.locker[0].shared[self.masterkey]
         if text and not isinstance(text,str):
             vlist, text = list(text), ''
             self.locker[0].lock.acquire()
@@ -79,7 +76,6 @@ class ScrolledTextbox(tk.LabelFrame):
             prevw, prevh = self.text.winfo_width(), self.text.winfo_height()
             self.text.delete('1.0',tk.END)
             self.text.insert('1.0',text)
-            
             wsub = prevw/self.text.winfo_width()
             hsub = prevh/self.text.winfo_height()
             self.text.xview_moveto(hpos[0]*wsub)
@@ -119,52 +115,47 @@ class PistonControl(tk.Frame):
         self.config(height='30', width='180')
     
     def Left(self):
-        self.locker[0].lock.acquire()
-        self.locker[0].pistons[self.elements['Left']['coil']] = not self.locker[0].pistons[self.elements['Left']['coil']]
-        if 'Right' in self.elements:
-            if 'sensor' in self.elements['Right']: 
-                self.locker[0].pistons[self.elements['Right']['coil']] = False
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            self.locker[0].pistons[self.elements['Left']['coil']] = not self.locker[0].pistons[self.elements['Left']['coil']]
+            if 'Right' in self.elements:
+                if 'sensor' in self.elements['Right']: 
+                    self.locker[0].pistons[self.elements['Right']['coil']] = False
 
     def Right(self):
-        self.locker[0].lock.acquire()
-        self.locker[0].pistons[self.elements['Right']['coil']] = not self.locker[0].pistons[self.elements['Right']['coil']]
-        if 'Left' in self.elements:
-            if 'sensor' in self.elements['Left']: 
-                self.locker[0].pistons[self.elements['Left']['coil']] = False
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            self.locker[0].pistons[self.elements['Right']['coil']] = not self.locker[0].pistons[self.elements['Right']['coil']]
+            if 'Left' in self.elements:
+                if 'sensor' in self.elements['Left']: 
+                    self.locker[0].pistons[self.elements['Left']['coil']] = False
 
     def Center(self):
-        self.locker[0].lock.acquire()
-        if 'Right' in self.elements:
-            if 'sensor' in self.elements['Right']: 
-                self.locker[0].pistons[self.elements['Right']['coil']] = False
-        if 'Left' in self.elements:
-            if 'sensor' in self.elements['Left']: 
-                self.locker[0].pistons[self.elements['Left']['coil']] = False
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            if 'Right' in self.elements:
+                if 'sensor' in self.elements['Right']: 
+                    self.locker[0].pistons[self.elements['Right']['coil']] = False
+            if 'Left' in self.elements:
+                if 'sensor' in self.elements['Left']: 
+                    self.locker[0].pistons[self.elements['Left']['coil']] = False
 
     def Update(self):
-        self.locker[0].lock.acquire()
-        if 'Left' in self.elements.keys():
-            color = '#84bdac'
-            if 'coil' in self.elements['Left']:
-                if self.locker[0].pistons[self.elements['Left']['coil']]: color = '#f2fc45'
-            if 'sensor' in self.elements['Left']:
-                if self.locker[0].pistons[self.elements['Left']['sensor']]: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
-            self.buttonLeft.configure(background = color)
-        if 'Right' in self.elements.keys():
-            color = '#84bdac'
-            if 'coil' in self.elements['Right']:
-                if self.locker[0].pistons[self.elements['Right']['coil']]: color = '#f2fc45'
-            if 'sensor' in self.elements['Right']:
-                if self.locker[0].pistons[self.elements['Right']['sensor']]: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
-            self.buttonRight.configure(background = color)
-
-        if 'Center' in self.elements.keys():
-            if 'sensor' in self.elements['Center']:
-                self.buttonCenter.configure(background = '#84ffac' if self.locker[0].pistons[self.elements['Center']['sensor']] else '#84bdac')
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            if 'Left' in self.elements.keys():
+                color = '#84bdac'
+                if 'coil' in self.elements['Left']:
+                    if self.locker[0].pistons[self.elements['Left']['coil']]: color = '#f2fc45'
+                if 'sensor' in self.elements['Left']:
+                    if self.locker[0].pistons[self.elements['Left']['sensor']]: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
+                self.buttonLeft.configure(background = color)
+            if 'Right' in self.elements.keys():
+                color = '#84bdac'
+                if 'coil' in self.elements['Right']:
+                    if self.locker[0].pistons[self.elements['Right']['coil']]: color = '#f2fc45'
+                if 'sensor' in self.elements['Right']:
+                    if self.locker[0].pistons[self.elements['Right']['sensor']]: color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
+                self.buttonRight.configure(background = color)
+            if 'Center' in self.elements.keys():
+                if 'sensor' in self.elements['Center']:
+                    self.buttonCenter.configure(background = '#84ffac' if self.locker[0].pistons[self.elements['Center']['sensor']] else '#84bdac')
 
 class PistonBar(tk.LabelFrame):
     def __init__(self, lockerinstance, elements = [], relief=tk.GROOVE, bd=2, anchor = tk.W, side =tk.LEFT, master=None):
@@ -241,17 +232,10 @@ class EstunBar(tk.LabelFrame):
             btn.pack(expand = tk.YES, side=side, anchor = anchor)
 
     def click(self, button):
-        self.locker[0].lock.acquire()
-        self.locker[0].shared[self.lockerkey][button] = True
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            self.locker[0].shared[self.lockerkey][button] = True
     
     def Update(self):
-        #if self.lockerkey == 'servo':
-        #    self.locker[0].lock.acquire()
-        #    buttonsactive = not self.locker[0].GPIO['I27']
-        #    self.locker[0].lock.release()
-        #    for button in self.buttons:
-        #        button.config(state = 'normal' if buttonsactive else 'disabled')
         pass
 
 class console(object):
@@ -262,27 +246,24 @@ class console(object):
             bar.Update()
         self.textbox.Update()
         self.textbox2.Update()
-        self.locker[0].lock.acquire()
-        Spos = self.locker[0].servo['positionNumber']
-        Muxchan = self.locker[0].mux['Channel']
-        Muxready = self.locker[0].mux['ready']
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            Spos = self.locker[0].servo['positionNumber']
+            Muxchan = self.locker[0].mux['Channel']
+            Muxready = self.locker[0].mux['ready']
         self.servopos.configure(text = 'ServoPos ' + str(Spos))
         self.channelactive.configure(text = 'Channel ' + str(Muxchan) + (' and ready' if Muxready else ''))
         self.root.after(300,self.timerloop)
 
     def Wclose(self):
-        self.locker[0].lock.acquire()
-        self.locker[0].events['closeApplication'] = True
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            self.locker[0].events['closeApplication'] = True
 
     def __init__(self, locker, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.locker = {**locker}
         self.Alive = True
-        self.locker[0].lock.acquire()
-        self.locker[0].console['Alive'] = self.Alive
-        self.locker[0].lock.release()
+        with self.locker[0].lock:
+            self.locker[0].console['Alive'] = self.Alive
         self.root = tk.Tk()
         self.root.protocol('WM_DELETE_WINDOW', self.Wclose)
         self.checkbuttons = []
@@ -293,12 +274,10 @@ class console(object):
         self.textbox2 = ScrolledTextbox(self.locker,masterkey = 'wdt', text = 'WDT', master = self.root, width = 33, height = 10)
         pistonbaritems = ['Seal', 'TroleyPusher', 'ShieldingGas', 'HeadCooling', 'CrossJet', 'Air', 'Vacuum']
         estuncommands = ['homing', 'step', 'reset', 'run', 'stop']
-        self.locker[0].lock.acquire()
         self.IOFrame = tk.Frame(self.root)
         self.bars = [
             IOBar(self.locker, text = 'Robot Inputs', side = tk.LEFT, elements = dict(list(filter((lambda item: True if 'I' in item[0] else False), self.locker[0].GPIO.items()))), master = self.IOFrame),
             IOBar(self.locker, text = 'Robot Outputs', side = tk.LEFT, elements = dict(list(filter((lambda item: True if 'O' in item[0] else False), self.locker[0].GPIO.items()))), master = self.IOFrame)]
-        self.locker[0].lock.release()
         self.bars.append(PistonBar(self.locker, side= tk.LEFT, elements = pistonbaritems, master = self.IOFrame))
         self.estunandlaser = tk.Frame(self.IOFrame)
         self.servopos = tk.Label(master = self.estunandlaser, text = '')
@@ -318,12 +297,9 @@ class console(object):
         self.IOFrame.grid(column=0, row=0, sticky=tk.W)
         self.textbox.grid(row=1)
         self.textbox2.grid(row=2, sticky = tk.W)
-        
         self.root.after(100,self.timerloop)
-
         while self.Alive:
-            self.locker[0].lock.acquire()
-            self.Alive = self.locker[0].console['Alive']
-            self.locker[0].lock.release()
+            with self.locker[0].lock:
+                self.Alive = self.locker[0].console['Alive']
             self.root.update()
         #self.root.mainloop()

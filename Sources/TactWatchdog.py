@@ -44,26 +44,23 @@ class TactWatchdog(object):
                 additionalFuncOnExceed = BlankFunc,
                 noerror = False,
                 *args, **kwargs):
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].wdt.append(thr.currentThread().name)
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            lockerinstance[0].wdt.append(thr.currentThread().name)
         additionalFuncOnStart()
         self.setpoint()
         limitval *= self.scaleMultiplier[scale]
         self.active = True
         while True:
             additionalFuncOnLoop()
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].shared['TactWDT'] = True
-            if eventToCatch[0] == '-':
-                event = not(lockerinstance[0].events[eventToCatch[1:]])
-            else:
-                event = lockerinstance[0].events[eventToCatch]
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].shared['TactWDT'] = True
+                if eventToCatch[0] == '-':
+                    event = not(lockerinstance[0].events[eventToCatch[1:]])
+                else:
+                    event = lockerinstance[0].events[eventToCatch]
             if event:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events[eventToCatch] = False
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    lockerinstance[0].events[eventToCatch] = False
                 additionalFuncOnCatch()
                 break
             if self.elapsed() >= limitval:
@@ -71,16 +68,14 @@ class TactWatchdog(object):
                 additionalFuncOnExceed()
                 self.Destruct()
                 break
-            lockerinstance[0].lock.acquire()
-            Alive = thr.currentThread().name in lockerinstance[0].wdt
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                Alive = thr.currentThread().name in lockerinstance[0].wdt
             if self.destruct or not Alive:
                 break
         self.active = False
-        lockerinstance[0].lock.acquire()
-        if thr.currentThread().name in lockerinstance[0].wdt:
-            lockerinstance[0].wdt.remove(thr.currentThread().name)
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            if thr.currentThread().name in lockerinstance[0].wdt:
+                lockerinstance[0].wdt.remove(thr.currentThread().name)
 
     @classmethod
     def WDT(cli,
@@ -128,23 +123,19 @@ if __name__=='__main__': ##Test
     TactWatchdog.WDT(locker, errToRaise = 'ERR2', limitval = 10, scale = 's')
     TactWatchdog.WDT(locker, limitval = 4, scale = 's')
     def Foo2():
-        locker[0].lock.acquire()
-        locker[0].events['RobotMoving'] = False
-        locker[0].lock.release()
+        with locker[0].lock:
+            locker[0].events['RobotMoving'] = False
     TactWatchdog.WDT(locker, errToRaise = 'ERR3', limitval = 5, scale = 's', additionalFuncOnExceed = Foo2)
     dt = True
     last = ''
     while dt:
-        locker[0].lock.acquire()
-        dt = locker[0].shared['TactWDT']
-        locker[0].shared['TactWDT'] = False
-        news = locker[0].shared['Errors']
-        if last != news:
-            print(news.replace(last,'',1))
-            last = locker[0].shared['Errors']
-        locker[0].lock.release()
-    locker[0].lock.acquire()
-    print(dictKeyByVal(locker[0].errorlevel,True))
-    locker[0].lock.release()
-
+        with locker[0].lock:
+            dt = locker[0].shared['TactWDT']
+            locker[0].shared['TactWDT'] = False
+            news = locker[0].shared['Errors']
+            if last != news:
+                print(news.replace(last,'',1))
+                last = locker[0].shared['Errors']
+    with locker[0].lock:
+        print(dictKeyByVal(locker[0].errorlevel,True))
     

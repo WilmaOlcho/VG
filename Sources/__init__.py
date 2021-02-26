@@ -17,11 +17,10 @@ def dictKeyByVal(dict, byVal): #There is no default method to search for keys in
     return keys
 
 def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255):
-    lockerinstance[0].lock.acquire()
-    if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring + '\n'
-    lockerinstance[0].errorlevel[errorlevel] = True
-    lockerinstance[0].events['Error'] = True
-    lockerinstance[0].lock.release()
+    with lockerinstance[0].lock:
+        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring + '\n'
+        lockerinstance[0].errorlevel[errorlevel] = True
+        lockerinstance[0].events['Error'] = True
 
 class EventManager():
     def __init__(self, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
@@ -41,66 +40,56 @@ class EventManager():
         self.callback = callback
         self.callbackargs = callbackargs
         self.event = event
-        lockerinstance[0].lock.acquire()
-        self.state = self.inputpath[self.input]
-        self.Alive = True
-        self.name = currentThread().name
-        lockerinstance[0].ect.append(self.name)
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            self.state = self.inputpath[self.input]
+            self.Alive = True
+            self.name = currentThread().name
+            lockerinstance[0].ect.append(self.name)
         self.loop(lockerinstance)
 
     def loop(self, lockerinstance):
         while self.Alive:
-            lockerinstance[0].lock.acquire()
-            self.Alive = lockerinstance[0].robot['Alive'] and self.name in lockerinstance[0].ect
-            currentstate = self.inputpath[self.input]
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                self.Alive = lockerinstance[0].robot['Alive'] and self.name in lockerinstance[0].ect
+                currentstate = self.inputpath[self.input]
             if not self.edge:
                 if (currentstate ^ self.sign):
                     if self.event:
-                        lockerinstance[0].lock.acquire()
-                        lockerinstance[0].events[self.event] = True
-                        lockerinstance[0].lock.release()
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
                     break
             elif self.edge == 'rising':
                 if self.state:
-                    lockerinstance[0].lock.acquire()
-                    self.state = self.inputpath[self.input]
-                    lockerinstance[0].lock.release()
+                    with lockerinstance[0].lock:
+                        self.state = self.inputpath[self.input]
                 elif currentstate:
                     if self.event:
-                        lockerinstance[0].lock.acquire()
-                        lockerinstance[0].events[self.event] = True
-                        lockerinstance[0].lock.release()
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
                     break
             elif self.edge == 'falling':
                 if not self.state:
-                    lockerinstance[0].lock.acquire()
-                    self.state = self.inputpath[self.input]
-                    lockerinstance[0].lock.release()
+                    with lockerinstance[0].lock:
+                        self.state = self.inputpath[self.input]
                 elif not currentstate:
                     if self.event:
-                        lockerinstance[0].lock.acquire()
-                        lockerinstance[0].events[self.event] = True
-                        lockerinstance[0].lock.release()
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
                     break
             elif self.edge == 'toggle':
                 if self.state != currentstate:
                     if self.event:
-                        lockerinstance[0].lock.acquire()
-                        lockerinstance[0].events[self.event] = True
-                        lockerinstance[0].lock.release()
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
                     break
         self.callback(*self.callbackargs)
-        lockerinstance[0].lock.acquire()
-        if self.name in lockerinstance[0].ect: lockerinstance[0].ect.remove(self.name)
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            if self.name in lockerinstance[0].ect: lockerinstance[0].ect.remove(self.name)
     
     @classmethod
     def AdaptEvent(cls, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
-        lockerinstance[0].lock.acquire()
-        ectActive = str('EventCatcher: ' + event) in lockerinstance[0].ect
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            ectActive = str('EventCatcher: ' + event) in lockerinstance[0].ect
         if not ectActive:
             EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event, callback, callbackargs))
             EventThread.setName('EventCatcher: ' + event)
@@ -109,10 +98,9 @@ class EventManager():
     @classmethod
     def DestroyEvent(cls, lockerinstance, event = ''):
         eventname = 'EventCatcher: ' + event
-        lockerinstance[0].lock.acquire()
-        ectActive = eventname in lockerinstance[0].ect
-        if ectActive: lockerinstance[0].ect.remove(eventname)
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            ectActive = eventname in lockerinstance[0].ect
+            if ectActive: lockerinstance[0].ect.remove(eventname)
 
 class Bits():
     def __init__(self, len = 4, LE = False):
@@ -157,5 +145,4 @@ class Bits():
 
     def __call__(self, values):
         return self.Bits(values)
-
             

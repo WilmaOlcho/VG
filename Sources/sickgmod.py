@@ -40,36 +40,32 @@ class GMOD(SICKGmod):
                             entry = entry[0].split(';')
                             if len(entry)>1:
                                 if entry[1] and '.' in entry[0]:
-                                    lockerinstance[0].lock.acquire()
-                                    lockerinstance[0].SICKGMOD0['inputs'][entry[0]] = entry[1]
-                                    lockerinstance[0].SICKGMOD0['inputmap'][entry[0]] = False
-                                    lockerinstance[0].lock.release()
+                                    with lockerinstance[0].lock:
+                                        lockerinstance[0].SICKGMOD0['inputs'][entry[0]] = entry[1]
+                                        lockerinstance[0].SICKGMOD0['inputmap'][entry[0]] = False
                         for entry in self.outputs:
                             entry = entry[0].split(';')
                             if len(entry)>1:
                                 if entry[1] and '.' in entry[0]:
-                                    lockerinstance[0].lock.acquire()
-                                    lockerinstance[0].SICKGMOD0['outputs'][entry[0]] = entry[1]
-                                    lockerinstance[0].SICKGMOD0['outputmap'][entry[0]] = False
-                                    lockerinstance[0].lock.release()
+                                    with lockerinstance[0].lock:
+                                        lockerinstance[0].SICKGMOD0['outputs'][entry[0]] = entry[1]
+                                        lockerinstance[0].SICKGMOD0['outputmap'][entry[0]] = False
                     except Exception as e:
                         errstring = '\nGMOD init error - extending DictProxy failed ' + str(e)
                         ErrorEventWrite(lockerinstance, errstring)
                     else:
                         try:
                             self.Alive = True
-                            lockerinstance[0].lock.acquire()
-                            lockerinstance[0].SICKGMOD0['Alive'] = True
-                            lockerinstance[0].lock.release()
+                            with lockerinstance[0].lock:
+                                lockerinstance[0].SICKGMOD0['Alive'] = True
                         except:
                             errstring = 'GMOD error ' + str(e)
                             ErrorEventWrite(lockerinstance, errstring)
                         else:
                             self.loop(lockerinstance)
-            lockerinstance[0].lock.acquire()
-            letdie = not lockerinstance[0].SICKGMOD0['Alive']
-            letdie |= lockerinstance[0].events['closeApplication']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                letdie = not lockerinstance[0].SICKGMOD0['Alive']
+                letdie |= lockerinstance[0].events['closeApplication']
             if letdie: break
     
     def loop(self, lockerinstance):
@@ -77,14 +73,12 @@ class GMOD(SICKGmod):
             self.retrieveinputs(lockerinstance)
             self.retrieveoutputs(lockerinstance)
             self.safetysignals(lockerinstance)
-            lockerinstance[0].lock.acquire()
-            self.Alive = lockerinstance[0].SICKGMOD0['Alive']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                self.Alive = lockerinstance[0].SICKGMOD0['Alive']
 
     def retrieveinputs(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        itemmap = lockerinstance[0].SICKGMOD0['inputmap'].keys()
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            itemmap = lockerinstance[0].SICKGMOD0['inputmap'].keys()
         for item in itemmap:
             positionInDatablock = item.split('.')
             address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
@@ -94,14 +88,12 @@ class GMOD(SICKGmod):
                 errstring = "\nGMOD error - can't retrieve inputs " + str(e)
                 ErrorEventWrite(lockerinstance, errstring)
             else:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].SICKGMOD0['inputmap']['item'] = result
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    lockerinstance[0].SICKGMOD0['inputmap']['item'] = result
 
     def retrieveoutputs(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        itemmap = lockerinstance[0].SICKGMOD0['outputmap']
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            itemmap = lockerinstance[0].SICKGMOD0['outputmap']
         for item in itemmap.items():
             positionInDatablock = item[0].split('.')
             address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
@@ -119,12 +111,10 @@ class GMOD(SICKGmod):
                 if item[1] in [src, dst]:
                     continue
                 if src == 'safety':
-                    lockerinstance[0].lock.acquire()
-                    signal = dictKeyByVal(lockerinstance[0].shared[dst]['outputs'],item[1])
-                    lockerinstance[0].shared[dst]['outputmap'][signal] = lockerinstance[0].shared[src][item[0]]
-                    lockerinstance[0].lock.release()
+                    with lockerinstance[0].lock:
+                        signal = dictKeyByVal(lockerinstance[0].shared[dst]['outputs'],item[1])
+                        lockerinstance[0].shared[dst]['outputmap'][signal] = lockerinstance[0].shared[src][item[0]]
                 else:
-                    lockerinstance[0].lock.acquire()
-                    signal = dictKeyByVal(lockerinstance[0].shared[src]['inputs'],item[0])
-                    lockerinstance[0].shared[dst][item[1]] = lockerinstance[0].shared[src]['inputmap'][signal]
-                    lockerinstance[0].lock.release()
+                    with lockerinstance[0].lock:
+                        signal = dictKeyByVal(lockerinstance[0].shared[src]['inputs'],item[0])
+                        lockerinstance[0].shared[dst][item[1]] = lockerinstance[0].shared[src]['inputmap'][signal]

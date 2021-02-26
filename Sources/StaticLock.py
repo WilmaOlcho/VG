@@ -218,3 +218,12 @@ class SharedLocker(object):
         self.console = self.shared['console']
         self.GPIO = self.shared['GPIO']
         self.SICKGMOD0 = self.shared['SICKGMOD0']
+
+if __name__=='__main__':
+    lck = SharedLocker()
+    with lck.lock:
+        print(lck.events['Error'])
+    with lck.lock:
+        lck.events['Error'] = True
+    with lck.lock:
+        print(lck.events['Error'])

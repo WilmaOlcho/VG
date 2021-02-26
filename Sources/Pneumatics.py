@@ -48,11 +48,10 @@ class Sensor(PneumaticActive):
             self.tandem = False
             
     def controlSequence(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        cstate = bool(lockerinstance[0].GPIO[self.address])
-        if self.tandem: cstate = cstate & lockerinstance[0].pistons['sensor'+self.tandem]
-        lockerinstance[0].pistons['sensor'+self.action] = cstate
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            cstate = bool(lockerinstance[0].GPIO[self.address])
+            if self.tandem: cstate = cstate & lockerinstance[0].pistons['sensor'+self.tandem]
+            lockerinstance[0].pistons['sensor'+self.action] = cstate
 
 class Coil(PneumaticActive):
     def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
@@ -62,27 +61,22 @@ class Coil(PneumaticActive):
         self.timeout = self.root['timeout']
 
     def controlSequence(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        cstate = lockerinstance[0].pistons['sensor'+self.action] if not self.nosensor else False
-        rstate = lockerinstance[0].pistons[self.action]
-        timers = list(lockerinstance[0].wdt)
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            cstate = lockerinstance[0].pistons['sensor'+self.action] if not self.nosensor else False
+            rstate = lockerinstance[0].pistons[self.action]
+            timers = list(lockerinstance[0].wdt)
         if rstate and not cstate:
             #print(self.action)
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].GPIO[self.address] = True
-            lockerinstance[0].GPIO['somethingChanged'] = True
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].GPIO[self.address] = True
+                lockerinstance[0].GPIO['somethingChanged'] = True
             if not self.nosensor and not self.timer in timers:
                 self.timer = WDT.WDT(lockerinstance, errToRaise = self.action + ' of '+self.parent.parent.name+' time exceeded', scale = 's', errorlevel = 30, limitval = self.timeout)
         else:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].GPIO[self.address] = False
-            lockerinstance[0].lock.release()
-            if self.timer in timers:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].wdt.remove(self.timer)
-                lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].GPIO[self.address] = False
+                if self.timer in timers:
+                    lockerinstance[0].wdt.remove(self.timer)
 
 class Valve(Pneumatic):
     def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
@@ -117,9 +111,8 @@ class PneumaticsVG(object):
                 except:
                     errstring = ('\nPneumaticsVG init error - Error while creating subobject: ' + str(child['class'])) if Class is not None else ('\nParent = ' + str(self))
                     ErrorEventWrite(lockerinstance, errstring)
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].pistons['Alive'] = True
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].pistons['Alive'] = True
             self.Alive = True
             self.PneumaticsLoop(lockerinstance)
 
@@ -128,6 +121,5 @@ class PneumaticsVG(object):
         while self.Alive:
             for child in self.childobjects:
                 child.controlSequence(lockerinstance)
-            lockerinstance[0].lock.acquire()
-            self.Alive = lockerinstance[0].pistons['Alive']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                self.Alive = lockerinstance[0].pistons['Alive']

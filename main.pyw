@@ -39,21 +39,19 @@ class ApplicationManager(object):
 
     def EventLoop(self, *args, **kwargs):
         while True:
-            self.lock[0].lock.acquire()
-            console = list(filter(lambda f:f.name == 'Window',self.processes))[0].is_alive()
-            if not console:
-                self.lock[0].events['closeApplication'] = True
-            self.ApplicationAlive = not self.lock[0].events['closeApplication']
-            self.lock[0].lock.release()
+            with self.lock[0].lock:
+                console = list(filter(lambda f:f.name == 'Window',self.processes))[0].is_alive()
+                if not console:
+                    self.lock[0].events['closeApplication'] = True
+                self.ApplicationAlive = not self.lock[0].events['closeApplication']
             if not self.ApplicationAlive:
-                self.lock[0].lock.acquire()
-                self.lock[0].servo['Alive'] = False
-                self.lock[0].mux['Alive'] = False
-                self.lock[0].robot['Alive'] = False
-                self.lock[0].pistons['Alive'] = False
-                self.lock[0].console['Alive'] = False
-                self.lock[0].lcon['Alive'] = False
-                self.lock[0].lock.release()
+                with self.lock[0].lock:
+                    self.lock[0].servo['Alive'] = False
+                    self.lock[0].mux['Alive'] = False
+                    self.lock[0].robot['Alive'] = False
+                    self.lock[0].pistons['Alive'] = False
+                    self.lock[0].console['Alive'] = False
+                    self.lock[0].lcon['Alive'] = False
                 for process in self.processes:
                     print(str(process))
                     process.join()
@@ -63,9 +61,8 @@ class ApplicationManager(object):
     def errorcatching(self):
         for proces in self.processes:
             if not proces.is_alive():
-                self.lock[0].lock.acquire()
-                self.lock[0].events['closeApplication'] = True
-                self.lock[0].lock.release()
+                with self.lock[0].lock:
+                    self.lock[0].events['closeApplication'] = True
 
 if __name__=="__main__":
     freeze_support()

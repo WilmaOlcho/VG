@@ -38,10 +38,9 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
     def getState(self, lockerinstance):
         try:
             self.currentState = self.read_coils(lockerinstance, input = 'DO0', NumberOfCoils = 3)
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].mux['ready'] = self.currentState.bits[self.myOutput]
-            lockerinstance[0].mux['Channel'] = (1 if bool(self.currentState.bits[0]) else 0) + (2 if bool(self.currentState.bits[1]) else 0)
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].mux['ready'] = self.currentState.bits[self.myOutput]
+                lockerinstance[0].mux['Channel'] = (1 if bool(self.currentState.bits[0]) else 0) + (2 if bool(self.currentState.bits[1]) else 0)
             return self.currentState.bits
         except:
             return -1
@@ -123,15 +122,14 @@ class LaserControl(ADAMDataAcquisitionModule):
                 state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters[coil])))
             for coil in ['LaserReady','LaserError','LaserAssigned','LaserIsOn','LaserWarning','ChillerWarning','ChillerError']:
                 inputstate.append(self.read_coils(lockerinstance, input = 'DI' + str(self.LconParameters[coil])))
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].lcon['LaserError'] = inputstate[1]
-            lockerinstance[0].lcon['LaserWarning'] = inputstate[4]
-            lockerinstance[0].lcon['ChillerError'] = inputstate[5]
-            lockerinstance[0].lcon['ChillerWarning'] = inputstate[6]
-            lockerinstance[0].lcon['LaserReady'] = inputstate[0]
-            lockerinstance[0].lcon['LaserOn'] = inputstate[3]
-            lockerinstance[0].lcon['LaserAssigned'] = inputstate[2]
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].lcon['LaserError'] = inputstate[1]
+                lockerinstance[0].lcon['LaserWarning'] = inputstate[4]
+                lockerinstance[0].lcon['ChillerError'] = inputstate[5]
+                lockerinstance[0].lcon['ChillerWarning'] = inputstate[6]
+                lockerinstance[0].lcon['LaserReady'] = inputstate[0]
+                lockerinstance[0].lcon['LaserOn'] = inputstate[3]
+                lockerinstance[0].lcon['LaserAssigned'] = inputstate[2]
             self.currentState = state
             self.inputState = inputstate
             return state
@@ -141,9 +139,8 @@ class LaserControl(ADAMDataAcquisitionModule):
             #raise LaserControlError(lockerinstance, errstring = errmessage)
 
     def __prohibitedBehaviour(self, lockerinstance):
-        lockerinstance[0].lock.acquire()
-        prohibited = lockerinstance[0].mux['busy']
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            prohibited = lockerinstance[0].mux['busy']
         return prohibited  
 
     def request(self, lockerinstance):
@@ -246,22 +243,19 @@ class MyMultiplexer(AnalogMultiplexer):
                 errstring = "MyMultiplexer init error" + str(e)
                 ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             else:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].mux['Alive'] = self.Alive
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    lockerinstance[0].mux['Alive'] = self.Alive
                 self.MUXloop(lockerinstance)
             finally:
-                lockerinstance[0].lock.acquire()
-                letdie = lockerinstance[0].events['closeApplication']
-                self.Alive = lockerinstance[0].mux['Alive']
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    letdie = lockerinstance[0].events['closeApplication']
+                    self.Alive = lockerinstance[0].mux['Alive']
                 if letdie: break
         
     def isBusy(self, lockerinstance):
         result = super().isBusy(lockerinstance) 
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].mux['busy'] = result
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            lockerinstance[0].mux['busy'] = result
         return result
 
     def getState(self, lockerinstance):
@@ -270,19 +264,17 @@ class MyMultiplexer(AnalogMultiplexer):
             errstring = "\nMyMultiplexer.getState cant get state: returned -1"
             ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
         else:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].mux['onpath'] = self.currentState[self.myOutput]
-            if lockerinstance[0].mux['onpath']:
-                lockerinstance[0].mux['ready'] = self.currentState[2]
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].mux['onpath'] = self.currentState[self.myOutput]
+                if lockerinstance[0].mux['onpath']:
+                    lockerinstance[0].mux['ready'] = self.currentState[2]
         
     def __acquire(self, lockerinstance): 
         if not self.isBusy(lockerinstance):
             if self.currentState[self.myOutput]:
                 if self.currentState[2]:
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].mux['acquire'] = False
-                    lockerinstance[0].lock.release()
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].mux['acquire'] = False
                 else:
                     self.activatePath(lockerinstance)
             else:
@@ -294,25 +286,22 @@ class MyMultiplexer(AnalogMultiplexer):
                 if self.currentState[self.myOutput]:
                     self.resetPath(lockerinstance)
                 else:
-                    lockerinstance[0].lock.acquire()
-                    lockerinstance[0].mux['release'] = False
-                    lockerinstance[0].lock.release()
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].mux['release'] = False
             else:
                 self.releasePath(lockerinstance)
 
     def MUXloop(self, lockerinstance, *args, **kwargs):
         while self.Alive:
-            lockerinstance[0].lock.acquire()
-            self.Alive = lockerinstance[0].mux['Alive']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                self.Alive = lockerinstance[0].mux['Alive']
             if not self.Alive: break
             try:
                 self.getState(lockerinstance)
             except:
                 pass
-            lockerinstance[0].lock.acquire()
-            ack, rel = lockerinstance[0].mux['acquire'], lockerinstance[0].mux['release']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                ack, rel = lockerinstance[0].mux['acquire'], lockerinstance[0].mux['release']
             if ack: 
                 try:
                     self.__acquire(lockerinstance)
@@ -336,30 +325,27 @@ class MyLaserControl(LaserControl):
                 errstring = "\nMyLaserControl init error" + str(e)
                 ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             else:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].lcon['Alive'] = self.Alive
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    lockerinstance[0].lcon['Alive'] = self.Alive
                 self.Lconloop(lockerinstance)
             finally:
-                lockerinstance[0].lock.acquire()
-                letdie = lockerinstance[0].events['closeApplication']
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    letdie = lockerinstance[0].events['closeApplication']
                 if letdie: break
 
     def Lconloop(self, lockerinstance):
         while self.Alive:
             self.getState(lockerinstance)
-            lockerinstance[0].lock.acquire()
-            setchannel = lockerinstance[0].lcon['SetChannel']
-            if setchannel: lockerinstance[0].lcon['SetChannel'] = False
-            startlaser = lockerinstance[0].lcon['LaserTurnOn']
-            if startlaser: lockerinstance[0].lcon['LaserTurnOn'] = False
-            stoplaser = lockerinstance[0].lcon['LaserTurnOff']
-            if stoplaser: lockerinstance[0].lcon['LaserTurnOff'] = False
-            resetlaser = lockerinstance[0].lcon['LaserReset']
-            if resetlaser: lockerinstance[0].lcon['LaserReset'] = False
-            self.Alive = lockerinstance[0].lcon['Alive']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                setchannel = lockerinstance[0].lcon['SetChannel']
+                if setchannel: lockerinstance[0].lcon['SetChannel'] = False
+                startlaser = lockerinstance[0].lcon['LaserTurnOn']
+                if startlaser: lockerinstance[0].lcon['LaserTurnOn'] = False
+                stoplaser = lockerinstance[0].lcon['LaserTurnOff']
+                if stoplaser: lockerinstance[0].lcon['LaserTurnOff'] = False
+                resetlaser = lockerinstance[0].lcon['LaserReset']
+                if resetlaser: lockerinstance[0].lcon['LaserReset'] = False
+                self.Alive = lockerinstance[0].lcon['Alive']
             if not self.Alive: break
             if setchannel: self.SetChannel(lockerinstance)
             if startlaser: self.laserOn(lockerinstance)
@@ -377,3 +363,4 @@ class AnalogMultiplexerError(Exception):
         self.args = args
         errstring = 'Analog multiplexer Error:' + ''.join(map(str, *args))
         ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
+        
