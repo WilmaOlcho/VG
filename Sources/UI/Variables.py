@@ -399,13 +399,12 @@ class Variables(dict):
             program['automode'] = self['auto']
             program['running'] = self['ProgramActive']
 
+    def misc(self):
+        self['safety']['OpenTheDoor'] |= self.internalEvents['stop']
+        self.internalEvents['stop'] = False
+
+
     def update(self):
-        self.robotupdate()
-        self.scoutupdate()
-        self.troleyupdate()
-        self.safetyupdate()
-        self.pneumaticsupdate()
-        self.programupdate()
         lockerinstance = self.lockerinstance
         with lockerinstance[0].lock:
             self.alive = lockerinstance[0].console['Alive']
@@ -418,4 +417,14 @@ class Variables(dict):
             if self.internalEvents['ack']:
                 events['ack'] = True
                 self.internalEvents['ack'] = False
+            if lockerinstance[0].events['Error']:
+                self['ProgramActive'] = False
+        self.robotupdate()
+        self.scoutupdate()
+        self.troleyupdate()
+        self.safetyupdate()
+        self.pneumaticsupdate()
+        self.programupdate()
+        self.misc()
+        
 

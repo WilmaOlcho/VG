@@ -13,7 +13,6 @@ ROBOTPOS = 4
 ROBOTTABLE = 5
 SERVOPOS = 6
 
-
 def startauto(lockerinstance):
     with lockerinstance[0].lock:
         running = lockerinstance[0].program['running']
@@ -220,7 +219,7 @@ def Initialise(lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].program['cycle'] = 0
             lockerinstance[0].program['initialising'] = False
-            lockerinstance[0].program['initialised'] = True 
+            lockerinstance[0].program['initialised'] = True
 
 def checkrecipes(lockerinstance, program):
     for recipe in [line[RECIPE] for line in program['Table']]:

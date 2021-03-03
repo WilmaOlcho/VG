@@ -30,6 +30,8 @@ class programController(object):
             lockerinstance[0].program['/running'] = not running
         if running: self.running(lockerinstance)
         self.CheckProgramsDirectory(lockerinstance)
+        if lockerinstance.events['Error']:
+            lockerinstance[0].program['running'] = False
 
     def CheckProgramsDirectory(self, lockerinstance):
         with lockerinstance[0].lock:
