@@ -107,6 +107,7 @@ class SharedLocker(object):
                 'LaserAssigned':False
                 }),
             'events':manager.dict({
+                'stopprogram':False,
                 'ScoutManagerReadyToSend':False,
                 'KDrawMessageReceived':False,
                 'KDrawWaitingForMessage':False,

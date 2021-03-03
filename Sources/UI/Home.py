@@ -107,7 +107,7 @@ class ProgramSelect(LabelFrame):
         window = DeleteProgramWindow(self, self.menubutton)
         window.grab_set()
 
-    def loadprogramminmax(self, program):
+    def loadprogramminmax(self, program): #I love this function, it's look beautiful
         minimum = reduce(lambda x,y: (x[1] if isinstance(x,list) else x) if (x[1] if isinstance(x,list) else x) <= y[1] else y[1], program['Table'])
         maximum = reduce(lambda x,y: (x[1] if isinstance(x,list) else x) if (x[1] if isinstance(x,list) else x) >= y[1] else y[1], program['Table'])
         return (minimum, maximum)
@@ -150,17 +150,21 @@ class Positions(LabelFrame):
             if isinstance(widget, tk.Entry):
                 widget.config(width = 5)
                 widget.bind("<FocusOut>",lambda x, obj = self: obj.setvalue())
+                widget.bind("<Return>",lambda x, obj = self: obj.setvalue())
             widget.pack(side = tk.LEFT, anchor = tk.N)
         self.pack()
         
     def nearest(self, value, attempts = list()):
         attemptlist = attempts.copy()
         attemptlist.sort(key = lambda element, v = int(value): abs(v - int(element)))
+        import tkinter.messagebox as messagebox #simplicity for a while
+        messagebox.showwarning('Co ty wyprawiasz?','Podana wartość nie występuje w tablicy,\n    automatycznie poprawiono na:\n              {}'.format(attemptlist[0]))
         return attemptlist[0]
 
     def setvalue(self):
         if self.program:
             for widget in self.widgets:
+                altered = False
                 if isinstance(widget, tk.Entry):
                     value = widget.get()
                     if not value.isnumeric(): break
@@ -169,10 +173,13 @@ class Positions(LabelFrame):
                     if not value in positionsintable:
                         value = self.nearest(value, positionsintable)
                     if '2' in widget._name:
+                        altered |= self.root.variables.programposend != value
                         self.root.variables.programposend = value
                     else:
+                        altered |= self.root.variables.programposstart != value
                         self.root.variables.programposstart = value
-            self.root.variables.internalEvents['RefreshStartEnd'] = True
+                if altered:
+                    self.root.variables.internalEvents['RefreshStartEnd'] = True
         
     def update(self):
         for program in self.programs['Programs']:
