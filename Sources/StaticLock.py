@@ -85,6 +85,7 @@ class SharedLocker(object):
 
             }),
             'Errors':'',
+            'Errcodes':manager.list(),
             'servoModuleFirstAccess':True,
             'configurationError':False,
             'TactWDT':False,

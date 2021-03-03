@@ -232,7 +232,7 @@ class Variables(dict):
 
     def scoutupdate(self):
         lock = self.lockerinstance[0].lock
-        scout = self.lockerinstance[0].servo
+        scout = self.lockerinstance[0].scout
         laser = self.lockerinstance[0].lcon
         safety = self.lockerinstance[0].safety
         multiplexer = self.lockerinstance[0].mux

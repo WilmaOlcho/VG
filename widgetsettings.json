@@ -113,7 +113,8 @@
                 "Name":"Ustawienia i tryb r\u0119czny",
                 "Button":{
                     "width":25,
-                    "height":2
+                    "height":2,
+                    "relief":"ridge"
                 },
                 "Troley":{
                     "Label":"W\u00F3zek",
@@ -927,7 +928,7 @@
                         "NewProgram":{
                             "title":"Nowy program",
                             "Button":{
-                                "width":10,
+                                "width":20,
                                 "height":2
                             },
                             "buttons":{
@@ -952,7 +953,7 @@
                         "DeleteProgram":{
                             "title":"Usu\u0144 program",
                             "Button":{
-                                "width":10,
+                                "width":20,
                                 "height":2
                             },
                             "buttons":{
@@ -977,7 +978,7 @@
                         "AgainPrompt":{
                             "title":"Czy wykona\u0107 procedur\u0119 ponownie?",
                             "Button":{
-                                "width":10,
+                                "width":20,
                                 "height":2
                             },
                             "buttons":{
@@ -1272,7 +1273,7 @@
                 "NewProgram":{
                     "title":"Nowy program",
                     "Button":{
-                        "width":10,
+                        "width":20,
                         "height":2
                     },
                     "buttons":{
@@ -1297,7 +1298,7 @@
                 "DeleteProgram":{
                     "title":"Usu\u0144 program",
                     "Button":{
-                        "width":10,
+                        "width":20,
                         "height":2
                     },
                     "buttons":{
@@ -1322,7 +1323,7 @@
                 "AgainPrompt":{
                     "title":"Czy wykona\u0107 procedur\u0119 ponownie?",
                     "Button":{
-                        "width":10,
+                        "width":20,
                         "height":2
                     },
                     "buttons":{

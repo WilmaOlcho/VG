@@ -100,9 +100,14 @@ def CheckProgram(lockerinstance):
         return True
 
 def CheckPositions(lockerinstance):
-    result = CheckPiston(lockerinstance, 'Seal', 'Down')
     with lockerinstance[0].lock:
-        result = result and lockerinstance[0].program['initialised']
+        currentstep = lockerinstance[0].program['stepnumber']
+        currentcycle = lockerinstance[0].program['cycle']
+        initialised = lockerinstance[0].program['initialised']
+    if currentstep == 0 and currentcycle == 0:
+        result = CheckPiston(lockerinstance, 'Seal', 'Down')
+    else:
+        result = initialised
     return result
 
 def CheckPiston(lockerinstance, pistonname, action):
@@ -210,7 +215,7 @@ def Initialise(lockerinstance):
             with lockerinstance[0].lock:
                 lockerinstance[0].program['cycle'] += 1
         else:
-            LaserSetState(lockerinstance, 'SetChannel')
+            ErrorEventWrite(lockerinstance, 'Błąd inicjalizacji SCOUT nie odpowiada')
     if cycle == 5:
         with lockerinstance[0].lock:
             lockerinstance[0].program['cycle'] = 0
