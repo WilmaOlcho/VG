@@ -39,8 +39,8 @@ def nextstep(lockerinstance):
         if stepcomplete:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].program['stepcomplete'] = False
-            lockerinstance[0].program['stepnumber'] += 1
-            lockerinstance[0].program['cycle'] = 0
+            lockerinstance[0].program['stepnumber'] =0
+            lockerinstance[0].program['cycle'] += 1
 
 def startprocedure(lockerinstance):
     with lockerinstance[0].lock:
