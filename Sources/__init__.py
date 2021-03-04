@@ -1,4 +1,7 @@
 from threading import Thread, currentThread
+from Sources.TactWatchdog import TactWatchdog as TWDT
+
+WDT = TWDT.WDT
 
 def BlankFunc(*args, **kwargs): #Blank func to use as default value in function type parameter
     pass

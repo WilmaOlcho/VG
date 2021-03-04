@@ -163,6 +163,7 @@ class Variables(dict):
                 lockerinstance[0].servo['reset'] |= self['troley']['servoRESET']
                 lockerinstance[0].servo['step'] |= self['troley']['servoSTEP']
                 lockerinstance[0].lcon['SetChannel'] |= self['laser']['GetChannel']
+                lockerinstance[0].mux['acquire'] |= self['laser']['GetChannel']
                 lockerinstance[0].lcon['LaserTurnOn'] |= self['laser']['LaserOn'] & (not lockerinstance[0].lcon['LaserOn'])
                 lockerinstance[0].lcon['LaserTurnOff'] |= (not self['laser']['LaserOn']) & lockerinstance[0].lcon['LaserOn']
                 lockerinstance[0].lcon['LaserReset'] |= self['laser']['GetChannel']

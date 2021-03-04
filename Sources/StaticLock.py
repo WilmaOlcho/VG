@@ -23,6 +23,20 @@ class SharedLocker(object):
 #            'O25': self.outputs[24], 'O26': self.outputs[25], 'O27': self.outputs[26], 'O28': self.outputs[27],
 #            'O29': self.outputs[28], 'O30': self.outputs[29], 'O31': self.outputs[30], 'O32': self.outputs[31]}
         self.shared = manager.dict({
+            'SCOUT':manager.dict({
+                'Alive':False,
+                'connectionbuffer':b'',
+                'LastMessageType':"",
+                'status':manager.dict({
+                    'ReadyOn':False,
+                    "AutoStart":False,
+                    "Alarm":False,
+                    "rsv":False,
+                    "WeldingProgress":False,
+                    "LaserIsOn":False,
+                    "Wobble":False
+                })
+                }),
             'Errors':'',
             'servoModuleFirstAccess':True,
             'configurationError':False,
@@ -44,6 +58,7 @@ class SharedLocker(object):
                 'LaserAssigned':False
                 }),
             'events':manager.dict({
+                'KDrawMessageReceived':False,
                 'startprogram':False,
                 'somethingchanged':False,
                 'ack':False,
@@ -206,6 +221,7 @@ class SharedLocker(object):
                 'cycle':0
                 })
                 })
+        self.scout = self.shared['SCOUT']
         self.program = self.shared['program']
         self.wdt = self.shared['wdt']
         self.troley = self.shared['troley']
