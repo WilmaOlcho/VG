@@ -2,6 +2,7 @@ from Sources.modbusTCPunits import ADAMDataAcquisitionModule
 import json
 from Sources.TactWatchdog import TactWatchdog as WDT
 from Sources import BlankFunc, ErrorEventWrite, Bits
+from contextlib import contextmanager
 import time
 
 class AnalogMultiplexer(ADAMDataAcquisitionModule):
@@ -115,34 +116,38 @@ class LaserControl(ADAMDataAcquisitionModule):
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def getState(self, lockerinstance):
-        try:
-            state = []
-            inputstate = []
-            for coil in ['ResetError','LaserRequest','OpticalChannelbit0','OpticalChannelbit1','OpticalChannelbit2','OpticalChannelbit3']:
-                state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters[coil])))
-            for coil in ['LaserReady','LaserError','LaserAssigned','LaserIsOn','LaserWarning','ChillerWarning','ChillerError']:
-                inputstate.append(self.read_coils(lockerinstance, input = 'DI' + str(self.LconParameters[coil])))
-            with lockerinstance[0].lock:
-                lockerinstance[0].lcon['LaserError'] = inputstate[1]
-                lockerinstance[0].lcon['LaserWarning'] = inputstate[4]
-                lockerinstance[0].lcon['ChillerError'] = inputstate[5]
-                lockerinstance[0].lcon['ChillerWarning'] = inputstate[6]
-                lockerinstance[0].lcon['LaserReady'] = inputstate[0]
-                lockerinstance[0].lcon['LaserOn'] = inputstate[3]
-                lockerinstance[0].lcon['LaserAssigned'] = inputstate[2]
-            self.currentState = state
-            self.inputState = inputstate
-            return state
-        except Exception as e:
-            errmessage = "getState Error:\n"+ str(e)
-            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
-            #raise LaserControlError(lockerinstance, errstring = errmessage)
+        with lockerinstance[0].lock:
+            busy = lockerinstance[0].mux['busy']
+        if not busy:
+            with self.request(lockerinstance):
+                try:
+                    state = []
+                    inputstate = []
+                    for coil in ['ResetError','LaserRequest','OpticalChannelbit0','OpticalChannelbit1','OpticalChannelbit2','OpticalChannelbit3']:
+                        state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters[coil])))
+                    for coil in ['LaserReady','LaserError','LaserAssigned','LaserIsOn','LaserWarning','ChillerWarning','ChillerError']:
+                        inputstate.append(self.read_coils(lockerinstance, input = 'DI' + str(self.LconParameters[coil])))
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].lcon['LaserError'] = inputstate[1]
+                        lockerinstance[0].lcon['LaserWarning'] = inputstate[4]
+                        lockerinstance[0].lcon['ChillerError'] = inputstate[5]
+                        lockerinstance[0].lcon['ChillerWarning'] = inputstate[6]
+                        lockerinstance[0].lcon['LaserReady'] = inputstate[0]
+                        lockerinstance[0].lcon['LaserOn'] = inputstate[3]
+                        lockerinstance[0].lcon['LaserAssigned'] = inputstate[2]
+                    self.currentState = state
+                    self.inputState = inputstate
+                    return state
+                except Exception as e:
+                    errmessage = "getState Error:\n"+ str(e)
+                    ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def __prohibitedBehaviour(self, lockerinstance):
         with lockerinstance[0].lock:
             prohibited = lockerinstance[0].mux['busy']
         return prohibited  
 
+    @contextmanager
     def request(self, lockerinstance):
         if not self.__prohibitedBehaviour(lockerinstance):
             try:
@@ -151,8 +156,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             except Exception as e:
                 errmessage = "SetChannel LaserRequest Error\n"+ str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
-
-    def release(self, lockerinstance):
+        yield
         if not self.__prohibitedBehaviour(lockerinstance):
             try:
                 self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserRequest']), False)
@@ -162,72 +166,69 @@ class LaserControl(ADAMDataAcquisitionModule):
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def acquireLightPath(self, lockerinstance):
-        if not self.__prohibitedBehaviour(lockerinstance):
-            self.request(lockerinstance)
-            try:
-                channel = self.Bits.Bits(self.LconParameters['MyOpticalChannel'])
-                for i in range(4):
-                    self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit'+str(i)]), channel[i])
-                time.sleep(0.1)
-            except Exception as e:
-                errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
-                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
-            self.release(lockerinstance)
+        with self.request(lockerinstance):
+            if not self.__prohibitedBehaviour(lockerinstance):
+                try:
+                    channel = self.Bits.Bits(self.LconParameters['MyOpticalChannel'])
+                    for i in range(4):
+                        self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit'+str(i)]), channel[i])
+                    time.sleep(0.1)
+                except Exception as e:
+                    errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
+                    ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def releaseLightPath(self, lockerinstance):
-        if not self.__prohibitedBehaviour(lockerinstance):
-            try:
-                channel = self.Bits(0)
-                for i in range(4):
-                    self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit'+str(i)]), channel[i])
-                time.sleep(0.1)
-            except Exception as e:
-                errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
-                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+        with self.request(lockerinstance):
+            if not self.__prohibitedBehaviour(lockerinstance):
+                try:
+                    channel = self.Bits(0)
+                    for i in range(4):
+                        self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['OpticalChannelbit'+str(i)]), channel[i])
+                    time.sleep(0.1)
+                except Exception as e:
+                    errmessage = "SetChannel OpticalChannelSetup Error\n"+ str(e)
+                    ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def laserOn(self, lockerinstance):
-        self.getState(lockerinstance)
-        if not self.inputState[3] and not self.__prohibitedBehaviour(lockerinstance):
-            self.resetError(lockerinstance)
-            self.request(lockerinstance)
-            try:
-                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserOn']), True)
-                time.sleep(0.1)
-            except Exception as e:
-                errmessage = "SetChannel ResetErrors Error\n"+ str(e)
-                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
-            self.release(lockerinstance)
+        with self.request(lockerinstance):
+            if not self.inputState[3] and not self.__prohibitedBehaviour(lockerinstance):
+                self.resetError(lockerinstance)
+                with self.request(lockerinstance):
+                    try:
+                        self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserOn']), True)
+                        time.sleep(0.1)
+                    except Exception as e:
+                        errmessage = "SetChannel ResetErrors Error\n"+ str(e)
+                        ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def resetError(self, lockerinstance):
-        self.getState(lockerinstance)
-        if self.inputState[1] and not self.__prohibitedBehaviour(lockerinstance):
-            self.request(lockerinstance)
-            try:
-                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), True)
-                time.sleep(0.1)
-            except Exception as e:
-                errmessage = "SetChannel ResetErrors Error\n"+ str(e)
-                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
-            self.release(lockerinstance)
-            try:
-                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), False)
-                time.sleep(0.1)
-            except Exception as e:
-                errmessage = "SetChannel ResetErrors Error\n"+ str(e)
-                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+        with self.request(lockerinstance):
+            if self.inputState[1] and not self.__prohibitedBehaviour(lockerinstance):
+                with self.request(lockerinstance):
+                    try:
+                        self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), True)
+                        time.sleep(0.1)
+                    except Exception as e:
+                        errmessage = "SetChannel ResetErrors Error\n"+ str(e)
+                        ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+                try:
+                    self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['ResetError']), False)
+                    time.sleep(0.1)
+                except Exception as e:
+                    errmessage = "SetChannel ResetErrors Error\n"+ str(e)
+                    ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def StopLaser(self, lockerinstance):
-        self.getState(lockerinstance)
-        if not self.inputState[3] and not self.__prohibitedBehaviour(lockerinstance):
-            self.resetError(lockerinstance)
-            self.request(lockerinstance)
-            try:
-                self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserOn']), False)
-                time.sleep(0.1)
-            except Exception as e:
-                errmessage = "SetChannel ResetErrors Error\n"+ str(e)
-                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
-            self.release(lockerinstance)
+        with self.request(lockerinstance):
+            if not self.inputState[3] and not self.__prohibitedBehaviour(lockerinstance):
+                self.resetError(lockerinstance)
+                with self.request(lockerinstance):
+                    try:
+                        self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['LaserOn']), False)
+                        time.sleep(0.1)
+                    except Exception as e:
+                        errmessage = "SetChannel ResetErrors Error\n"+ str(e)
+                        ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def SetChannel(self, lockerinstance):
         self.resetError(lockerinstance)
