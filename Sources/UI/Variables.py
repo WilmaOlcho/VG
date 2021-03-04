@@ -52,6 +52,20 @@ class Variables(dict):
             'servoTGON':False,
             'TroleyDocked':False
         }
+        self['robot'] = {
+            'RobotGo':False,
+            'RobotHoming':False,
+            'table':0,
+            'position':0,
+            'actualposition':0,
+            'RobotCommandActive':False,
+            'RobotIsHome':False,
+            'RobotInAPosition':False,
+            'RobotHandMode':False,
+            'RobotMotorsOn':False,
+            'RobotCycle':False,
+            'ConnectionActive':False
+        }
         self['laser'] = {
             'LaserOn':False,
             'LaserIsOn':False,
@@ -152,8 +166,13 @@ class Variables(dict):
                 lockerinstance[0].lcon['LaserTurnOn'] |= self['laser']['LaserOn'] & (not lockerinstance[0].lcon['LaserOn'])
                 lockerinstance[0].lcon['LaserTurnOff'] |= (not self['laser']['LaserOn']) & lockerinstance[0].lcon['LaserOn']
                 lockerinstance[0].lcon['LaserReset'] |= self['laser']['GetChannel']
-
-
+                lockerinstance[0].robot['go'] |= self['robot']['RobotGo']
+                lockerinstance[0].robot['homing'] |= self['robot']['RobotHoming']
+                lockerinstance[0].robot['settable'] = self['robot']['table']
+                lockerinstance[0].robot['setpos'] = self['robot']['position']
+                
+                self['robot']['RobotGo'] = False
+                self['robot']['RobotHoming'] = False
                 self['troley']['servoRUN'] = False
                 self['troley']['servoSTOP'] = False
                 self['troley']['servoHOMING'] = False
@@ -193,6 +212,15 @@ class Variables(dict):
             robot = lockerinstance[0].robot
             if robot['Alive'] and not robot['error']:
                 self.statusindicators['Robot'] = 1
+                self['robot']['actualposition'] = robot['currentpos']
+                self['robot']['RobotCommandActive'] = robot['activecommand']
+                self['robot']['RobotIsHome'] = robot['homepos']
+                self['robot']['RobotInAPosition'] = robot['currentpos'] == robot['setpos']
+                self['robot']['RobotHandMode'] = robot['handmode']
+                self['robot']['RobotMotorsOn'] = robot['motors']
+                self['robot']['RobotCycle'] = robot['cycle']
+                self['robot']['ConnectionActive'] = robot['connection']
+
             elif robot['error'] or not robot['Alive']:
                 self.statusindicators['Robot'] = -1
             else:

@@ -142,11 +142,16 @@ class SharedLocker(object):
                 'PositionControl':False,
                 'Alive':False,
                 'error':False,
-                'homepos':False,
+                'homepos':False, #TODO
                 'homing':False,
                 'go':False,
                 'setoffset':False,
                 'goonce':False,
+                'handmode':False,#TODO
+                'motors':False,#TODO
+                'cycle':False,#TODO
+                'connection':False,#TODO
+                'settable':0,#TODO
                 'setpos':0,
                 'currentpos':0,
                 'activecommand':False,

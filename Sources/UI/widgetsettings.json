@@ -110,6 +110,10 @@
                 "sticky":"nsew"},
             "SettingsScreen":{
                 "Name":"Ustawienia i tryb r\u0119czny",
+                "Button":{
+                    "width":25,
+                    "height":2
+                },
                 "Troley":{
                     "Label":"W\u00F3zek",
                     "Pneumatics":{
@@ -129,7 +133,7 @@
                         "Label":"Serwo",
                         "Button":{
                             "masterkey":"troley",
-                            "width":25,
+                            "width":15,
                             "height":2
                         },
                         "Lamp":{
@@ -184,7 +188,7 @@
                     "Label":"\u0179r\u00F3d\u0142o wi\u0105zki",
                     "Button":{
                         "masterkey":"laser",
-                        "width":25,
+                        "width":15,
                         "height":2
                     },
                     "Lamp":{
@@ -218,6 +222,53 @@
                         "Ostrze\u017Cenie lasera":"!LaserWarning",
                         "B\u0142\u0105d ch\u0142odnicy":"!ChillerError",
                         "Ostrze\u017Cenie ch\u0142odnicy":"!ChillerWarning"}
+                },
+                "Robot":{
+                    "Label":"Manipulator zrobotyzowany",
+                    "Button":{
+                        "masterkey":"robot",
+                        "width":15,
+                        "height":2
+                    },
+                    "Lamp":{
+                        "masterkey":"robot",
+                        "width":40,
+                        "height":40,
+                        "frame":{
+                            "relief":"ridge",
+                            "borderwidth":2
+                        },
+                        "caption":{
+                            "width":19
+                        },
+                        "Color":{
+                            "normal":"black",
+                            "active":"green",
+                            "error":"red"
+                        }
+                    },
+                    "Entry":{
+                        "masterkey":"robot",
+                        "width":25
+                    },
+                    "buttons":{
+                        "Jedź":"RobotGo",
+                        "Bazuj":"RobotHoming"
+                    },
+                    "entries":{
+                        "Tabela pozycji":"table",
+                        "Pozycja zadana":"position",
+                        "Aktualna pozycja":"actualposition"
+                    },
+                    "lamps":{
+                        "Operacja w toku":"RobotCommandActive",
+                        "Pozycja domowa":"RobotIsHome",
+                        "Robot na pozycji":"RobotInAPosition",
+                        "Tryb ręczny":"RobotHandMode",
+                        "Silniki robota aktywne":"RobotMotorsOn",
+                        "Cykl programu robota":"RobotCycle",
+                        "Połączenie aktywne":"!-ConnectionActive"
+                    }
                 }
             },
             "HomeScreen":{

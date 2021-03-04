@@ -23,6 +23,9 @@ class GeneralWidget(dict):
     def pack(self, *args, **kwargs):
         self.frame.pack(*args, **kwargs)
 
+    def pack_forget(self, *args, **kwargs):
+        self.frame.pack_forget(*args, **kwargs)
+
 class LabelFrame(GeneralWidget):
     def __init__(self, master = None, branch = ''):
         super().__init__(master = master, branch = branch)
@@ -33,22 +36,34 @@ class SettingsScreen(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'SettingsScreen')
         self.name = self.settings['Name']
-        self.miscpneumaticsframe = ttk.LabelFrame(master = self.frame, text = self.settings["Pneumatics"]['Label'])
+        self.miscpneumaticsframe = LabelFrame(master = self.frame, branch = "Pneumatics")
         self.miscpneumaticsframe.__setattr__('settings', self.settings['Pneumatics'])
         self.widgets = [
             Troley(self.frame),
             Laser(self.frame),
-            PistonControl(master = self.miscpneumaticsframe, button = 'ShieldingGas'),
-            PistonControl(master = self.miscpneumaticsframe, button = 'CrossJet'),
-            PistonControl(master = self.miscpneumaticsframe, button = 'HeadCooling'),
+            Robot(self.frame),
+            PistonControl(master = self.miscpneumaticsframe.frame, button = 'ShieldingGas'),
+            PistonControl(master = self.miscpneumaticsframe.frame, button = 'CrossJet'),
+            PistonControl(master = self.miscpneumaticsframe.frame, button = 'HeadCooling'),
             self.miscpneumaticsframe
         ]
-        for widget in self.widgets:
+        self.buttonsframe = tk.Frame(master = self.frame)
+        for number, widget in enumerate(self.widgets):
             if isinstance(widget, LabelFrame):
-                widget.pack(side = tk.LEFT, anchor = tk.NW)
+                button = tk.Button(master = self.buttonsframe, font = self.font(), text = widget.settings['Label'], command = lambda obj = self, key = number: obj.show(key), **self.settings['Button'])
+                button.pack(side = tk.TOP, anchor = tk.NW)
             else:
                 widget.pack(anchor = tk.NW)
-        self.frame.pack(expand = tk.YES, fill=tk.BOTH)
+        self.buttonsframe.pack(side = tk.LEFT, anchor = tk.NW)
+        self.pack(expand = tk.YES, fill=tk.BOTH)
+
+    def show(self, key):
+        for number, widget in enumerate(self.widgets):
+            if number == key:
+                widget.pack(side = tk.LEFT, anchor = tk.NW)
+            else:
+                if isinstance(widget, LabelFrame):
+                    widget.pack_forget()
 
 class Troley(LabelFrame):
     def __init__(self, master = None):
@@ -62,7 +77,6 @@ class Troley(LabelFrame):
             self.widgets.append(PistonControl(master = self.pistonlabeledFrame, button=piston))
         for widget in self.widgets:
             widget.pack(anchor = tk.NW)
-        self.pack()
 
 class Laser(LabelFrame):
     def __init__(self, master = None):
@@ -83,7 +97,31 @@ class Laser(LabelFrame):
                 widget.pack(side = tk.LEFT, anchor = tk.N)
             else:
                 widget.pack(anchor = tk.N)
-        self.pack()
+
+class Robot(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Robot')
+        self.buttonsframe = tk.Frame(self.frame)
+        self.buttonsframe.__setattr__('settings', self.settings)
+        self.lampsframe = tk.Frame(self.frame)
+        self.lampsframe.__setattr__('settings', self.settings)
+        self.entriesframe = tk.Frame(self.frame)
+        self.entriesframe.__setattr__('settings', self.settings)
+        self.widgets = [self.buttonsframe, self.lampsframe, self.entriesframe]
+        buttons = self.settings['buttons']
+        lamps = self.settings['lamps']
+        entries = self.settings['entries']
+        for key, value in buttons.items():
+            self.widgets.append(Button(self.buttonsframe, text = key, key = value))
+        for key, value in lamps.items():
+            self.widgets.append(Lamp(self.lampsframe, text = key, key = value))
+        for key, value in entries.items():
+            self.widgets.append(Entry(self.entriesframe, text = key, key = value))
+        for widget in self.widgets:
+            if widget.master == self.frame:
+                widget.pack(side = tk.LEFT, anchor = tk.N)
+            else:
+                widget.pack(anchor = tk.N)
 
 class ServoControl(LabelFrame):
     def __init__(self, master = None, buttons = {}, lamps = {}):
@@ -104,7 +142,6 @@ class ServoControl(LabelFrame):
                 widget.pack(side = tk.LEFT, anchor = tk.N)
             else:
                 widget.pack(anchor = tk.N)
-        self.pack()
 
 class Button(GeneralWidget):
     def __init__(self, master = None, text = '', key = ''):
@@ -119,6 +156,30 @@ class Button(GeneralWidget):
             self.root.variables[self.masterkey][self.key[1:]] = False
         else:
             self.root.variables[self.masterkey][self.key] = True
+
+class Entry(GeneralWidget):
+    def __init__(self, master = None, text = '', key = ''):
+        super().__init__(master = master, branch = 'Entry')
+        self.frame = ttk.Frame(master = master)
+        self.frame.__setattr__('settings',self.settings)
+        self.Label = ttk.Label(master = self.frame, font = self.font(), text = text)
+        self.entry = tk.Entry(master = self.frame, width = self.settings['width'])
+        self.entry.bind('<FocusOut>',self.ReadEntry)
+        self.key = key
+        self.masterkey = self.settings['masterkey']
+        self.Label.pack()
+        self.entry.pack()
+        
+    def ReadEntry(self, event):
+        self.root.variables[self.masterkey][self.key] = self.entry.get()
+
+    def update(self):
+        focus = self.frame.focus_get()
+        if focus != self.entry:
+            value = self.root.variables[self.masterkey][self.key]
+            if self.entry.get() != value:
+                self.entry.delete(0,tk.END)
+                self.entry.insert(0,value)
 
 class Lamp(GeneralWidget):
     def __init__(self, master = None, text = '', key = ''):
@@ -135,9 +196,11 @@ class Lamp(GeneralWidget):
 
     def update(self):
         self.frame.update()
+        keystartpos = 0
         negation = '-' in self.key[:2]
+        if negation: keystartpos += 1
         errsign = '!' in self.key[:2]
-        keystartpos = 0 + 1 if negation else 0 + 1 if errsign else 0
+        if errsign: keystartpos += 1
         key = self.key[keystartpos:]
         if negation:
             self.lit = not self.root.variables[self.masterkey][key]
@@ -174,7 +237,6 @@ class PistonControl(GeneralWidget):
         else:
             self.buttonCenter = tk.Canvas(self.frame, **config['Center']['Canvas'])
         self.buttonCenter.place(**config['Center']['place'])
-        self.pack()
 
     def Left(self):
         self.elements['Left']['coil'] = not self.elements['Left']['coil']
