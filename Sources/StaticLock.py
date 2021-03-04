@@ -138,20 +138,20 @@ class SharedLocker(object):
                 'rotate':False
                 }),
             'robot':manager.dict({
-                'CommandControl':False,
-                'PositionControl':False,
+                'CommandControl':True,
+                'PositionControl':True,
                 'Alive':False,
                 'error':False,
-                'homepos':False, #TODO
+                'homepos':False,
                 'homing':False,
                 'go':False,
                 'setoffset':False,
                 'goonce':False,
-                'handmode':False,#TODO
-                'motors':False,#TODO
-                'cycle':False,#TODO
-                'connection':False,#TODO
-                'settable':0,#TODO
+                'handmode':False,
+                'motors':False,
+                'cycle':False,
+                'connection':False,
+                'settable':0,
                 'setpos':0,
                 'currentpos':0,
                 'activecommand':False,
