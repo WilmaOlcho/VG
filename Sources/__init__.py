@@ -90,12 +90,13 @@ class EventManager():
             if self.name in lockerinstance[0].ect: lockerinstance[0].ect.remove(self.name)
     
     @classmethod
-    def AdaptEvent(cls, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
+    def AdaptEvent(cls, lockerinstance, input = '', edge = None, name = '', event = '', callback = BlankFunc, callbackargs = ()):
+        evname = event if not name else name
         with lockerinstance[0].lock:
-            ectActive = str('EventCatcher: ' + event) in lockerinstance[0].ect
+            ectActive = str('EventCatcher: ' + evname) in lockerinstance[0].ect
         if not ectActive:
             EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event, callback, callbackargs))
-            EventThread.setName('EventCatcher: ' + event)
+            EventThread.setName('EventCatcher: ' + evname)
             EventThread.start()
 
     @classmethod

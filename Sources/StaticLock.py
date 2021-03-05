@@ -30,6 +30,7 @@ class SharedLocker(object):
                 'MessageAck':False,
                 'version':'',
                 'recipe':'',
+                'pagesToWeld':manager.list([]),
                 'weldrunpagescount':0,
                 'LaserOn':False,
                 'ManualAlignPage':0,
@@ -59,8 +60,18 @@ class SharedLocker(object):
                     "frequency":1,
                     "amplitude":0,
                     "power":0
-                })
                 }),
+                'SetRecipe':False,
+                'TurnLaserOn':False,
+                'TurnLaserOff':False,
+                'GetVersion':False,
+                'AlarmReset':False,
+                'AutostartOn':False,
+                'AutostartOff':False,
+                'WeldStart':False, #requires
+                'Wobble':False
+
+            }),
             'Errors':'',
             'servoModuleFirstAccess':True,
             'configurationError':False,

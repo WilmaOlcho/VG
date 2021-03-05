@@ -12,6 +12,11 @@ class KDrawTCPInterface(socket.socket):
             errstring = "KDrawTCPInterface can't load json file: " + str(e)
             ErrorEventWrite(lockerinstance, errstring)
 
+    def connect(self):
+        address = self.config['connection']['IP']
+        port = self.config['connection']['port']
+        super().connect((address,port))
+
     def receive(self, lockerinstance):
         def start(lockerinstance = lockerinstance):
             with lockerinstance[0].lock:
@@ -232,9 +237,11 @@ class KDrawTCPInterface(socket.socket):
     
     def send_message(self, lockerinstance, bytes_message):
         def callback(obj = self, lockerinstance = lockerinstance):
+            with lockerinstance[0].lock:
+                lockerinstance[0].events['KDrawWaitingForMessage'] = True
             self.sendall(bytes_message)
             obj.receive(lockerinstance)
-        EventManager.AdaptEvent(lockerinstance, event = '-KDrawWaitingForMessage', callback = callback)
+        EventManager.AdaptEvent(lockerinstance, name = bytes_message.decode(), event = '-KDrawWaitingForMessage', callback = callback)
 
     def GetStatus(self, lockerinstance):
         message = self.encode_message(lockerinstance, ['STATUS'])
@@ -291,15 +298,79 @@ class KDrawTCPInterface(socket.socket):
         self.send_message(lockerinstance, message)
 
     def ManualAlign(self, lockerinstance):
-        pass
+        with lockerinstance[0].lock:
+            page = lockerinstance[0].scout['ManualAlignPage']
+        message = self.encode_message(lockerinstance, ['MANUAL_ALIGN', page])
+        self.send_message(lockerinstance, message)
 
     def ManualWeld(self, lockerinstance):
-        pass
+        with lockerinstance[0].lock:
+            page = lockerinstance[0].scout['ManualWeldPage']
+        message = self.encode_message(lockerinstance, ['MANUAL_WELD', page])
+        self.send_message(lockerinstance, message)
 
     def WeldRun(self, lockerinstance):
-        pass
+        with lockerinstance[0].lock:
+            pages = lockerinstance[0].scout['pagesToWeld'].copy()
+            lockerinstance[0].scout['weldrunpagescount'] = len(pages)
+        message = self.encode_message(lockerinstance, ['WELD_RUN', len(pages), *pages])
+        self.send_message(lockerinstance, message)
 
 class SCOUT():
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args,**kwargs)
+    def __init__(self, lockerinstance, configfile):
+        while True:
+            try:
+                with open(configfile) as filehandle:
+                    self.config = json.load(filehandle)
+            except Exception as e:
+                ErrorEventWrite(lockerinstance, 'SCOUT manager cant load json file:\n{}'.format(str(e)))
+            else:
+                with lockerinstance[0].lock:
+                    lockerinstance[0].scout['Alive'] = True
+                self.Alive = True
+                self.connection = KDrawTCPInterface(lockerinstance, configfile)
+                self.connection.connect()
+                self.loop(lockerinstance)
+            finally:
+                with lockerinstance[0].lock:
+                    self.Alive = lockerinstance[0].scout['Alive']
+                    letdie = lockerinstance[0].events['closeApplication']
+                if not self.Alive or letdie: break
+
+    def loop(self, lockerinstance):
+        while self.Alive:
+            with lockerinstance[0].lock:
+                self.Alive = lockerinstance[0].scout['Alive'] and not lockerinstance[0].events['closeApplication']
+                lastrecv = lockerinstance[0].scout['LastMessageType']
+                alarm = lockerinstance[0].scout['status']['Alarm']
+                alarmReset = lockerinstance[0].scout['AlarmReset']
+                if alarmReset: lockerinstance[0].scout['AlarmReset'] = False
+                tlaseron = lockerinstance[0].scout['TurnLaserOn']
+                if tlaseron: lockerinstance[0].scout['TurnLaserOn'] = False
+                tlaseroff = lockerinstance[0].scout['TurnLaserOff']
+                if tlaseroff: lockerinstance[0].scout['TurnLaserOff'] = False
+                version = lockerinstance[0].scout['GetVersion']
+                if version: lockerinstance[0].scout['GetVersion'] = False
+                recipe = lockerinstance[0].scout['SetRecipe']
+                if recipe: lockerinstance[0].scout['SetRecipe'] = False
+                atstart = lockerinstance[0].scout['AutostartOn']
+                if atstart: lockerinstance[0].scout['AutostartOn'] = False
+                atstop = lockerinstance[0].scout['AutostartOff']
+                if atstop: lockerinstance[0].scout['AutostartOff'] = False
+                weld = lockerinstance[0].scout['WeldStart']
+                if weld: lockerinstance[0].scout['WeldStart'] = False
+                wobbler = lockerinstance[0].scout['Wobble']
+                if wobbler: lockerinstance[0].scout['Wobble'] = False
+            if alarm and lastrecv != 'AL_REPORT': self.connection.GetAlarmReport(lockerinstance)
+            if tlaseron: self.connection.TurnOnLaser(lockerinstance)
+            if tlaseroff: self.connection.TurnOffLaser(lockerinstance)
+            if alarmReset: self.connection.AlarmReset(lockerinstance)
+            if version and lastrecv != 'VER': self.connection.GetVersion(lockerinstance)
+            if recipe: self.connection.ChangeRecipe(lockerinstance)
+            if atstart and lastrecv != 'AT_START': self.connection.SetAutoStart(lockerinstance)
+            if atstop and lastrecv != 'AT_STOP': self.connection.StopAutoStart(lockerinstance)
+            if weld: self.connection.WeldRun(lockerinstance)
+            if wobbler: self.connection.SetWobble(lockerinstance)
+            self.connection.getState(lockerinstance)
+
 
