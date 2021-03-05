@@ -27,6 +27,24 @@ class SharedLocker(object):
                 'Alive':False,
                 'connectionbuffer':b'',
                 'LastMessageType':"",
+                'MessageAck':False,
+                'version':'',
+                'recipe':'',
+                'weldrunpagescount':0,
+                'LaserOn':False,
+                'ManualAlignPage':0,
+                'ManualWeldPage':0,
+                'AlignInfo':manager.dict({
+                    '0':0,
+                    '1':0,
+                    '2':0,
+                    "A":0,
+                    "dotA":0,
+                    "X":0,
+                    "dotX":0,
+                    "Y":0,
+                    "dotY":0,
+                }),
                 'status':manager.dict({
                     'ReadyOn':False,
                     "AutoStart":False,
@@ -35,6 +53,12 @@ class SharedLocker(object):
                     "WeldingProgress":False,
                     "LaserIsOn":False,
                     "Wobble":False
+                }),
+                'scanwobble':manager.dict({
+                    'mode':0,
+                    "frequency":1,
+                    "amplitude":0,
+                    "power":0
                 })
                 }),
             'Errors':'',
@@ -59,6 +83,7 @@ class SharedLocker(object):
                 }),
             'events':manager.dict({
                 'KDrawMessageReceived':False,
+                'KDrawWaitingForMessage':False,
                 'startprogram':False,
                 'somethingchanged':False,
                 'ack':False,
