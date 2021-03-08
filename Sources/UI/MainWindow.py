@@ -45,11 +45,12 @@ class Frame(dict):
         self.root.variables.internalEvents['ack'] = True
 
 class Window(dict):
-    def __init__(self, lockerinstance):
+    def __init__(self, lockerinstance, settingsfile):
         super().__init__()
         self.window = tk.Tk()
         root = self.window
-        widgetsettings = json.load(open(str(Path(__file__).parent.absolute())+'//widgetsettings.json','r'))
+        with open(settingsfile) as jsonfile:
+            widgetsettings = json.load(jsonfile)
         root.__setattr__('variables', Variables(lockerinstance, **widgetsettings))
         root.__setattr__('settings', root.variables['widgetsettings'])
         self.settings = root.settings
@@ -73,4 +74,6 @@ class Window(dict):
             self.Alive = self.window.variables.Alive
 
 if __name__ == '__main__':
-    Window(object)
+    filepath = str(Path(__file__).parent.absolute())+'//widgetsettings.json'
+    Window(object, filepath)
+    

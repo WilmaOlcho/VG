@@ -62,7 +62,8 @@ class PosTable(dict):
         self.synctable = []
         self.focused_on = [0,0]
         self.width = 20
-        self.tjson = json.load(open(self.root.variables.jsonpath))
+        with open(self.root.variables.jsonpath, 'r') as jsonfile:
+            self.tjson = json.load(jsonfile)
 
     def CreateContextMenu(self):
         menu = tk.Menu(self.frame, tearoff = 0)
@@ -219,7 +220,8 @@ class PosTable(dict):
 
     def WriteSyncTable(self):
         self.UpdateJson()
-        json.dump(self.tjson,open(self.root.variables.jsonpath,'w'))
+        with open(self.root.variables.jsonpath, 'w') as jsonfile:
+            json.dump(self.tjson,jsonfile)
         self.root.variables.internalEvents['DumpProgramToFile'] = False
 
     def pack(self, *args, **kwargs):

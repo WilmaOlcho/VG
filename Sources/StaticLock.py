@@ -68,7 +68,7 @@ class SharedLocker(object):
                 'AlarmReset':False,
                 'AutostartOn':False,
                 'AutostartOff':False,
-                'WeldStart':False, #requires
+                'WeldStart':False, #requires pages to weld list
                 'Wobble':False
 
             }),
