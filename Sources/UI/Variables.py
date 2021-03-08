@@ -5,12 +5,14 @@ class Variables(dict):
         self['widgetsettings'] = widgetsettings
         self.jsonpath = ''
         self.currentProgram = ''
+        self.currentProgramIndex = 0
         self.programposstart = 0
         self.programposend = 1
         self.programcolumns = ["ID","Kolejność","Program SCOUT","Warstwa SCOUT","Pozycja robota","Tabela pozycji","Pozycja serwo","reserved","reserved"]
         self.displayedprogramcolumns = [False,True,True,True,True,True,True,False,False]
         self.columnwidths = [4,10,30,15,14,14,17,15,15]
         self.internalEvents = {
+            'ProgramMenuRefresh':False,
             'RefreshStartEnd':False,
             'TableRefresh':False,
             'DumpProgramToFile':False,
@@ -124,7 +126,7 @@ class Variables(dict):
 
     def update(self):
         lockerinstance = self.lockerinstance
-        if False:
+        if True:
             with lockerinstance[0].lock:
                 self['pistoncontrol']['seal']['Left']['sensor'] = lockerinstance[0].pistons['sensorSealDown']
                 self['pistoncontrol']['pusher']['Left']['sensor'] = lockerinstance[0].pistons['sensorTroleyPusherBack']
@@ -163,11 +165,11 @@ class Variables(dict):
                     lockerinstance[0].servo['stop'] |= self['troley']['servoSTOP']
                     lockerinstance[0].servo['reset'] |= self['troley']['servoRESET']
                     lockerinstance[0].servo['step'] |= self['troley']['servoSTEP']
-                    lockerinstance[0].lcon['SetChannel'] |= self['laser']['GetChannel']
-                    lockerinstance[0].mux['acquire'] |= self['laser']['GetChannel']
-                    lockerinstance[0].lcon['LaserTurnOn'] |= self['laser']['LaserOn'] & (not lockerinstance[0].lcon['LaserOn'])
-                    lockerinstance[0].lcon['LaserTurnOff'] |= (not self['laser']['LaserOn']) & lockerinstance[0].lcon['LaserOn']
-                    lockerinstance[0].lcon['LaserReset'] |= self['laser']['GetChannel']
+                    #lockerinstance[0].lcon['SetChannel'] |= self['laser']['GetChannel']
+                    #lockerinstance[0].mux['acquire'] |= self['laser']['GetChannel']
+                    #lockerinstance[0].lcon['LaserTurnOn'] |= self['laser']['LaserOn'] & (not lockerinstance[0].lcon['LaserOn'])
+                    #lockerinstance[0].lcon['LaserTurnOff'] |= (not self['laser']['LaserOn']) & lockerinstance[0].lcon['LaserOn']
+                    #lockerinstance[0].lcon['LaserReset'] |= self['laser']['GetChannel']
                     lockerinstance[0].robot['go'] |= self['robot']['RobotGo']
                     lockerinstance[0].robot['homing'] |= self['robot']['RobotHoming']
                     lockerinstance[0].robot['settable'] = self['robot']['table']

@@ -75,12 +75,14 @@ class PosTable(dict):
         return menu
 
     def ContextMenuPopup(self, event):
+        self.frame.update_idletasks()
         try:
             self.menu.tk_popup(event.x_root, event.y_root, 0)
         finally:
             self.menu.grab_release()
 
     def GetFocus(self, event):
+        self.frame.update_idletasks()
         focus = self.frame.focus_get()
         for row, row_content in enumerate(self.entries):
             for column, entry in enumerate(row_content):
@@ -106,26 +108,37 @@ class PosTable(dict):
         return ID
 
     def AddRowBefore(self):
+        self.frame.update_idletasks()
         row = self.getActiveRow()
         self.synctable.insert(row,[self.CreateID(),0,0,0,0,0,0,0,0])
         self.UpdateJson()
+        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def AddRowAfter(self):
+        self.frame.update_idletasks()
         row = self.getActiveRow()
         self.synctable.insert(row+1,[self.CreateID(),0,0,0,0,0,0,0,0])
         self.UpdateJson()
+        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def DeleteRow(self):
+        self.frame.update_idletasks()
         row = self.getActiveRow()
         del self.synctable[row]
         self.UpdateJson()
+        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def SortTable(self):
-        self.synctable.sort(key = lambda element: element[1] if isinstance(element[1],int) else 0)
+        self.frame.update_idletasks()
+        def sortconditions(element):
+            value = int(element[1]) if str(element[1]).isnumeric() else 0
+            return value
+        self.synctable.sort(key = sortconditions)
         self.UpdateJson()
+        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def __reframe(self):
@@ -136,6 +149,10 @@ class PosTable(dict):
         self.frame.pack()
 
     def __getprogram(self, i = False):
+        with open(self.root.variables.jsonpath, 'r') as jsonfile:
+            compareinput = json.load(jsonfile)
+        if len(self.tjson['Programs']) != len(compareinput['Programs']):
+            self.tjson = compareinput
         for j, program in enumerate(self.tjson['Programs']):
             if program['Name'] == self.root.variables.currentProgram:
                 if i:
@@ -209,6 +226,7 @@ class PosTable(dict):
         return False
     
     def RetrieveSynctable(self, event):
+        self.frame.update_idletasks()
         for row, content in enumerate(self.entries):
             for column, value in enumerate(content):
                 if value: self.synctable[row][column] = value.get()
@@ -217,6 +235,7 @@ class PosTable(dict):
         i = self.__getprogram(i = 'only')
         self.tjson['Programs'][i]['Table'] = []
         self.tjson['Programs'][i]['Table'] = self.synctable[1:].copy()
+        pass
 
     def WriteSyncTable(self):
         self.UpdateJson()

@@ -190,7 +190,7 @@ class SharedLocker(object):
                 }),
             'robot':manager.dict({
                 'CommandControl':True,
-                'PositionControl':True,
+                'PositionControl':False,
                 'Alive':False,
                 'error':False,
                 'homepos':False,

@@ -79,12 +79,12 @@ class RobotVG(KawasakiVG):
                     axisValues[axis] = self.__splitdecimals(lockerinstance[0].robot[axis])
                 for i, status in enumerate(RobotRegister[9:][:7]):
                     lockerinstance[0].robot['StatusRegister' + str(i)] = status
-            for i, register, axis in enumerate([[RobotRegister[1:][:8][x], [2*['A'],2*['X'],2*['Y'],2*['Z']][x]] for x in range(len(RobotRegister[1:][:8]))]):
-                if i%2:
-                    if axisValues[axis][0] != register:
-                        self.write_register(lockerinstance, register = axis, value = register)
-                else:
-                    self.write_register(lockerinstance, register = '00'+axis, value = register)
+            #for i, register, axis in [x,[RobotRegister[1:][:8][x], ['A','A','X','X','Y','Y','Z','Z'][x]] for x in range(len(RobotRegister[1:][:8]))]:
+            #    if i%2:
+            #        if axisValues[axis][0] != register:
+            #            self.write_register(lockerinstance, register = axis, value = register)
+            #    else:
+            #        self.write_register(lockerinstance, register = '00'+axis, value = register)
 
     def __Command(self, lockerinstance, command = ''):
         command_u = command[:1].upper() + command[1:]
@@ -100,7 +100,8 @@ class RobotVG(KawasakiVG):
 
     def CommandControl(self, lockerinstance):
         activecommand = self.read_holding_registers(lockerinstance, registerToStartFrom = 'command')
-        if not activecommand:
+        if not activecommand: activecommand.append(0)
+        if not activecommand[0]:
             with lockerinstance[0].lock:
                 homing, go, setoffset, goonce = [lockerinstance[0].robot[x] for x in ['homing', 'go', 'setoffset', 'goonce']]
                 for x in ['homing', 'go', 'setoffset', 'goonce']: lockerinstance[0].robot[x] = False
@@ -108,8 +109,8 @@ class RobotVG(KawasakiVG):
                 self.__Command(lockerinstance, command = 'homing')
             if go:
                 with lockerinstance[0].lock:
-                    spos = lockerinstance[0].robot['setpos']
-                    stable = lockerinstance[0].robot['settable']
+                    spos = int(lockerinstance[0].robot['setpos'])
+                    stable = int(lockerinstance[0].robot['settable'])
                 self.write_register(lockerinstance, register = 'DestinationPositionNumber', value = spos)
                 self.write_register(lockerinstance, register = 'table', value = stable)
                 self.__Command(lockerinstance, command = 'go')

@@ -3,6 +3,7 @@ from tkinter import ttk
 from pathlib import Path
 import json
 from getroot import getroot
+from win32api import GetSystemMetrics
 
 class HomeScreen(dict):
     def __init__(self, master = None):
@@ -179,6 +180,197 @@ class FirstColumn(dict):
     def pack(self, *args, **kwargs):
         self.frame.pack(*args, **kwargs)
 
+class NewProgramWindow(tk.Toplevel):
+    def __init__(self, parent, menubuttonwidget):
+        super().__init__(parent)
+        self.title('Nowy program')
+        self.master = parent
+        self.masterwidget = menubuttonwidget
+        self.frame = ttk.LabelFrame(master = self, text = 'Program bazowy')
+        self.menubutton = tk.Menubutton(master = self.frame, height = 3, width = 70, text = 'Wybierz program bazowy', bg = 'white')
+        self.menu = tk.Menu(master = self.menubutton)
+        self.menubutton['menu'] = self.menu
+        self.root = getroot(parent)
+        with open(self.root.variables.jsonpath) as jsonfile:
+            self.programs = json.load(jsonfile)
+        self.menu.add_command(label = 'Pusty', command = self.command)
+        for program in self.programs["Programs"]:
+            self.menu.add_command(label = program['Name'], command = lambda obj = self, program = program['Name']: obj.command(program))
+        self.menubutton.pack()
+        self.frame.grid(column = 0, row = 0, columnspan = 3)
+        self.nameentry = tk.Entry(master = self, text = "Nazwa nowego programu")
+        self.nameentry.bind('<FocusIn>', self.nameentryclicked)
+        self.nameentry.bind('<FocusOut>', self.nameentryreleased)
+        self.NameentryLabel = ttk.Label(master = self, text = "Nazwa dla nowego programu")
+        self.NameentryLabel.grid(column = 0, row = 1)
+        self.nameentry.grid(column = 1, columnspan = 2, row= 1)
+        self.buttonDoIt = ttk.Button(master = self, text = 'Utwórz program', command = self._newprogram)
+        self.buttonCancel = ttk.Button(master = self, text = 'Zaniechaj', command = self.cancel)
+        self.buttonDoIt.grid(column = 0, row = 2, sticky = tk.W)
+        self.buttonCancel.grid(column = 2, row = 2, sticky = tk.E)
+        self.newprogram = {}
+        self.name = ''
+        self.center()
+
+    def center(self):
+        screenWidth = GetSystemMetrics(0)
+        screenHeigth = GetSystemMetrics(1)
+        size = tuple(int(val) for val in self.geometry().split('+')[0].split('x'))
+        x = int(screenWidth/2 - size[0]/2)
+        y = int(screenHeigth/2 - size[1]/2)
+        self.geometry('+{}+{}'.format(x,y))
+
+    def nameentryreleased(self, event):
+        self.name = self.nameentry.get()
+        self.nameentry.config(bg = 'white')
+
+    def nameentryclicked(self, event):
+        self.nameentry.config(bg = 'lightblue')
+
+    def command(self, program = 'Pusty'):
+        if program == 'Pusty' or program == "empty":
+            self.newprogram = {
+                "Name":"New",
+                "Table":[[0, 0, "", 0, 0, 0, 0, 0, 0]]
+            }
+        else:
+            for _program in self.programs["Programs"]:
+                if _program['Name'] == program:
+                    self.newprogram = _program.copy()
+                    self.newprogram['Name'] = 'New'
+                    break
+        self.menubutton.config(text = program)
+        self.root.variables.currentProgram = program
+
+    def _newprogram(self):
+        if self.newprogram:
+            self.getnameforprogram()
+            self.newprogram['Name'] = self.name
+            self.masterwidget.config(text = self.name)
+            self.programs['Programs'].append(self.newprogram)
+            with open(self.root.variables.jsonpath, 'w') as jsonfile:
+                json.dump(self.programs, jsonfile)
+            self.root.variables.currentProgram = self.name
+            self.root.variables.internalEvents['TableRefresh'] = True
+            self.root.variables.internalEvents['RefreshStartEnd'] = True
+            self.root.variables.internalEvents['ProgramMenuRefresh'] = True
+        self.destroy()
+
+    def cancel(self):
+        self.destroy()
+
+    def getnameforprogram(self):
+        self.name = self.nameentry.get()
+        if not self.name: self.name = "New"
+        iteration = 0
+        changed = True
+        while changed:
+            changed = False
+            for _program in self.programs['Programs']:
+                nametocheck = self.name + (str(iteration) if iteration else '')
+                if _program['Name'] == nametocheck:
+                    iteration +=1
+                    changed = True
+                    break
+        self.name += str(iteration) if iteration else ''
+        pass
+
+class DeleteProgramWindow(tk.Toplevel):
+    def __init__(self, parent, menubuttonwidget):
+        super().__init__(parent)
+        self.title('Usuń program')
+        self.master = parent
+        self.masterwidget = menubuttonwidget
+        self.frame = ttk.LabelFrame(master = self, text = 'Program do usunięcia')
+        self.menubutton = tk.Menubutton(master = self.frame, height = 3, width = 70, text = 'Wybierz program do usunięcia', bg = 'white')
+        self.menu = tk.Menu(master = self.menubutton)
+        self.menubutton['menu'] = self.menu
+        self.root = getroot(parent)
+        with open(self.root.variables.jsonpath) as jsonfile:
+            self.programs = json.load(jsonfile)
+        for program in self.programs["Programs"]:
+            self.menu.add_command(label = program['Name'], command = lambda obj = self, program = program['Name']: obj.command(program))
+        self.menubutton.pack()
+        self.frame.grid(column = 0, row = 0, columnspan = 3)
+        self.buttonDoIt = ttk.Button(master = self, text = 'Usuń program', command = self._deleteprogram)
+        self.buttonCancel = ttk.Button(master = self, text = 'Zaniechaj', command = self.cancel)
+        self.buttonDoIt.grid(column = 0, row = 2, sticky = tk.W)
+        self.buttonCancel.grid(column = 2, row = 2, sticky = tk.E)
+        self.programtoDelete = {}
+        self.center()
+
+    def center(self):
+        screenWidth = GetSystemMetrics(0)
+        screenHeigth = GetSystemMetrics(1)
+        size = tuple(int(val) for val in self.geometry().split('+')[0].split('x'))
+        x = int(screenWidth/2 - size[0]/2)
+        y = int(screenHeigth/2 - size[1]/2)
+        self.geometry('+{}+{}'.format(x,y))
+
+    def command(self, program = 'Pusty'):
+        self.menubutton.config(text = program)
+        for _program in self.programs['Programs']:
+            if _program["Name"] == program:
+                self.programtoDelete = _program
+                break
+
+    def createEmptyProgram(self):
+        newprogram = {
+            "Name":"New",
+            "Table":[[0, 0, "", 0, 0, 0, 0, 0, 0]]
+        }
+        self.programs['Programs'].append(newprogram)
+
+    def _deleteprogram(self):
+        if self.programtoDelete:
+            self.programs['Programs'].remove(self.programtoDelete)
+            if not self.programs['Programs']:
+                self.createEmptyProgram()
+            with open(self.root.variables.jsonpath, 'w') as jsonfile:
+                json.dump(self.programs, jsonfile)
+            self.masterwidget.config(text = self.programs['Programs'][0]['Name'])
+            self.root.variables.currentProgram = self.programs['Programs'][0]['Name']
+            self.root.variables.internalEvents['TableRefresh'] = True
+            self.root.variables.internalEvents['RefreshStartEnd'] = True
+            self.root.variables.internalEvents['ProgramMenuRefresh'] = True
+        prompt = AgainPrompt(master = self.master, cls = DeleteProgramWindow, args = (self.masterwidget,))
+        prompt.grab_set()
+        self.destroy()
+
+    def cancel(self):
+        self.destroy()
+
+class AgainPrompt(tk.Toplevel):
+    def __init__(self, master = None, cls = None, args = ()):
+        super().__init__(master)
+        self.title('Czy wykonać procedurę ponownie?')
+        self.buttonDoIt = ttk.Button(self, text = 'Wykonaj ponownie', command = self.doitagain)
+        self.buttonCancel = ttk.Button(self, text = 'Zaniechaj', command = self.cancel)
+        self.Label = ttk.Label(master = self, text = "Czy wykonać procedurę ponownie?")
+        self.Label.grid(column = 0, columnspan = 3, row = 0)
+        self.buttonDoIt.grid(column = 0, row = 1)
+        self.buttonCancel.grid(column = 2, row = 1)
+        self.master = master
+        self.args = args
+        self.masterclass = cls
+        self.center()
+
+    def center(self):
+        screenWidth = GetSystemMetrics(0)
+        screenHeigth = GetSystemMetrics(1)
+        size = tuple(int(val) for val in self.geometry().split('+')[0].split('x'))
+        x = int(screenWidth/2 - size[0]/2)
+        y = int(screenHeigth/2 - size[1]/2)
+        self.geometry('+{}+{}'.format(x,y))
+
+    def doitagain(self):
+        masterclass = self.masterclass(self.master, *self.args)
+        masterclass.grab_set()
+        self.destroy()
+
+    def cancel(self):
+        self.destroy()
+
 class StatusIndicators(dict):
     def __init__(self, master = None):
         super().__init__()
@@ -233,13 +425,30 @@ class ProgramSelect(dict):
         self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
         self.menubutton = tk.Menubutton(master = self.frame, text = self.settings['Label'])
         self.frame.__setattr__('settings', self.settings)
+        self.menu = None
+        self.createmenu()
+
+    def createmenu(self):
+        if isinstance(self.menu, tk.Menu):
+            self.menu.destroy()
         self.root.variables.jsonpath = str(Path(__file__).parent.absolute())+'\\Programs.json'
-        self.programs = json.load(open(self.root.variables.jsonpath))
+        with open(self.root.variables.jsonpath) as jsonfile:
+            self.programs = json.load(jsonfile)
         self.menu = tk.Menu(master = self.menubutton, tearoff = 0)
         self.menubutton['menu'] = self.menu
         for program in self.programs["Programs"]:
             self.menu.add_command(label = program['Name'], command = lambda obj = self, program = program['Name']: obj.command(program))
+        self.menu.add_command(label = 'Nowy program', command = self.newprogram)
+        self.menu.add_command(label = 'Usuń program', command = self.deleteprogram)
         self.menubutton.pack()
+
+    def newprogram(self):
+        window = NewProgramWindow(self.frame, self.menubutton)
+        window.grab_set()
+
+    def deleteprogram(self):
+        window = DeleteProgramWindow(self.frame, self.menubutton)
+        window.grab_set()
 
     def command(self, program):
         self.menubutton.config(text = program)
@@ -257,6 +466,9 @@ class ProgramSelect(dict):
 
     def update(self):
         self.frame.update()
+        if self.root.variables.internalEvents['ProgramMenuRefresh']:
+            self.createmenu()
+            self.root.variables.internalEvents['ProgramMenuRefresh'] = False
 
 class Positions(dict):
     def __init__(self, master = None):

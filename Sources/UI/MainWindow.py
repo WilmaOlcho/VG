@@ -49,6 +49,7 @@ class Window(dict):
         super().__init__()
         self.window = tk.Tk()
         root = self.window
+        settingsfile = str(Path(__file__).parent.absolute())+'//widgetsettings.json'
         with open(settingsfile) as jsonfile:
             widgetsettings = json.load(jsonfile)
         root.__setattr__('variables', Variables(lockerinstance, **widgetsettings))

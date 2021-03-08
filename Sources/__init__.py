@@ -1,7 +1,4 @@
 from threading import Thread, currentThread
-from Sources.TactWatchdog import TactWatchdog as TWDT
-
-WDT = TWDT.WDT
 
 def BlankFunc(*args, **kwargs): #Blank func to use as default value in function type parameter
     pass
@@ -34,8 +31,8 @@ class EventManager():
             self.sign = False
         if '.' in input:
             path = input.split('.')
-            self.inputpath = lockerinstance[0].shared[path[:-1]]
-            self.input = path[::-1][:1]
+            self.inputpath = lockerinstance[0].shared[path[0]]
+            self.input = path[::-1][0]
         else:
             self.inputpath = lockerinstance[0].GPIO
             self.input = input

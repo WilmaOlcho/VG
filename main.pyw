@@ -24,7 +24,7 @@ class ApplicationManager(object):
         self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
         self.SICKGMOD0ConfigurationFile = path + 'SICKGMODconfiguration.json'
         self.processes = [
-            Process(name = 'Window', target = Window, args=(self.lock,)),
+            Process(name = 'Window', target = Window, args=(self.lock,"")),
             Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
             Process(name = 'Servo', target = Servo, args=(self.lock, self.ServoConfigurationFile,)),
             Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
