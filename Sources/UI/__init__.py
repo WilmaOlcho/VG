@@ -1,5 +1,9 @@
-from getroot import getroot
-from Home import HomeScreen
-from Settings import SettingsScreen
-from Table import TableScreen
-from Variables import Variables
+from . import Home as __cHome
+from . import Settings as __cSettings
+from . import Table as __cTable
+from . import Variables as __cVar
+
+HomeScreen = __cHome.HomeScreen
+SettingsScreen = __cSettings.SettingsScreen
+TableScreen = __cTable.TableScreen
+Variables = __cVar.Variables

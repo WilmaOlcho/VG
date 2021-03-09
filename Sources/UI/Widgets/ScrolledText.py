@@ -1,7 +1,7 @@
 import json
 import tkinter as tk
 import tkinter.ttk as ttk
-from . import getroot
+from .common import getroot
 
 class ScrolledText(ttk.Frame):
     def __init__(self, master = None, InternalVariable = None, scrolltype = 'both', height=200, width=200):

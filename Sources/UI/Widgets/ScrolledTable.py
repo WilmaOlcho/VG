@@ -1,14 +1,10 @@
 import tkinter as tk
 import json
-from . import getroot
+from .common import LabelFrame, GeneralWidget, getroot
 
-class ScrolledWidget(dict):
+class ScrolledWidget(LabelFrame):
     def __init__(self, widgetCls, text = '', master = None, height = 600, scrolltype = 'both'):
-        super().__init__()
-        self.root = getroot(master)
-        self.settings = master.settings['ScrolledWidget']
-        self.frame = tk.LabelFrame(master = master, **self.settings['LabelFrame'])
-        self.frame.__setattr__('settings',self.settings)
+        super().__init__(master = master, branch = "ScrolledWidget")
         self.width, self.height = 0, self.root.variables.displayedprogramtableheight
         self.widgetheight = self.settings['LabelFrame']['height']
         for i, state in enumerate(self.root.variables.displayedprogramcolumns):
@@ -42,18 +38,10 @@ class ScrolledWidget(dict):
             self.cnv.xview_moveto(0)
             self.cnv.yview_moveto(0)
         self.frame.update()
-        
-    def pack(self, *args, **kwargs):
-        self.frame.pack(*args, **kwargs)
 
-class PosTable(dict):
+class PosTable(GeneralWidget):
     def __init__(self, master = None):
-        super().__init__()
-        self.master = master
-        self.frame = tk.Frame(master = self.master)
-        self.root = getroot(master)
-        self.settings = master.settings['PosTable']
-        self.frame.__setattr__('settings', self.settings)
+        super().__init__(master = master, branch = "PosTable")
         self.freeze = False
         self.menu = self.CreateContextMenu()
         self.table = []
@@ -242,6 +230,3 @@ class PosTable(dict):
         with open(self.root.variables.jsonpath, 'w') as jsonfile:
             json.dump(self.tjson,jsonfile)
         self.root.variables.internalEvents['DumpProgramToFile'] = False
-
-    def pack(self, *args, **kwargs):
-        self.frame.pack(*args, **kwargs)

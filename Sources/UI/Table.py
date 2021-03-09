@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
-from Widgets import ScrolledWidget, PosTable
+from .Widgets.ScrolledTable import ScrolledWidget, PosTable
+from .Widgets import getroot
 import json
-from getroot import getroot
 
 class TableScreen(dict):
     def __init__(self, master = None):

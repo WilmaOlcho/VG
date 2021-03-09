@@ -1,20 +1,19 @@
 import tkinter as tk
 from tkinter import ttk
-from Widgets import Font, LabelledScrolledText
+from .Widgets import Font, LabelledScrolledText, getroot
 import json
 from pathlib import Path
-from getroot import getroot
-from Settings import SettingsScreen
-from Home import HomeScreen
-from Table import TableScreen
-from Variables import Variables
+from ..UI import SettingsScreen
+from ..UI import HomeScreen
+from ..UI import TableScreen
+from ..UI import Variables
 
 class Frame(dict):
     def __init__(self, master = None):
         self.frame = tk.Frame(master = master)
         dict.__init__(self)
         self.settings = master.settings['MainWindow']
-        self.root = getroot(master) 
+        self.root = getroot(master)
         self.OverallNotebook = ttk.Notebook(self.frame, **self.settings['Notebook']['constructor'])
         self.OverallNotebook.__setattr__('settings',self.settings['Notebook'])
         self.widgets = [

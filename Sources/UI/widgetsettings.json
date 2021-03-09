@@ -275,7 +275,82 @@
                 "Name":"Ekran g\u0142\u00F3wny",
                 "FirstColumn":{
                     "ProgramSelect":{
-                        "Label":"Program"
+                        "Label":"Program",
+                        "NewProgram":{
+                            "title":"Nowy program",
+                            "Button":{
+                                "width":10,
+                                "height":2
+                            },
+                            "buttons":{
+                                "DoIt":{
+                                    "text":"Utwórz Program",
+                                    "grid":{
+                                        "column":0,
+                                        "row":"2",
+                                        "sticky":"W"
+                                    }
+                                },
+                                "Cancel":{
+                                    "text":"Zaniechaj",
+                                    "grid":{
+                                        "column":2,
+                                        "row":"2",
+                                        "sticky":"E"
+                                    }
+                                }
+                            }
+                        },
+                        "DeleteProgram":{
+                            "title":"Usuń program",
+                            "Button":{
+                                "width":10,
+                                "height":2
+                            },
+                            "buttons":{
+                                "DoIt":{
+                                    "text":"Usuń Program",
+                                    "grid":{
+                                        "column":0,
+                                        "row":"1",
+                                        "sticky":"W"
+                                    }
+                                },
+                                "Cancel":{
+                                    "text":"Zaniechaj",
+                                    "grid":{
+                                        "column":2,
+                                        "row":"1",
+                                        "sticky":"E"
+                                    }
+                                }
+                            }
+                        },
+                        "AgainPrompt":{
+                            "title":"Czy wykonać procedurę ponownie?",
+                            "Button":{
+                                "width":10,
+                                "height":2
+                            },
+                            "buttons":{
+                                "DoIt":{
+                                    "text":"Wykonaj ponownie",
+                                    "grid":{
+                                        "column":0,
+                                        "row":"1",
+                                        "sticky":"W"
+                                    }
+                                },
+                                "Cancel":{
+                                    "text":"Zaniechaj",
+                                    "grid":{
+                                        "column":2,
+                                        "row":"1",
+                                        "sticky":"E"
+                                    }
+                                }
+                            }
+                        }
                     },
                     "Positions":{
                         "Label":"Wyb\u00F3r pozycji:",
@@ -285,6 +360,7 @@
                 },
                 "SecondColumn":{
                     "StatusIndicators":{
+                        "Label":"Status",
                         "Safety":{
                             "Label":"Bezpiecze\u0144stwo:",
                             "Frame":{
@@ -427,6 +503,7 @@
             },
             "TableScreen":{
                 "ScrolledWidget":{
+                    "Label":"",
                     "scrolltype":"vertical",
                     "LabelFrame":{
                         "text":"",
