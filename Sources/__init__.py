@@ -31,8 +31,11 @@ class EventManager():
             self.sign = False
         if '.' in input:
             path = input.split('.')
-            self.inputpath = lockerinstance[0].shared[path[0]]
-            self.input = path[::-1][0]
+            self.inputpath = lockerinstance[0].shared
+            for i, branch in enumerate(path):
+                if i >= len(path)-1: break
+                self.inputpath = self.inputpath[branch]
+            self.input = path[-1]
         else:
             self.inputpath = lockerinstance[0].GPIO
             self.input = input
@@ -48,10 +51,11 @@ class EventManager():
         self.loop(lockerinstance)
 
     def loop(self, lockerinstance):
-        while self.Alive:
+        while True:
             with lockerinstance[0].lock:
-                self.Alive = lockerinstance[0].robot['Alive'] and self.name in lockerinstance[0].ect
+                self.Alive = self.name in lockerinstance[0].ect
                 currentstate = self.inputpath[self.input]
+            if not self.Alive: break
             if not self.edge:
                 if (currentstate ^ self.sign):
                     if self.event:
