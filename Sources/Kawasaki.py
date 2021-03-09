@@ -79,12 +79,12 @@ class RobotVG(KawasakiVG):
                     axisValues[axis] = self.__splitdecimals(lockerinstance[0].robot[axis])
                 for i, status in enumerate(RobotRegister[9:][:7]):
                     lockerinstance[0].robot['StatusRegister' + str(i)] = status
-            #for i, register, axis in [x,[RobotRegister[1:][:8][x], ['A','A','X','X','Y','Y','Z','Z'][x]] for x in range(len(RobotRegister[1:][:8]))]:
-            #    if i%2:
-            #        if axisValues[axis][0] != register:
-            #            self.write_register(lockerinstance, register = axis, value = register)
-            #    else:
-            #        self.write_register(lockerinstance, register = '00'+axis, value = register)
+            for i, register, axis in [[x,RobotRegister[1:][:8][x], ['A','A','X','X','Y','Y','Z','Z'][x]] for x in range(len(RobotRegister[1:][:8]))]:
+                if i%2:
+                    if axisValues[axis][0] != register:
+                        self.write_register(lockerinstance, register = axis, value = register)
+                else:
+                    self.write_register(lockerinstance, register = '00'+axis, value = register)
 
     def __Command(self, lockerinstance, command = ''):
         command_u = command[:1].upper() + command[1:]
