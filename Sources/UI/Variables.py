@@ -84,32 +84,32 @@ class Variables(dict):
         self['pistoncontrol'] = {
             'seal':{
                 'Left':{
-                    'coil':True,
-                    'sensor':True},
+                    'coil':False,
+                    'sensor':False},
                 'Center':{},
                 'Right':{
-                    'coil':True}
+                    'coil':False}
             },
             'shieldinggas':{
                 'Right':{
-                    'coil':True
+                    'coil':False
                 },
                 'Center':{
-                    'sensor':True
+                    'sensor':False
                 }
             },
             'crossjet':{
                 'Right':{
-                    'coil':True},
+                    'coil':False},
                 'Center':{
-                    'sensor':True
+                    'sensor':False
                 }
             },
             'headcooling':{
                 'Right':{
-                    'coil':True},
+                    'coil':False},
                 'Center':{
-                    'sensor':True
+                    'sensor':False
                 }
             },
             'pusher':{
@@ -156,25 +156,29 @@ class Variables(dict):
                     lockerinstance[0].pistons['TroleyPusherFront'] |= self['pistoncontrol']['pusher']['Right']['coil']
                     lockerinstance[0].pistons['TroleyPusherBack'] |= self['pistoncontrol']['pusher']['Left']['coil']
                     lockerinstance[0].pistons['SealUp'] |= self['pistoncontrol']['seal']['Right']['coil']
-                    lockerinstance[0].pistons['SealDown'] |= self['pistoncontrol']['seal']['Right']['coil']
+                    lockerinstance[0].pistons['SealDown'] |= self['pistoncontrol']['seal']['Left']['coil']
                     lockerinstance[0].pistons['ShieldingGas'] |= self['pistoncontrol']['shieldinggas']['Right']['coil']
                     lockerinstance[0].pistons['HeadCooling'] |= self['pistoncontrol']['headcooling']['Right']['coil']
                     lockerinstance[0].pistons['CrossJet'] |= self['pistoncontrol']['crossjet']['Right']['coil']
+
                     lockerinstance[0].servo['homing'] |= self['troley']['servoHOMING']
                     lockerinstance[0].servo['run'] |= self['troley']['servoRUN']
                     lockerinstance[0].servo['stop'] |= self['troley']['servoSTOP']
                     lockerinstance[0].servo['reset'] |= self['troley']['servoRESET']
                     lockerinstance[0].servo['step'] |= self['troley']['servoSTEP']
-                    #lockerinstance[0].lcon['SetChannel'] |= self['laser']['GetChannel']
-                    #lockerinstance[0].mux['acquire'] |= self['laser']['GetChannel']
-                    #lockerinstance[0].lcon['LaserTurnOn'] |= self['laser']['LaserOn'] & (not lockerinstance[0].lcon['LaserOn'])
-                    #lockerinstance[0].lcon['LaserTurnOff'] |= (not self['laser']['LaserOn']) & lockerinstance[0].lcon['LaserOn']
-                    #lockerinstance[0].lcon['LaserReset'] |= self['laser']['GetChannel']
+                    lockerinstance[0].lcon['SetChannel'] |= self['laser']['GetChannel'] #Here are the issues
+                    lockerinstance[0].mux['acquire'] |= self['laser']['GetChannel']
+                    lockerinstance[0].lcon['LaserTurnOn'] |= self['laser']['LaserOn'] & (not lockerinstance[0].lcon['LaserOn'])
+                    lockerinstance[0].lcon['LaserTurnOff'] |= (not self['laser']['LaserOn']) & lockerinstance[0].lcon['LaserOn']
+                    lockerinstance[0].lcon['LaserReset'] |= self['laser']['ResetErrors']
                     lockerinstance[0].robot['go'] |= self['robot']['RobotGo']
                     lockerinstance[0].robot['homing'] |= self['robot']['RobotHoming']
                     lockerinstance[0].robot['settable'] = self['robot']['table']
                     lockerinstance[0].robot['setpos'] = self['robot']['position']
                     
+                    self['laser']['GetChannel'] = False
+                    self['laser']['ResetErrors'] = False
+
                     self['robot']['RobotGo'] = False
                     self['robot']['RobotHoming'] = False
                     self['troley']['servoRUN'] = False

@@ -8,18 +8,31 @@ import time
 class AnalogMultiplexer(ADAMDataAcquisitionModule):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
         try:
-            self.parameters = json.load(open(settingFilePath))
-            AmuxParameters = self.parameters['AnalogMultiplexer']
-            self.IPAddress = AmuxParameters['IPAddress']
-            self.moduleName = AmuxParameters['moduleName']
-            self.Port = AmuxParameters['Port']
-            self.myOutput = AmuxParameters['BindOutput']
-            super().__init__(lockerinstance, moduleName =  self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
-            self.currentState = self.getState(lockerinstance)
+            with open(settingFilePath) as jsonfile:
+                self.parameters = json.load(jsonfile)
         except Exception as e:
-            errmessage = 'Analog multiplexer init error - Error while reading config file ' + str(e)
+            errmessage = 'Analog multiplexer init error - Error while reading config file \n' + str(e)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
-
+        else:
+            try:
+                AmuxParameters = self.parameters['AnalogMultiplexer']
+                self.IPAddress = AmuxParameters['IPAddress']
+                self.moduleName = AmuxParameters['moduleName']
+                self.Port = AmuxParameters['Port']
+                self.myOutput = AmuxParameters['BindOutput']
+                super().__init__(lockerinstance, moduleName = self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
+            except Exception as e:
+                errmessage = "Analog multiplexer init error - can't set MODBUS TCP connection\n" + str(e)
+                ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+            else:
+                try:
+                    self.bits = Bits(3)
+                    self.currentState = [False,False,False]
+                    self.getState(lockerinstance)
+                except Exception as e:
+                    errmessage = "Analog multiplexer init error\n" + str(e)
+                    ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)           
+        
     def __prohibitedBehaviour(self, lockerinstance, action = BlankFunc, *args, **kwargs):
         self.getState(lockerinstance)
         prohibited = False
@@ -39,12 +52,19 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
     def getState(self, lockerinstance):
         try:
             self.currentState = self.read_coils(lockerinstance, input = 'DO0', NumberOfCoils = 3)
-            with lockerinstance[0].lock:
-                lockerinstance[0].mux['ready'] = self.currentState.bits[self.myOutput]
-                lockerinstance[0].mux['Channel'] = (1 if bool(self.currentState.bits[0]) else 0) + (2 if bool(self.currentState.bits[1]) else 0)
-            return self.currentState.bits
-        except:
-            return -1
+        except Exception as e:
+            errmsg = "Amux can't get state:\n" + str(e)
+            ErrorEventWrite(lockerinstance, errmsg)
+        finally:
+            if isinstance(self.currentState, list):
+                with lockerinstance[0].lock:
+                    lockerinstance[0].mux['ready'] = self.currentState[self.myOutput]
+                    lockerinstance[0].mux['Channel'] = (1 if self.currentState[0] else 0) + (2 if self.currentState[1] else 0)
+            if len(self.currentState) < 3:
+                self.currentState = [False,False,False]
+                errmsg = "Amux can't get state data:\n" + str(self.currentState)
+                ErrorEventWrite(lockerinstance, errmsg)
+            return self.currentState
 
     def isBusy(self, lockerinstance):
         self.getState(lockerinstance)
@@ -135,12 +155,21 @@ class LaserControl(ADAMDataAcquisitionModule):
                         lockerinstance[0].lcon['LaserReady'] = inputstate[0]
                         lockerinstance[0].lcon['LaserOn'] = inputstate[3]
                         lockerinstance[0].lcon['LaserAssigned'] = inputstate[2]
-                    self.currentState = state
-                    self.inputState = inputstate
-                    return state
                 except Exception as e:
                     errmessage = "getState Error:\n"+ str(e)
                     ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+                finally:
+                    if len(state)<6:
+                        errmessage = "getState can't load data:\n"+ str(state)
+                        ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+                        state = [False,False,False,False,False,False]
+                    if len(inputstate)<7:
+                        errmessage = "getState can't load data:\n"+ str(inputstate)
+                        ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+                        inputstate = [False,False,False,False,False,False,False]
+                    self.currentState = state
+                    self.inputState = inputstate
+                    return state
 
     def __prohibitedBehaviour(self, lockerinstance):
         with lockerinstance[0].lock:
