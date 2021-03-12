@@ -36,7 +36,6 @@ class programController(object):
             else:
                 control.Program(lockerinstance)
 
-
     def automode(self, lockerinstance):
         with lockerinstance[0].lock:
             running = lockerinstance[0].program['running']
