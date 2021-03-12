@@ -34,8 +34,10 @@ class SharedLocker(object):
                 'weldrunpagescount':0,
                 'LaserOn':False,
                 'ManualAlignPage':0,
+                'ManualAlignCheck':False, #TODO
                 'ManualWeldPage':0,
-                'StatusCheckCode':False,
+                'ManualWeldCheck':False, #TODO
+                'StatusCheckCode':False, #TODO
                 'AlignInfo':manager.dict({
                     '0':0,
                     '1':0,
@@ -250,8 +252,8 @@ class SharedLocker(object):
                 'outputmap':manager.dict({})
                 }),
             'program':manager.dict({
-                'ProgramsFilePath':'',
-                'ProgramName':'',
+                'ProgramsFilePath':'', #TODO
+                'ProgramName':'', #TODO
                 'Alive':False,
                 'stepmode':False,
                 'stepcomplete':False,
@@ -262,10 +264,10 @@ class SharedLocker(object):
                 '/running':True,
                 'programname':'',
                 'stepnumber':0,
-                'cycle':0, #bind it to process step
+                'cycle':0, #bind it to process step #TODO
                 'starttime':0.0,
                 'currenttime':0.0,
-                'time':0.0, #as elapsed #bind it to process time
+                'time':0.0, #as elapsed #bind it to process time #TODO
                 'startpos':0,
                 'endpos':0,
                 'programline':manager.list([]),

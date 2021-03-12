@@ -186,13 +186,16 @@ def Program(lockerinstance):
         cycleended = progproxy['cycleended']
         if cycleended: progproxy['cycleended'] = False
         progproxy['currenttime'] = time.time()
-        progproxy['time'] = progproxy['currenttime'] - progproxy['starttime']
+        if progproxy['running']:
+            progproxy['time'] = progproxy['currenttime'] - progproxy['starttime']
+        else:
+            progproxy['starttime'] = time.time()
+            progproxy['time'] = 0.0
     with open(programspath, 'r') as jsonfile:
         programs = json.load(jsonfile)
     program = programs['Programs'][programname]
     if cycle == 0: #table is from 1
         with lockerinstance[0].lock:
-            progproxy['time'] = 0.0
             progproxy['starttime'] = time.time()
             startindex = progproxy['startpos']
         programline = loadprogramline(lockerinstance, program, startindex)

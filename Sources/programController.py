@@ -1,6 +1,6 @@
 import json
 import Sources.procedures as control
-from Sources import EventManager
+from Sources import EventManager, WDT
 
 class programController(object):
     def __init__(self, lockerinstance, programfilepath, *args, **kwargs):
@@ -42,6 +42,7 @@ class programController(object):
             cycle = lockerinstance[0].program['cycle']
             cycleended = lockerinstance[0].program['cycleended']
             step = lockerinstance[0].program['step']
+            lockerinstance[0].program['stepcomplete'] = False
         if running and cycle and not cycleended:
             #setting recipe for scout
             if step == 0:
@@ -58,8 +59,15 @@ class programController(object):
                     else:
                         lockerinstance[0].scout['Recipechangedsuccesfully'] = False
                         step += 1
-            #setting servo position
+            #Setting seal down
             if step == 2:
+                with lockerinstance[0].lock:
+                    if not lockerinstance[0].pistons['sensorSealDown']:
+                        lockerinstance[0].scout['SealDown'] = True
+                    else:
+                        step += 1
+            #setting servo position
+            if step == 3:
                 with lockerinstance[0].lock:
                     if lockerinstance[0].servo['positionNumber'] == -1:
                         ErrorEventWrite(lockerinstance, 'servo is not ready')
@@ -69,7 +77,7 @@ class programController(object):
                         if not lockerinstance[0].servo['moving']:
                             lockerinstance[0].servo['step'] = True
             #setting robot position
-            if step == 3:
+            if step == 4:
                 with lockerinstance[0].lock:
                     if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]
                         or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
@@ -77,24 +85,130 @@ class programController(object):
                         lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
                     else:
                         step += 1
-            if step == 4:
+            if step == 5:
                 with lockerinstance[0].lock:
                     if lockerinstance[0].robot['currentpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]:
                         if not lockerinstance[0].robot['activecommand']:
                             lockerinstance[0].robot['go'] = True
                     else:
                         step += 1
-            #align scout
-            if step == 5:
+            #Setting seal up
+            if step == 6:
                 with lockerinstance[0].lock:
-                    pass
-
+                    if lockerinstance[0].pistons['sensorSealDown']:
+                        lockerinstance[0].scout['SealUp'] = True
+                    else:
+                        step += 1
+            #Wait 3s until sealing were perfect
+            if step == 7:
+                def exceed(lockerinstance = lockerinstance):
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].program['step'] += 1 
+                WDT(lockerinstance, additionalFuncOnExceed = exceed, noerror = True, limit = 3, scale = 's')
+            #align scout
+            if step == 8:
+                with lockerinstance[0].lock:
+                    lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
+                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                            lockerinstance[0].scout['ManualAlign'] = True
+                        if lockerinstance[0].scout['ManualAlignCheck']:
+                            lockerinstance[0].scout['ManualAlignCheck'] = False
+                            step +=1
+            #SCOUT weld
+            if step == 9:
+                with lockerinstance[0].lock:
+                    lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
+                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                            lockerinstance[0].scout['ManualWeld'] = True
+                        if lockerinstance[0].scout['ManualWeldCheck']:
+                            lockerinstance[0].scout['ManualWeldCheck'] = False
+                            step +=1
+            if step == 10:
+                with lockerinstance[0].lock:
+                    lockerinstane[0].program['cycleended'] = True
+                    step = 0
         with lockerinstance[0].lock:
-            lockerinstance[0].program['step'] = step
-
-
-
-
+            if lockerinstance[0].program['step'] < step:
+                lockerinstance[0].program['step'] = step
 
     def stepmode(self, lockerinstance):
-        pass
+        with lockerinstance[0].lock:
+            running = lockerinstance[0].program['running']
+            cycle = lockerinstance[0].program['cycle']
+            cycleended = lockerinstance[0].program['cycleended']
+            step = lockerinstance[0].program['step']
+        if running and cycle and not cycleended:
+            with lockerinstance[0].lock: #locking whole method for event-compatibility
+                #setting recipe for scout
+                if step == 0:
+                    if lockerinstance[0].scout['recipe'] != lockerinstance[0].program['programline'][control.RECIPE]:
+                        lockerinstance[0].scout['recipe'] = lockerinstance[0].program['programline'][control.RECIPE]
+                    else:
+                        lockerinstance[0].program['stepcomplete'] = True
+                if step == 1:
+                    if not lockerinstance[0].scout['Recipechangedsuccesfully']:
+                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                            lockerinstance[0].scout['SetRecipe'] = True
+                    else:
+                        lockerinstance[0].scout['Recipechangedsuccesfully'] = False
+                        step += 1
+                #Setting seal down
+                if step == 2:
+                    if not lockerinstance[0].pistons['sensorSealDown']:
+                        lockerinstance[0].scout['SealDown'] = True
+                    else:
+                        lockerinstance[0].program['stepcomplete'] = True
+                #setting servo position
+                if step == 3:
+                    if lockerinstance[0].servo['positionNumber'] == -1:
+                        ErrorEventWrite(lockerinstance, 'servo is not ready')
+                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]
+                        step += 1
+                    else:
+                        if not lockerinstance[0].servo['moving']:
+                            lockerinstance[0].servo['step'] = True
+                #setting robot position
+                if step == 4:
+                    if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]
+                        or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
+                        lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
+                        lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
+                    else:
+                        lockerinstance[0].program['stepcomplete'] = True
+                if step == 5:
+                    if lockerinstance[0].robot['currentpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]:
+                        if not lockerinstance[0].robot['activecommand']:
+                            lockerinstance[0].robot['go'] = True
+                    else:
+                        lockerinstance[0].program['stepcomplete'] = True
+                #Setting seal up
+                if step == 6:
+                    if lockerinstance[0].pistons['sensorSealDown']:
+                        lockerinstance[0].scout['SealUp'] = True
+                    else:
+                        lockerinstance[0].program['stepcomplete'] = True
+            #Wait 3s until sealing were perfect
+            if step == 7:
+                def exceed(lockerinstance = lockerinstance):
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].program['stepcomplete'] = True
+                WDT(lockerinstance, additionalFuncOnExceed = exceed, noerror = True, limit = 3, scale = 's')
+            with lockerinstance[0].lock:
+                #align scout
+                if step == 8:
+                    lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
+                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                            lockerinstance[0].scout['ManualAlign'] = True
+                        if lockerinstance[0].scout['ManualAlignCheck']:
+                            lockerinstance[0].scout['ManualAlignCheck'] = False
+                            lockerinstance[0].program['stepcomplete'] = True
+                #SCOUT weld
+                if step == 9:
+                    lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
+                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                            lockerinstance[0].scout['ManualWeld'] = True
+                        if lockerinstance[0].scout['ManualWeldCheck']:
+                            lockerinstance[0].scout['ManualWeldCheck'] = False
+                            lockerinstance[0].program['stepcomplete'] = True
+                if step == 10:
+                        lockerinstane[0].program['cycleended'] = True
