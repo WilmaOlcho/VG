@@ -74,7 +74,7 @@ class SharedLocker(object):
                 'WeldStart':False, #requires pages to weld list
                 'Wobble':False,
 
-                'Recipechangedsuccesfully':False,
+                'Recipechangedsuccesfully':False #TODO
 
             }),
             'Errors':'',
@@ -262,10 +262,10 @@ class SharedLocker(object):
                 '/running':True,
                 'programname':'',
                 'stepnumber':0,
-                'cycle':0,
+                'cycle':0, #bind it to process step
                 'starttime':0.0,
                 'currenttime':0.0,
-                'time':0.0, #as elapsed
+                'time':0.0, #as elapsed #bind it to process time
                 'startpos':0,
                 'endpos':0,
                 'programline':manager.list([]),
