@@ -3,6 +3,7 @@ from tkinter import ttk
 from pathlib import Path
 import json
 from .Widgets import GeneralWidget, LabelFrame, Window, Button, getroot, KEYWORDS
+from functools import reduce
 
 class HomeScreen(GeneralWidget):
     def __init__(self, master = None):
@@ -336,13 +337,19 @@ class ProgramSelect(LabelFrame):
         window = DeleteProgramWindow(self.frame, self.menubutton)
         window.grab_set()
 
+    def loadprogramminmax(self, program):
+        minimum = reduce(lambda x,y: x[1] if x[1] <= y[1] else y[1], program['Table'])
+        maximum = reduce(lambda x,y: x[1] if x[1] >= y[1] else y[1], program['Table'])
+        return (minimum, maximum)
+
     def command(self, program):
         self.menubutton.config(text = program)
         self.root.variables.currentProgram = program
         for prog in self.programs['Programs']:
             if prog['Name'] == program:
-                self.root.variables.programposstart = min(int(item[1]) for item in prog['Table'])
-                self.root.variables.programposend = max(int(item[1]) for item in prog['Table'])
+                minimum, maximum = self.loadprogramminmax(prog)
+                self.root.variables.programposstart = minimum
+                self.root.variables.programposend = maximum
                 break
         self.root.variables.internalEvents['RefreshStartEnd'] = True
         self.root.variables.internalEvents['TableRefresh'] = True

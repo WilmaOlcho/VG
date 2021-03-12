@@ -1,7 +1,9 @@
 
 from Sources import ErrorEventWrite
+from functools import reduce
 import json
 import time
+from Pathlib import Path
 
 ID = 0
 STEP = 1
@@ -18,6 +20,16 @@ def startauto(lockerinstance):
         if not running:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].program['running'] = True
+            lockerinstance[0].program['stepcomplete'] = False
+            lockerinstance[0].program['stepnumber'] = 0
+            lockerinstance[0].program['cycle'] = 0
+
+def endprogram(lockerinstance):
+    with lockerinstance[0].lock:
+        running = lockerinstance[0].program['running']
+        if running:
+            lockerinstance[0].lock.acquire()
+            lockerinstance[0].program['running'] = False
             lockerinstance[0].program['stepcomplete'] = False
             lockerinstance[0].program['stepnumber'] = 0
             lockerinstance[0].program['cycle'] = 0
@@ -41,7 +53,31 @@ def CheckSafety(lockerinstance):
     return False
 
 def CheckProgram(lockerinstance):
-    return False
+    errmsg = ''
+    with lockerinstance[0].lock:
+        if not lockerinstance[0].program['ProgramName'] or not lockerinstance[0].program['ProgramsFilePath']:
+            errmsg = 'Program not loaded'
+        else:
+            programname = lockerinstance[0].program['ProgramName']
+            programpath = lockerinstance[0].program['ProgramsFilePath']
+    if programname and programpath:
+        with open(programpath, 'r') as jsonfile:
+            programs = json.load(jsonfile)
+        for program in programs['Programs']:
+            if program['Name'] == programname:
+        #        minval, maxval = loadprogramminmax(lockerinstance, program)
+                recipesarepresent = checkrecipes(lockerinstance, program)
+                if not recipesarepresent:
+                    errmsg = 'Program is invalid'
+                break
+        #with lockerinstance[0].lock:
+        #    lockerinstance[0].program['startpos'] = minval
+        #    lockerinstance[0].program['endpos'] = maxval
+    if errmsg:
+        ErrorEventWrite(lockerinstance, errmsg)
+        return False
+    else:
+        return True
 
 def CheckPositions(lockerinstance):
     result = CheckPiston(lockerinstance, 'Seal', 'Down')
@@ -161,6 +197,23 @@ def Initialise(lockerinstance):
             lockerinstance[0].program['initialising'] = False
             lockerinstance[0].program['initialised'] = True 
 
+def checkrecipes(lockerinstance, program):
+    for line in program['Table']:
+        recipe = line[RECIPE]
+        if recipe:
+            with lockerinstance[0].lock:
+                path = lockerinstance[0].scout['recipesdir']
+            if Path(path + recipe).is_file():
+                continue
+            else:
+                return False
+    return True
+
+#def loadprogramminmax(lockerinstance, program):
+#    minimum = reduce(lambda x,y: x[STEP] if x[STEP] <= y[STEP] else y[STEP], program['Table'])
+#    maximum = reduce(lambda x,y: x[STEP] if x[STEP] >= y[STEP] else y[STEP], program['Table'])
+#    return (minimum, maximum)
+
 def loadprogramline(lockerinstance, program, number):
     #program dict with key table, where is list of lists of 9 elements each
     while True:
@@ -204,9 +257,14 @@ def Program(lockerinstance):
             progproxy['programline'] = programline
     if cycleended:
         cycle += 1
-        programline = loadprogramline(lockerinstance, program, cycle)
         with lockerinstance[0].lock:
-            progproxy['programline'] = programline
+            end = lockerinstance[0].program['endpos']
+        if cycle > end:
+            endprogram(lockerinstance)
+        else:
+            programline = loadprogramline(lockerinstance, program, cycle)
+            with lockerinstance[0].lock:
+                progproxy['programline'] = programline
 
         
 

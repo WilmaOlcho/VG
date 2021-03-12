@@ -149,6 +149,10 @@ class Variables(dict):
                 self.internalEvents['error'] = lockerinstance[0].events['Error']
                 self['ImportantMessages'] = lockerinstance[0].shared['Errors']
                 self.alive = lockerinstance[0].console['Alive']
+                lockerinstance[0].program['startpos'] = self.programposstart
+                lockerinstance[0].program['endpos'] = self.programposend
+                
+                
                 if self.internalEvents['ack']:
                     lockerinstance[0].events['erroracknowledge'] = True
                     self.internalEvents['ack'] = False

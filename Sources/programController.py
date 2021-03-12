@@ -1,6 +1,6 @@
 import json
 import Sources.procedures as control
-from Sources import EventManager, WDT
+from Sources import EventManager, WDT, ErrorEventWrite
 
 class programController(object):
     def __init__(self, lockerinstance, programfilepath, *args, **kwargs):
@@ -71,7 +71,7 @@ class programController(object):
                 with lockerinstance[0].lock:
                     if lockerinstance[0].servo['positionNumber'] == -1:
                         ErrorEventWrite(lockerinstance, 'servo is not ready')
-                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]
+                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]:
                         step += 1
                     else:
                         if not lockerinstance[0].servo['moving']:
@@ -79,8 +79,7 @@ class programController(object):
             #setting robot position
             if step == 4:
                 with lockerinstance[0].lock:
-                    if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]
-                        or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
+                    if (lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS] or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]):
                         lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
                         lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
                     else:
@@ -109,23 +108,23 @@ class programController(object):
             if step == 8:
                 with lockerinstance[0].lock:
                     lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
-                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
-                            lockerinstance[0].scout['ManualAlign'] = True
-                        if lockerinstance[0].scout['ManualAlignCheck']:
-                            lockerinstance[0].scout['ManualAlignCheck'] = False
-                            step +=1
+                    if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                        lockerinstance[0].scout['ManualAlign'] = True
+                    if lockerinstance[0].scout['ManualAlignCheck']:
+                        lockerinstance[0].scout['ManualAlignCheck'] = False
+                        step +=1
             #SCOUT weld
             if step == 9:
                 with lockerinstance[0].lock:
                     lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
-                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
-                            lockerinstance[0].scout['ManualWeld'] = True
-                        if lockerinstance[0].scout['ManualWeldCheck']:
-                            lockerinstance[0].scout['ManualWeldCheck'] = False
-                            step +=1
+                    if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                        lockerinstance[0].scout['ManualWeld'] = True
+                    if lockerinstance[0].scout['ManualWeldCheck']:
+                        lockerinstance[0].scout['ManualWeldCheck'] = False
+                        step +=1
             if step == 10:
                 with lockerinstance[0].lock:
-                    lockerinstane[0].program['cycleended'] = True
+                    lockerinstance[0].program['cycleended'] = True
                     step = 0
         with lockerinstance[0].lock:
             if lockerinstance[0].program['step'] < step:
@@ -162,15 +161,14 @@ class programController(object):
                 if step == 3:
                     if lockerinstance[0].servo['positionNumber'] == -1:
                         ErrorEventWrite(lockerinstance, 'servo is not ready')
-                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]
+                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]:
                         step += 1
                     else:
                         if not lockerinstance[0].servo['moving']:
                             lockerinstance[0].servo['step'] = True
                 #setting robot position
                 if step == 4:
-                    if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]
-                        or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
+                    if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS] or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
                         lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
                         lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
                     else:
@@ -197,18 +195,18 @@ class programController(object):
                 #align scout
                 if step == 8:
                     lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
-                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
-                            lockerinstance[0].scout['ManualAlign'] = True
-                        if lockerinstance[0].scout['ManualAlignCheck']:
-                            lockerinstance[0].scout['ManualAlignCheck'] = False
-                            lockerinstance[0].program['stepcomplete'] = True
+                    if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                        lockerinstance[0].scout['ManualAlign'] = True
+                    if lockerinstance[0].scout['ManualAlignCheck']:
+                        lockerinstance[0].scout['ManualAlignCheck'] = False
+                        lockerinstance[0].program['stepcomplete'] = True
                 #SCOUT weld
                 if step == 9:
                     lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
-                        if not lockerinstance[0].events['KDrawWaitingForMessage']:
-                            lockerinstance[0].scout['ManualWeld'] = True
-                        if lockerinstance[0].scout['ManualWeldCheck']:
-                            lockerinstance[0].scout['ManualWeldCheck'] = False
-                            lockerinstance[0].program['stepcomplete'] = True
+                    if not lockerinstance[0].events['KDrawWaitingForMessage']:
+                        lockerinstance[0].scout['ManualWeld'] = True
+                    if lockerinstance[0].scout['ManualWeldCheck']:
+                        lockerinstance[0].scout['ManualWeldCheck'] = False
+                        lockerinstance[0].program['stepcomplete'] = True
                 if step == 10:
-                        lockerinstane[0].program['cycleended'] = True
+                    lockerinstance[0].program['cycleended'] = True

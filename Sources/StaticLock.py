@@ -30,6 +30,7 @@ class SharedLocker(object):
                 'MessageAck':False,
                 'version':'',
                 'recipe':'',
+                'recipesdir':'', #TODO
                 'pagesToWeld':manager.list([]),
                 'weldrunpagescount':0,
                 'LaserOn':False,
@@ -262,8 +263,8 @@ class SharedLocker(object):
                 'automode':False,
                 'running':False,
                 '/running':True,
-                'programname':'',
-                'stepnumber':0,
+                'programname':'', #doubled key? #TODO
+                'stepnumber':0, #bind to process step #TODO
                 'cycle':0, #bind it to process step #TODO
                 'starttime':0.0,
                 'currenttime':0.0,
