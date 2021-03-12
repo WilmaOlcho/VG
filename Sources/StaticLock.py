@@ -263,7 +263,7 @@ class SharedLocker(object):
                 'automode':False,
                 'running':False,
                 '/running':True,
-                'programname':'', #doubled key? #TODO
+                'programname':'', #doubled key? #TODO#
                 'stepnumber':0, #bind to process step #TODO
                 'cycle':0, #bind it to process step #TODO
                 'starttime':0.0,
