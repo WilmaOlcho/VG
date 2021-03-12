@@ -35,6 +35,7 @@ class SharedLocker(object):
                 'LaserOn':False,
                 'ManualAlignPage':0,
                 'ManualWeldPage':0,
+                'StatusCheckCode':False,
                 'AlignInfo':manager.dict({
                     '0':0,
                     '1':0,
@@ -68,8 +69,12 @@ class SharedLocker(object):
                 'AlarmReset':False,
                 'AutostartOn':False,
                 'AutostartOff':False,
+                'ManualAlign':False,
+                'ManualWeld':False,
                 'WeldStart':False, #requires pages to weld list
-                'Wobble':False
+                'Wobble':False,
+
+                'Recipechangedsuccesfully':False,
 
             }),
             'Errors':'',
@@ -245,16 +250,26 @@ class SharedLocker(object):
                 'outputmap':manager.dict({})
                 }),
             'program':manager.dict({
+                'ProgramsFilePath':'',
+                'ProgramName':'',
                 'Alive':False,
                 'stepmode':False,
                 'stepcomplete':False,
                 'initialising':False,
+                'initialised':False,
                 'automode':False,
                 'running':False,
                 '/running':True,
                 'programname':'',
                 'stepnumber':0,
-                'cycle':0
+                'cycle':0,
+                'starttime':0.0,
+                'currenttime':0.0,
+                'time':0.0, #as elapsed
+                'startpos':0,
+                'endpos':0,
+                'programline':manager.list([]),
+                'cycleended':False
                 })
                 })
         self.scout = self.shared['SCOUT']

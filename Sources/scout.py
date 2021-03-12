@@ -45,7 +45,10 @@ class KDrawTCPInterface(socket.socket):
                 scout = lockerinstance[0].scout
                 with lockerinstance[0].lock:
                     for i, status in enumerate(['ReadyOn','AutoStart','Alarm','rsv','WeldingProgress','LaserIsOn','Wobble']):
-                        if i == 0: continue #statusdata[0] is checkcode
+                        if i == 0: 
+                            with lockerinstance[0].lock:
+                                lockerinstance[0].scout['StatusCheckCode'] = statusdata[i]
+                            continue
                         scout['status'][status] = bool(statusdata[i])
                     scout['MessageAck'] = True
             else:
@@ -361,6 +364,10 @@ class SCOUT():
                 if weld: lockerinstance[0].scout['WeldStart'] = False
                 wobbler = lockerinstance[0].scout['Wobble']
                 if wobbler: lockerinstance[0].scout['Wobble'] = False
+                malign = lockerinstance[0].scout['ManualAlign']
+                if malign: lockerinstance[0].scout['ManualAlign'] = False
+                mweld = lockerinstance[0].scout['ManualWeld']
+                if mweld: lockerinstance[0].scout['ManualWeld'] = False
             if alarm and lastrecv != 'AL_REPORT': self.connection.GetAlarmReport(lockerinstance)
             if tlaseron: self.connection.TurnOnLaser(lockerinstance)
             if tlaseroff: self.connection.TurnOffLaser(lockerinstance)
@@ -371,6 +378,8 @@ class SCOUT():
             if atstop and lastrecv != 'AT_STOP': self.connection.StopAutoStart(lockerinstance)
             if weld: self.connection.WeldRun(lockerinstance)
             if wobbler: self.connection.SetWobble(lockerinstance)
+            if mweld: self.connection.ManualWeld(lockerinstance)
+            if malign: self.connection.ManualAlign(lockerinstance)
             self.connection.getState(lockerinstance)
 
 

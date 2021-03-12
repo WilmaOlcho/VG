@@ -1,6 +1,6 @@
 from Sources.modbusTCPunits import KawasakiVG
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources import EventManager, ErrorEventWrite, Bits, dictKeyByVal
+from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
 from functools import lru_cache
 from threading import Thread, currentThread
 import json

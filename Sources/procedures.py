@@ -1,4 +1,16 @@
 
+from Sources import ErrorEventWrite
+import json
+import time
+
+ID = 0
+STEP = 1
+RECIPE = 2
+PAGE = 3
+ROBOTPOS = 4
+ROBOTTABLE = 5
+SERVOPOS = 6
+
 
 def startauto(lockerinstance):
     with lockerinstance[0].lock:
@@ -32,22 +44,38 @@ def CheckProgram(lockerinstance):
     return False
 
 def CheckPositions(lockerinstance):
-    return False
+    result = CheckPiston(lockerinstance, 'Seal', 'Down')
+    with lockerinstance[0].lock:
+        result = result and lockerinstance[0].program['initialised']
+    return result
 
 def CheckPiston(lockerinstance, pistonname, action):
     with lockerinstance[0].lock:
         pistonState = lockerinstance[0].pistons['sensor' + pistonname + action]
     return pistonState
 
-def RobotState(lockerinstance, state):
+def GetState(lockerinstance, path, state, alternativepath = ''):
     with lockerinstance[0].lock:
-        robotstate = lockerinstance[0].robot[state]
-    return robotstate
+        if state in lockerinstance[0].shared[path].keys():
+            currentstate = lockerinstance[0].shared[path][state]
+        elif alternativepath:
+            currentstate = lockerinstance[0].shared[alternativepath][state]
+        else:
+            ErrorEventWrite(lockerinstance, 'GetState procedure got wrong parameters')
+            currentstate = -1
+    return currentstate
+
+def RobotState(lockerinstance, state):
+    return GetState(lockerinstance, 'robot', state)
 
 def ServoState(lockerinstance, state):
-    with lockerinstance[0].lock:
-        servostate = lockerinstance[0].servo[state]
-    return servostate
+    return GetState(lockerinstance, 'servo', state)
+
+def LaserState(lockerinstance, state):
+    return GetState(lockerinstance, 'lcon', state, alternativepath= 'mux')
+
+def SCOUTState(lockerinstance, state):
+    return GetState(lockerinstance, 'SCOUT', state)
 
 def SetPiston(lockerinstance, pistonname, action):
     with lockerinstance[0].lock:
@@ -61,6 +89,10 @@ def RobotGopos(lockerinstance, posnumber):
 def ServoSetState(lockerinstance, state):
     with lockerinstance[0].lock:
         lockerinstance[0].servo[state] = True
+
+def LaserSetState(lockerinstance, state):
+    with lockerinstance[0].lock:
+        lockerinstance[0].laser[state] = True
 
 def Initialise(lockerinstance):
     with lockerinstance[0].lock:
@@ -99,18 +131,80 @@ def Initialise(lockerinstance):
                 ServoSetState(lockerinstance, 'homing')
     if cycle == 3:
         #checking if laser is ready
-        servopos = ServoState(lockerinstance, 'positionNumber')
-        servomoving = ServoState(lockerinstance, 'moving')
-        if servopos == 0:
+        LaserOn = LaserState(lockerinstance, 'LaserOn')
+        LaserReady = LaserState(lockerinstance, 'LaserReady')
+        LaserBusy = LaserState(lockerinstance, 'busy')
+        LaserError = LaserState(lockerinstance, 'LaserError')
+        ChillerError = LaserState(lockerinstance, 'ChillerError')
+        if LaserReady and not LaserBusy:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['cycle'] += 1
-        elif servopos == -1:
-            if not servomoving:
-                ServoSetState(lockerinstance, 'step')
+        elif not LaserOn:
+            LaserSetState(lockerinstance, 'LaserTurnOn')
+        elif LaserBusy:
+            ErrorEventWrite(lockerinstance, "Initialisation step 3: Laser Is Busy")
+        elif LaserError or ChillerError:
+            ErrorEventWrite(lockerinstance, "Initialisation step 3: Laser or Chiller Error")
         else:
-            if not servomoving:
-                ServoSetState(lockerinstance, 'homing')
-    
-    
-    
+            LaserSetState(lockerinstance, 'SetChannel')
+    if cycle == 4:
+        #checking scout
+        StatusCheckCode = SCOUTState(lockerinstance, 'StatusCheckCode')
+        if StatusCheckCode:
+            with lockerinstance[0].lock:
+                lockerinstance[0].program['cycle'] += 1
+        else:
+            LaserSetState(lockerinstance, 'SetChannel')
+    if cycle == 5:
+        with lockerinstance[0].lock:
+            lockerinstance[0].program['cycle'] = 0
+            lockerinstance[0].program['initialising'] = False
+            lockerinstance[0].program['initialised'] = True 
 
+def loadprogramline(lockerinstance, program, number):
+    #program dict with key table, where is list of lists of 9 elements each
+    while True:
+        result = []
+        for programline in program['Table']:
+            if programline[1] == number:
+                result = programline
+                break
+        if result: break
+        else: programline +=1
+        with lockerinstance[0].lock:
+            currentcycle = lockerinstance[0].program['cycle']
+            maxintable = lockerinstance[0].program['endpos']
+        if currentcycle >= maxintable: break
+    return result
+
+def Program(lockerinstance):
+    progproxy = lockerinstance[0].program
+    with lockerinstance[0].lock:
+        cycle = progproxy['cycle']
+        programspath = progproxy['ProgramsFilePath']
+        programname = progproxy['ProgramName']
+        cycleended = progproxy['cycleended']
+        if cycleended: progproxy['cycleended'] = False
+        progproxy['currenttime'] = time.time()
+        progproxy['time'] = progproxy['currenttime'] - progproxy['starttime']
+    with open(programspath, 'r') as jsonfile:
+        programs = json.load(jsonfile)
+    program = programs['Programs'][programname]
+    if cycle == 0: #table is from 1
+        with lockerinstance[0].lock:
+            progproxy['time'] = 0.0
+            progproxy['starttime'] = time.time()
+            startindex = progproxy['startpos']
+        programline = loadprogramline(lockerinstance, program, startindex)
+        cycle = startindex
+        with lockerinstance[0].lock:
+            progproxy['programline'] = programline
+    if cycleended:
+        cycle += 1
+        programline = loadprogramline(lockerinstance, program, cycle)
+        with lockerinstance[0].lock:
+            progproxy['programline'] = programline
+
+        
+
+        
