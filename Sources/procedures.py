@@ -3,7 +3,7 @@ from Sources import ErrorEventWrite
 from functools import reduce
 import json
 import time
-from Pathlib import Path
+from pathlib import Path
 
 ID = 0
 STEP = 1
@@ -54,6 +54,8 @@ def CheckSafety(lockerinstance):
 
 def CheckProgram(lockerinstance):
     errmsg = ''
+    programname = ''
+    programpath = ''
     with lockerinstance[0].lock:
         if not lockerinstance[0].program['ProgramName'] or not lockerinstance[0].program['ProgramsFilePath']:
             errmsg = 'Program not loaded'

@@ -6,13 +6,18 @@ from Sources import EventManager, WDT, ErrorEventWrite
 class programController(object):
     def __init__(self, lockerinstance, programfilepath, *args, **kwargs):
         self.Alive = True
-        self.loop(lockerinstance)
+        with lockerinstance[0].lock:
+            lockerinstance[0].program['Alive'] = True
+        while self.Alive:
+            with lockerinstance[0].lock:
+                self.Alive = lockerinstance[0].program['Alive'] and not lockerinstance[0].events['closeApplication']
+            if not self.Alive: break
+            self.loop(lockerinstance)
 
     def loop(self, lockerinstance):
         with lockerinstance[0].lock:
             automode = lockerinstance[0].program['automode']
             stepmode = lockerinstance[0].program['stepmode']
-            self.Alive = lockerinstance[0].program['Alive']
             automode = lockerinstance[0].program['automode']
         if automode: self.automode(lockerinstance)
         if stepmode: self.stepmode(lockerinstance)
@@ -41,7 +46,7 @@ class programController(object):
             running = lockerinstance[0].program['running']
             cycle = lockerinstance[0].program['cycle']
             cycleended = lockerinstance[0].program['cycleended']
-            step = lockerinstance[0].program['step']
+            step = lockerinstance[0].program['stepnumber']
             lockerinstance[0].program['stepcomplete'] = False
         if running and cycle and not cycleended:
             #setting recipe for scout
@@ -75,7 +80,7 @@ class programController(object):
                         step += 1
                     else:
                         if not lockerinstance[0].servo['moving']:
-                            lockerinstance[0].servo['step'] = True
+                            lockerinstance[0].servo['stepnumber'] = True
             #setting robot position
             if step == 4:
                 with lockerinstance[0].lock:
@@ -102,7 +107,7 @@ class programController(object):
             if step == 7:
                 def exceed(lockerinstance = lockerinstance):
                     with lockerinstance[0].lock:
-                        lockerinstance[0].program['step'] += 1 
+                        lockerinstance[0].program['stepnumber'] += 1 
                 WDT(lockerinstance, additionalFuncOnExceed = exceed, noerror = True, limit = 3, scale = 's')
             #align scout
             if step == 8:
@@ -127,15 +132,15 @@ class programController(object):
                     lockerinstance[0].program['cycleended'] = True
                     step = 0
         with lockerinstance[0].lock:
-            if lockerinstance[0].program['step'] < step:
-                lockerinstance[0].program['step'] = step
+            if lockerinstance[0].program['stepnumber'] < step:
+                lockerinstance[0].program['stepnumber'] = step
 
     def stepmode(self, lockerinstance):
         with lockerinstance[0].lock:
             running = lockerinstance[0].program['running']
             cycle = lockerinstance[0].program['cycle']
             cycleended = lockerinstance[0].program['cycleended']
-            step = lockerinstance[0].program['step']
+            step = lockerinstance[0].program['stepnumber']
         if running and cycle and not cycleended:
             with lockerinstance[0].lock: #locking whole method for event-compatibility
                 #setting recipe for scout
@@ -165,7 +170,7 @@ class programController(object):
                         step += 1
                     else:
                         if not lockerinstance[0].servo['moving']:
-                            lockerinstance[0].servo['step'] = True
+                            lockerinstance[0].servo['stepnumber'] = True
                 #setting robot position
                 if step == 4:
                     if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS] or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:

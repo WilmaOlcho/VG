@@ -9,6 +9,8 @@ from Sources.sickgmod import GMOD
 #from gui import console
 from Sources.UI.MainWindow import Window
 from pathlib import Path
+from Sources.scout import SCOUT
+from Sources.programController import programController
 
 class ApplicationManager(object):
     def __init__(self, *args, **kwargs):
@@ -23,15 +25,19 @@ class ApplicationManager(object):
         self.TroleyConfigurationFile = path + 'Troleysettings.json'
         self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
         self.SICKGMOD0ConfigurationFile = path + 'SICKGMODconfiguration.json'
+        self.ScoutConfigurationFile = path + 'Scoutconfiguration.json'
+        self.programs = path + 'Programs.json'
         self.processes = [
             Process(name = 'Window', target = Window, args=(self.lock,"")),
-            Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
-            Process(name = 'Servo', target = Servo, args=(self.lock, self.ServoConfigurationFile,)),
-            Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
-            Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
-            Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
-            Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
-            Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,))
+            #Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
+            #Process(name = 'Servo', target = Servo, args=(self.lock, self.ServoConfigurationFile,)),
+            #Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
+            #Process(name = 'RobotVG', target = RobotVG, args=(self.lock, self.RobotConfigurationFile, *args,)),
+            #Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
+            #Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
+            #Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,)),
+            Process(name = 'Program', target = programController, args=(self.lock, self.programs,))
+            #Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
         ]    
         for process in self.processes: 
             process.start()

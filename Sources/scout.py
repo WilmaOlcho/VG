@@ -1,6 +1,8 @@
 import socket
 import json
-from Sources import ErrorEventWrite, WDT, EventManager
+from .common import ErrorEventWrite, EventManager
+from .TactWatchdog import TactWatchdog
+WDT = TactWatchdog.WDT
 
 class KDrawTCPInterface(socket.socket):
     def __init__(self, lockerinstance, configfile, *args, **kwargs):
@@ -18,7 +20,13 @@ class KDrawTCPInterface(socket.socket):
     def connect(self):
         address = self.config['connection']['IP']
         port = self.config['connection']['port']
-        super().connect((address,port))
+        while True:
+            try:
+                super().connect((address,port))
+            except Exception:
+                pass
+            else:
+                break
 
     def receive(self, lockerinstance):
         def start(lockerinstance = lockerinstance):

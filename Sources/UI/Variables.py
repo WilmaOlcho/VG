@@ -162,7 +162,8 @@ class Variables(dict):
                 program['endpos'] = self.programposend
                 program['ProgramName'] = self.currentProgram
                 program['ProgramsFilePath'] = self.jsonpath
-                
+                program['stepmode'] = not self['auto']
+                program['automode'] = self['auto']
                 if self.internalEvents['ack']:
                     events['erroracknowledge'] = True
                     self.internalEvents['ack'] = False

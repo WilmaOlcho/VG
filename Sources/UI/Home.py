@@ -338,8 +338,8 @@ class ProgramSelect(LabelFrame):
         window.grab_set()
 
     def loadprogramminmax(self, program):
-        minimum = reduce(lambda x,y: x[1] if x[1] <= y[1] else y[1], program['Table'])
-        maximum = reduce(lambda x,y: x[1] if x[1] >= y[1] else y[1], program['Table'])
+        minimum = reduce(lambda x,y: (x[1] if isinstance(x,list) else x) if (x[1] if isinstance(x,list) else x) <= y[1] else y[1], program['Table'])
+        maximum = reduce(lambda x,y: (x[1] if isinstance(x,list) else x) if (x[1] if isinstance(x,list) else x) >= y[1] else y[1], program['Table'])
         return (minimum, maximum)
 
     def command(self, program):
