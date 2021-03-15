@@ -11,6 +11,9 @@ class KDrawTCPInterface(socket.socket):
         except Exception as e:
             errstring = "KDrawTCPInterface can't load json file: " + str(e)
             ErrorEventWrite(lockerinstance, errstring)
+        else:
+            with lockerinstance[0].lock:
+                lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
 
     def connect(self):
         address = self.config['connection']['IP']
@@ -88,7 +91,9 @@ class KDrawTCPInterface(socket.socket):
         if len(data) == 2:
             with lockerinstance[0].lock:
                 recipechanged = data[1] == lockerinstance[0].scout['recipe']
-                if recipechanged: lockerinstance[0].scout['MessageAck'] = True
+                if recipechanged:
+                    lockerinstance[0].scout['MessageAck'] = True
+                    lockerinstance[0].scout['Recipechangedsuccesfully'] = True
             if not recipechanged:
                 ErrorEventWrite(lockerinstance, "SCOUT returned wrong Recipe Change ack message:\n{}".format(data))
         else:
@@ -151,7 +156,9 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
                 alignpage = int(data[1]) == lockerinstance[0].scout['ManualAlignPage']
-                if checkcode and alignpage: lockerinstance[0].scout['MessageAck'] = True
+                if checkcode and alignpage:
+                    lockerinstance[0].scout['ManualAlignCheck'] = True
+                lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualAlign fail:\n{}".format(data))
             if not alignpage:
@@ -164,7 +171,9 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
                 weldpage = int(data[1]) == lockerinstance[0].scout['ManualWeldPage']
-                if checkcode and weldpage: lockerinstance[0].scout['MessageAck'] = True
+                if checkcode and weldpage:
+                    lockerinstance[0].scout['ManualWeldCheck'] = True
+                lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualWeld went wrong:\n{}".format(data))
             if not weldpage:

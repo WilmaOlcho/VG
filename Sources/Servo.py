@@ -136,4 +136,7 @@ class Servo(object):
        
     def IO(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].servo['active'] = lockerinstance[0].GPIO[self.sreadyAddress]
+            lockerinstance[0].servo['active'] = not lockerinstance[0].GPIO[self.sreadyAddress]
+            lockerinstance[0].servo['iocoin'] = not lockerinstance[0].GPIO[self.coinAddress]
+            lockerinstance[0].servo['ioready'] = not lockerinstance[0].GPIO[self.coinAddress]
+            lockerinstance[0].servo['iotgon'] = not lockerinstance[0].GPIO[self.tgonAddress]

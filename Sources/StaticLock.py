@@ -30,15 +30,15 @@ class SharedLocker(object):
                 'MessageAck':False,
                 'version':'',
                 'recipe':'',
-                'recipesdir':'', #TODO
+                'recipesdir':'',
                 'pagesToWeld':manager.list([]),
                 'weldrunpagescount':0,
                 'LaserOn':False,
                 'ManualAlignPage':0,
-                'ManualAlignCheck':False, #TODO
+                'ManualAlignCheck':False,
                 'ManualWeldPage':0,
-                'ManualWeldCheck':False, #TODO
-                'StatusCheckCode':False, #TODO
+                'ManualWeldCheck':False,
+                'StatusCheckCode':False,
                 'AlignInfo':manager.dict({
                     '0':0,
                     '1':0,
@@ -77,7 +77,7 @@ class SharedLocker(object):
                 'WeldStart':False, #requires pages to weld list
                 'Wobble':False,
 
-                'Recipechangedsuccesfully':False #TODO
+                'Recipechangedsuccesfully':False
 
             }),
             'Errors':'',
@@ -181,9 +181,9 @@ class SharedLocker(object):
                 'positionNumber':-1,
                 'moving':False,
                 'active':False,
-                'iocoin':False,  #bint it to servo control signals
-                'ioready':False, #
-                'iotgon':False   #
+                'iocoin':False,
+                'ioready':False,
+                'iotgon':False
                 }),
             'troley':manager.dict({
                 'Alive':False,
@@ -253,8 +253,8 @@ class SharedLocker(object):
                 'outputmap':manager.dict({})
                 }),
             'program':manager.dict({
-                'ProgramsFilePath':'', #TODO
-                'ProgramName':'', #TODO
+                'ProgramsFilePath':'',
+                'ProgramName':'',
                 'Alive':False,
                 'stepmode':False,
                 'stepcomplete':False,
@@ -263,12 +263,12 @@ class SharedLocker(object):
                 'automode':False,
                 'running':False,
                 '/running':True,
-                'programname':'', #doubled key? #TODO#
-                'stepnumber':0, #bind to process step #TODO
-                'cycle':0, #bind it to process step #TODO
+                #'programname':'', #doubled key? #TODO#
+                'stepnumber':0,
+                'cycle':0, 
                 'starttime':0.0,
                 'currenttime':0.0,
-                'time':0.0, #as elapsed #bind it to process time #TODO
+                'time':0.0,
                 'startpos':0,
                 'endpos':0,
                 'programline':manager.list([]),
