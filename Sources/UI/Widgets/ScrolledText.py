@@ -1,13 +1,13 @@
 import json
 import tkinter as tk
 import tkinter.ttk as ttk
-from .common import getroot
+from .common import LabelFrame, GeneralWidget, getroot
 
-class ScrolledText(ttk.Frame):
+class ScrolledText(GeneralWidget, ttk.Frame):
     def __init__(self, master = None, InternalVariable = None, scrolltype = 'both', height=200, width=200):
-        super().__init__(master = master, width = width, height = height)
+        GeneralWidget.__init__(self, master)
+        ttk.Frame.__init__(self, master = master, width = width, height = height)
         self.key = InternalVariable
-        self.root = getroot(master)
         self.textInstance = tk.Text(self, height=height, width=width, font = self.root.font())
         if scrolltype in ('vertical','both'):
             self.vsb = tk.Scrollbar(self, orient='vertical', command = self.textInstance.yview)#, yscrollcommand = lambda f, l, obj = self:obj.autoscroll(self.vsb, f, l))
@@ -34,12 +34,13 @@ class ScrolledText(ttk.Frame):
             self.textInstance.yview_moveto(vpos[0]*hsub)
             self.vtext = text
 
-class LabelledScrolledText(ScrolledText):
+class LabelledScrolledText(GeneralWidget, ttk.LabelFrame):
     def __init__(self, master = None, text = '', InternalVariable = None, scrolltype = 'both', height=200, width=200):
-        self.frame = ttk.LabelFrame(master = master, text = text)
-        super().__init__(master = self.frame, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
-        self.frame.grid()
+        GeneralWidget.__init__(self, master)
+        ttk.LabelFrame.__init__(self, master = master, text = text)
+        self.text = ScrolledText(master = self, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
+        self.text.pack()
 
     def update(self):
         super().update()
-        self.frame.update()
+        self.text.update()

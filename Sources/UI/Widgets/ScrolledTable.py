@@ -9,12 +9,12 @@ class ScrolledWidget(LabelFrame):
         self.widgetheight = self.settings['LabelFrame']['height']
         for i, state in enumerate(self.root.variables.displayedprogramcolumns):
             if state: self.width += (self.root.variables.columnwidths[i]*6)
-        self.frame['width'] = self.width
-        self.frame.pack(expand = tk.N)
-        self.cnv = tk.Canvas(master = self.frame, width = self.width, height = self.widgetheight)
+        self['width'] = self.width
+        self.pack(expand = tk.N)
+        self.cnv = tk.Canvas(master = self, width = self.width, height = self.widgetheight)
         self.cnv.__setattr__('settings',self.settings)
-        self.xscrollbar = tk.Scrollbar(master = self.frame, orient='horizontal', command = self.cnv.xview) if self.settings['scrolltype'] in ['h', 'horizontal', 'x', 'xy', 'yx', 'both'] else False
-        self.yscrollbar = tk.Scrollbar(master = self.frame, orient='vertical', command = self.cnv.yview) if self.settings['scrolltype'] in ['v', 'vertical', 'y', 'xy', 'yx', 'both'] else False
+        self.xscrollbar = tk.Scrollbar(master = self, orient='horizontal', command = self.cnv.xview) if self.settings['scrolltype'] in ['h', 'horizontal', 'x', 'xy', 'yx', 'both'] else False
+        self.yscrollbar = tk.Scrollbar(master = self, orient='vertical', command = self.cnv.yview) if self.settings['scrolltype'] in ['v', 'vertical', 'y', 'xy', 'yx', 'both'] else False
         if self.xscrollbar:
             self.cnv.configure(xscrollcommand=self.xscrollbar.set)
             self.xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -37,7 +37,7 @@ class ScrolledWidget(LabelFrame):
             self.cnv.config(scrollregion = (0,0,self.width,self.height), highlightthickness = 0)
             self.cnv.xview_moveto(0)
             self.cnv.yview_moveto(0)
-        self.frame.update()
+        super().update()
 
 class PosTable(GeneralWidget):
     def __init__(self, master = None):
@@ -54,7 +54,7 @@ class PosTable(GeneralWidget):
             self.tjson = json.load(jsonfile)
 
     def CreateContextMenu(self):
-        menu = tk.Menu(self.frame, tearoff = 0)
+        menu = tk.Menu(master = self, tearoff = 0)
         for element in self.settings['ContextMenu']:
             if 'separator' in element:
                 menu.add_separator()
@@ -63,15 +63,13 @@ class PosTable(GeneralWidget):
         return menu
 
     def ContextMenuPopup(self, event):
-        self.frame.update_idletasks()
         try:
             self.menu.tk_popup(event.x_root, event.y_root, 0)
         finally:
             self.menu.grab_release()
 
     def GetFocus(self, event):
-        self.frame.update_idletasks()
-        focus = self.frame.focus_get()
+        focus = self.focus_get()
         for row, row_content in enumerate(self.entries):
             for column, entry in enumerate(row_content):
                 if isinstance(entry, tk.Entry):
@@ -96,7 +94,6 @@ class PosTable(GeneralWidget):
         return ID
 
     def AddRowBefore(self):
-        self.frame.update_idletasks()
         row = self.getActiveRow()
         self.synctable.insert(row,[self.CreateID(),0,0,0,0,0,0,0,0])
         self.UpdateJson()
@@ -104,7 +101,6 @@ class PosTable(GeneralWidget):
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def AddRowAfter(self):
-        self.frame.update_idletasks()
         row = self.getActiveRow()
         self.synctable.insert(row+1,[self.CreateID(),0,0,0,0,0,0,0,0])
         self.UpdateJson()
@@ -112,7 +108,6 @@ class PosTable(GeneralWidget):
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def DeleteRow(self):
-        self.frame.update_idletasks()
         row = self.getActiveRow()
         del self.synctable[row]
         self.UpdateJson()
@@ -120,7 +115,6 @@ class PosTable(GeneralWidget):
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def SortTable(self):
-        self.frame.update_idletasks()
         def sortconditions(element):
             value = int(element[1]) if str(element[1]).isnumeric() else 0
             return value
@@ -130,11 +124,10 @@ class PosTable(GeneralWidget):
         self.root.variables.internalEvents['TableRefresh'] = True
 
     def __reframe(self):
-        self.frame.destroy()
-        self.frame = tk.Frame(master = self.master)
+        for child in list(self.children.values()):
+            child.destroy()
         self.menu = self.CreateContextMenu()
-        self.frame.__setattr__('settings', self.settings)
-        self.frame.pack()
+        self.pack()
 
     def __getprogram(self, i = False):
         with open(self.root.variables.jsonpath, 'r') as jsonfile:
@@ -178,7 +171,7 @@ class PosTable(GeneralWidget):
         self.__bindEvents(row, column)
         
     def __entry(self, row, column, value):
-        entry = tk.Entry(self.frame, width = self.root.variables.columnwidths[column])
+        entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
         self.entries[row][column] = entry
         self.entries[row][column].delete(0,tk.END)
         if row == 0:
@@ -204,7 +197,7 @@ class PosTable(GeneralWidget):
         self.pack(expand = tk.YES, fill=tk.BOTH)
 
     def update(self):
-        self.frame.update()
+        super().update()
         self.freeze = not self.root.variables.internalEvents['TableRefresh']
         if not self.freeze:
             self.TableChanged()
@@ -214,7 +207,6 @@ class PosTable(GeneralWidget):
         return False
     
     def RetrieveSynctable(self, event):
-        self.frame.update_idletasks()
         for row, content in enumerate(self.entries):
             for column, value in enumerate(content):
                 if value: self.synctable[row][column] = value.get()

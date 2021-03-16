@@ -209,18 +209,16 @@ def checkrecipes(lockerinstance, program):
 def loadprogramline(lockerinstance, program, number):
     #program dict with key table, where is list of lists of 9 elements each
     while True:
-        result = []
-        for programline in program['Table']:
-            if programline[1] == number:
-                result = programline
-                break
-        if result: break
-        else: programline +=1
+        result = list(filter(lambda x: x[STEP] == number, program['Table']))
+        if result:
+            with lockerinstance[0].lock:
+                lockerinstance[0].program['cycle'] = number
+            return result[0]
+        else: number +=1
         with lockerinstance[0].lock:
-            currentcycle = lockerinstance[0].program['cycle']
             maxintable = lockerinstance[0].program['endpos']
-        if currentcycle >= maxintable: break
-    return result
+        if number >= maxintable: break
+    
 
 def Program(lockerinstance):
     progproxy = lockerinstance[0].program
@@ -238,7 +236,7 @@ def Program(lockerinstance):
             progproxy['time'] = 0.0
     with open(programspath, 'r') as jsonfile:
         programs = json.load(jsonfile)
-    program = programs['Programs'][programname]
+    program = filter(lambda x: x['Name'] == programname, programs['Programs'])
     if cycle == 0: #table is from 1
         with lockerinstance[0].lock:
             progproxy['starttime'] = time.time()
@@ -251,7 +249,7 @@ def Program(lockerinstance):
         cycle += 1
         with lockerinstance[0].lock:
             end = lockerinstance[0].program['endpos']
-        if cycle > end:
+        if cycle > end+1:
             endprogram(lockerinstance)
         else:
             programline = loadprogramline(lockerinstance, program, cycle)

@@ -18,42 +18,31 @@ def getroot(obj):
             break
     return obj
 
-class GeneralWidget(dict):
+class GeneralWidget(tk.Frame):
     def __init__(self, master = None, branch = ''):
-        super().__init__()
+        tk.Frame.__init__(self, master)
         self.settings = master.settings[branch] if branch else master.settings
-        self.frame = ttk.Frame(master = master)
-        self.frame.__setattr__('settings', self.settings)
         self.root = getroot(master)
         self.widgets = []
         self.font = self.root.font
         self.master = master
 
     def update(self):
-        self.frame.update()
+        super().update()
         for widget in self.widgets:
             widget.update()
 
-    def pack(self, *args, **kwargs):
-        self.frame.pack(*args, **kwargs)
-
-    def pack_forget(self, *args, **kwargs):
-        self.frame.pack_forget(*args, **kwargs)
-
-    def grid(self, *args, **kwargs):
-        self.frame.grid(*args, **kwargs)
-
-class LabelFrame(GeneralWidget):
+class LabelFrame(GeneralWidget, ttk.LabelFrame):
     def __init__(self, master = None, branch = ''):
-        super().__init__(master = master, branch = branch)
-        self.frame = ttk.LabelFrame(master = master, text = self.settings['Label'])
-        self.frame.__setattr__('settings', self.settings)
+        GeneralWidget.__init__(self, master = master, branch = branch)
+        ttk.LabelFrame.__init__(self, master = master)
+        self.widgetName = 'labelframe'
+        self.config(text = self.settings['Label'])
     
-class Button(GeneralWidget):
+class Button(GeneralWidget, tk.Button):
     def __init__(self, master = None, callback = Blank, text = '', key = ''):
-        super().__init__(master = master, branch = 'Button')
-        self.frame = tk.Button(master = master, font = self.font(), text = text, command = self.click, width = self.settings['width'], height = self.settings['height'])
-        self.frame.__setattr__('settings',self.settings)
+        GeneralWidget.__init__(self, master = master, branch = 'Button')
+        tk.Button.__init__(self, master = master, font = self.font(), text = text, command = self.click, width = self.settings['width'], height = self.settings['height'])
         self.key = key
         if key:
             self.masterkey = self.settings['masterkey']
@@ -71,10 +60,8 @@ class Button(GeneralWidget):
 class Entry(GeneralWidget):
     def __init__(self, master = None, text = '', key = ''):
         super().__init__(master = master, branch = 'Entry')
-        self.frame = ttk.Frame(master = master)
-        self.frame.__setattr__('settings',self.settings)
-        self.Label = ttk.Label(master = self.frame, font = self.font(), text = text)
-        self.entry = tk.Entry(master = self.frame, width = self.settings['width'])
+        self.Label = ttk.Label(master = self, font = self.font(), text = text)
+        self.entry = tk.Entry(master = self, width = self.settings['width'])
         self.entry.bind('<FocusOut>',self.ReadEntry)
         self.key = key
         self.masterkey = self.settings['masterkey']
@@ -85,7 +72,7 @@ class Entry(GeneralWidget):
         self.root.variables[self.masterkey][self.key] = self.entry.get()
 
     def update(self):
-        focus = self.frame.focus_get()
+        focus = self.focus_get()
         if focus != self.entry:
             value = self.root.variables[self.masterkey][self.key]
             if self.entry.get() != value:
@@ -95,10 +82,9 @@ class Entry(GeneralWidget):
 class Lamp(GeneralWidget):
     def __init__(self, master = None, text = '', key = ''):
         super().__init__(master = master, branch = 'Lamp')
-        self.frame = tk.Frame(master, **self.settings['frame'])
-        self.frame.__setattr__('settings',self.settings)
-        self.lamp = tk.Canvas(master = self.frame, width = self.settings['width'], height = self.settings['height'])
-        self.caption = ttk.Label(master = self.frame, text = text, **self.settings['caption'])
+        self.config(**self.settings['frame'])
+        self.lamp = tk.Canvas(master = self, width = self.settings['width'], height = self.settings['height'])
+        self.caption = ttk.Label(master = self, text = text, **self.settings['caption'])
         self.key = key
         self.masterkey = self.settings['masterkey']
         self.caption.pack(side = tk.LEFT)
@@ -106,7 +92,7 @@ class Lamp(GeneralWidget):
         self.lit = False
 
     def update(self):
-        self.frame.update()
+        super().update()
         keystartpos = 0
         negation = '-' in self.key[:2]
         if negation: keystartpos += 1
@@ -122,27 +108,22 @@ class Lamp(GeneralWidget):
         else:
             self.lamp.config(bg = self.settings['Color']['active'] if self.lit else self.settings['Color']['normal'])
 
-class Window(GeneralWidget):
+class Window(GeneralWidget, tk.Toplevel):
     def __init__(self, parent = None, branch = ''):
-        self.toplevel = tk.Toplevel( master = parent)
-        self.toplevel.__setattr__('settings', parent.settings)
-        self.parent = parent
-        super().__init__(master = self.toplevel, branch = branch)
-        self.toplevel.title(self.settings['title'])
+        #self.toplevel = tk.Toplevel( master = parent)
+        #self.toplevel.__setattr__('settings', parent.settings)
+        #self.parent = parent
+        #super().__init__(master = self.toplevel, branch = branch)
+        #self.toplevel.title(self.settings['title'])
+        GeneralWidget.__init__(self, master = parent, branch = branch)
+        tk.Toplevel.__init__(self, master = parent)
+        self.title = self.settings['title']
 
     def center(self):
         screenWidth = GetSystemMetrics(0)
         screenHeigth = GetSystemMetrics(1)
-        size = tuple(int(val) for val in self.toplevel.geometry().split('+')[0].split('x'))
+        size = tuple(int(val) for val in self.geometry().split('+')[0].split('x'))
         x = int(screenWidth/2 - size[0]/2)
         y = int(screenHeigth/2 - size[1]/2)
-        self.toplevel.geometry('+{}+{}'.format(x,y))
+        self.geometry('+{}+{}'.format(x,y))
 
-    def grab_set(self, *args, **kwargs):
-        self.toplevel.grab_set( *args, **kwargs)
-
-    def grab_release(self, *args, **kwargs):
-        self.toplevel.grab_release( *args, **kwargs)
-
-    def destroy(self):
-        self.toplevel.destroy()

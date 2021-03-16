@@ -11,7 +11,7 @@ class HomeScreen(GeneralWidget):
         self.name = self.settings['Name']
         for key in self.settings.keys():
             if not key == 'Name':
-                self.widgets.append(eval(key)(self.frame))
+                self.widgets.append(eval(key)(self))
         for widget in self.widgets:
             widget.pack(side = tk.LEFT, expand = tk.Y)
         self.pack(expand = tk.YES, fill=tk.BOTH)
@@ -20,7 +20,7 @@ class ThirdColumn(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'ThirdColumn')
         for key in self.settings:
-            self.widgets.append(eval(key)(master = self.frame))
+            self.widgets.append(eval(key)(master = self))
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
         self.pack()
@@ -28,13 +28,14 @@ class ThirdColumn(GeneralWidget):
 class ProcessVariables(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'ProcessVariables')
-        self.leftFrame = ttk.Frame(master = self.frame)
+        self.leftFrame = ttk.Frame(master = self)
         self.leftFrame.__setattr__('settings',self.settings)
-        self.rightFrame = ttk.Frame(master = self.frame)
+        self.rightFrame = ttk.Frame(master = self)
         self.rightFrame.__setattr__('settings',self.settings)
         self.widgets.extend([self.leftFrame, self.rightFrame ])
         for key in self.settings['variablesFrame'].keys():
-            self.widgets.append(variablesFrame(master = self.leftFrame, key = key))
+            element = variablesFrame(master = self.leftFrame, key = key)
+            self.widgets.append(element)
         for key in self.settings['Button'].keys():
             button = tk.Button(master = self.rightFrame, font = self.font(), command = lambda obj = self, k = key: obj.click(k), **self.settings['Button'][key])
             button.__setattr__('settings',self.settings['interactive'][key])
@@ -57,8 +58,8 @@ class ProcessVariables(LabelFrame):
                             eval(line)
 
     def update(self):
-        self.frame.update()
         for widget in self.widgets:
+            widget.update()
             if isinstance(widget, tk.Button):
                 if 'condition' in widget.settings.keys():
                     condition = eval(widget.settings['condition'])
@@ -66,41 +67,42 @@ class ProcessVariables(LabelFrame):
                         widget.config(widget.settings['active'])
                     else:
                         widget.config(widget.settings['inactive'])
+        super().update()
 
 class variablesFrame(GeneralWidget):
     def __init__(self, master = None, key = 'auto'):
         super().__init__(master = master, branch = 'variablesFrame')
         self.key = key
-        self.widgets.extend([
-            ttk.Label(master = self.frame, text = self.settings[self.key]['Label']),
-            ttk.Entry(master = self.frame, text = self.root.variables[self.key], width = self.settings[self.key]['width'])
-        ])
+        self.label = ttk.Label(master = self, text = self.settings[self.key]['Label'])
+        self.entry = ttk.Entry(master = self, text = self.root.variables[self.key], width = self.settings[self.key]['width'])
+        self.widgets.extend([self.label, self.entry])
         for widget in self.widgets:
             widget.pack(side = tk.TOP)
         self.pack()
 
     def update(self):
-        self.frame.update()
         for widget in self.widgets:
-            if isinstance(widget,tk.Entry):
-                widget.delete(0,tk.END)
-                widget.insert(0,self.root.variables[self.key])
             widget.update()
+            if isinstance(widget,ttk.Entry):
+                if widget.get() != self.root.variables[self.key]:
+                    widget.delete(0,tk.END)
+                    widget.insert(0,self.root.variables[self.key])
+        super().update()
 
 class SecondColumn(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'SecondColumn')
-        self.widgets.append(StatusIndicators(master = self.frame))
+        self.widgets.append(StatusIndicators(master = self))
         for widget in self.widgets:
-            widget.frame.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
+            widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
         self.pack()
 
 class FirstColumn(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'FirstColumn')
         self.widgets.extend([
-            ProgramSelect(self.frame),
-            Positions(self.frame)
+            ProgramSelect(self),
+            Positions(self)
         ])
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
@@ -110,7 +112,7 @@ class NewProgramWindow(Window):
     def __init__(self, parent, menubuttonwidget):
         super().__init__(parent, branch = "NewProgram")
         self.masterwidget = menubuttonwidget
-        self.menubutton = tk.Menubutton(master = self.frame, relief = 'ridge', height = 3, width = 70, text = 'Wybierz program bazowy', bg = 'white')
+        self.menubutton = tk.Menubutton(master = self, relief = 'ridge', height = 3, width = 70, text = 'Wybierz program bazowy', bg = 'white')
         self.menu = tk.Menu(master = self.menubutton)
         self.menubutton['menu'] = self.menu
         with open(self.root.variables.jsonpath) as jsonfile:
@@ -119,19 +121,19 @@ class NewProgramWindow(Window):
         for program in self.programs["Programs"]:
             self.menu.add_command(label = program['Name'], command = lambda obj = self, program = program['Name']: obj.command(program))
         self.menubutton.grid(columnspan = 3)
-        self.nameentry = tk.Entry(master = self.frame, text = "Nazwa nowego programu")
+        self.nameentry = tk.Entry(master = self, text = "Nazwa nowego programu")
         self.nameentry.bind('<FocusIn>', self.nameentryclicked)
         self.nameentry.bind('<FocusOut>', self.nameentryreleased)
-        self.NameentryLabel = ttk.Label(master = self.frame, text = "Nazwa dla nowego programu")
+        self.NameentryLabel = ttk.Label(master = self, text = "Nazwa dla nowego programu")
         self.NameentryLabel.grid(column = 0, row = 1)
         self.nameentry.grid(column = 1, columnspan = 2, row= 1)
         self.newprogram = {}
         self.name = ''
         self.center()
         for button in self.settings['buttons']:
-            self.widgets.append(Button(master = self.frame, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
+            self.widgets.append(Button(master = self, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
             self.widgets[-1].grid(**self.settings['buttons'][button]['grid'])
-        self.pack()
+
 
     def ButtonClick(self, button):
         if button == "DoIt":
@@ -198,7 +200,7 @@ class DeleteProgramWindow(Window):
     def __init__(self, parent, menubuttonwidget):
         super().__init__(parent, branch = 'DeleteProgram')
         self.masterwidget = menubuttonwidget
-        self.menubutton = tk.Menubutton(master = self.frame, relief = 'ridge', height = 3, width = 70, text = 'Wybierz program do usunięcia', bg = 'white')
+        self.menubutton = tk.Menubutton(master = self, relief = 'ridge', height = 3, width = 70, text = 'Wybierz program do usunięcia', bg = 'white')
         self.menu = tk.Menu(master = self.menubutton)
         self.menubutton['menu'] = self.menu
         with open(self.root.variables.jsonpath) as jsonfile:
@@ -209,9 +211,9 @@ class DeleteProgramWindow(Window):
         self.programtoDelete = {}
         self.center()
         for button in self.settings['buttons']:
-            self.widgets.append(Button(master = self.frame, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
+            self.widgets.append(Button(master = self, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
             self.widgets[-1].grid(**self.settings['buttons'][button]['grid'])
-        self.pack()
+
 
     def ButtonClick(self, button):
         if button == "DoIt":
@@ -255,13 +257,13 @@ class DeleteProgramWindow(Window):
 class AgainPrompt(Window):
     def __init__(self, master = None, cls = None, args = ()):
         super().__init__(master, branch = "AgainPrompt")
-        self.Label = ttk.Label(master = self.frame, text = "Czy wykonać procedurę ponownie?")
+        self.Label = ttk.Label(master = self, text = "Czy wykonać procedurę ponownie?")
         self.Label.grid(column = 0, columnspan = 3, row = 0)
         self.args = args
         self.masterclass = cls
         self.center()
         for button in self.settings['buttons']:
-            self.widgets.append(Button(master = self.frame, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
+            self.widgets.append(Button(master = self, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
             self.widgets[-1].grid(**self.settings['buttons'][button]['grid'])
         self.pack()
 
@@ -284,7 +286,7 @@ class StatusIndicators(LabelFrame):
         super().__init__(master = master, branch = 'StatusIndicators')
         for key, indicator in self.settings.items():
             if key in KEYWORDS: continue
-            self.widgets.append(StatusIndicators.line(self.frame, label = indicator['Label'], indicator = key))
+            self.widgets.append(StatusIndicators.line(self, label = indicator['Label'], indicator = key))
         for widget in self.widgets:
             widget.pack()
         self.pack()
@@ -293,25 +295,25 @@ class StatusIndicators(LabelFrame):
         def __init__(self, master = None, label = '', indicator = ''):
             super().__init__(master = master, branch = indicator)
             self.key = indicator
-            self.frame = ttk.Frame(master = master, **self.settings['Frame'])
+            self.config(**self.settings['Frame'])
             self.cwidth = self.settings['Frame']['height']
             self.place = self.cwidth//2
-            self.frame.__setattr__('settings', self.settings)
-            self.label = ttk.Label(self.frame)
+            self.__setattr__('settings', self.settings)
+            self.label = ttk.Label(self)
             self.label.config(text=label)
             self.label.place(anchor='w', x='3', y=self.place)
-            self.indicator = tk.Canvas(self.frame)
+            self.indicator = tk.Canvas(self)
             self.indicator.config(background='Black', height=self.cwidth, width=self.cwidth, bd = 0)
             self.indicator.place(anchor='e', x=self.settings['Frame']['width'], y=self.place)
         
         def update(self):
-            self.frame.update()
             self.indicator.config(bg = 'lightgreen' if self.root.variables.statusindicators[self.key]==1 else 'black' if self.root.variables.statusindicators[self.key]==0 else 'red' if self.root.variables.statusindicators[self.key]==-1 else 'blue')
+            super().update()
 
 class ProgramSelect(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'ProgramSelect')
-        self.menubutton = tk.Menubutton(master = self.frame, text = self.settings['Label'])
+        self.menubutton = tk.Menubutton(master = self, text = self.settings['Label'])
         self.menu = None
         self.createmenu()
 
@@ -330,11 +332,11 @@ class ProgramSelect(LabelFrame):
         self.menubutton.pack()
 
     def newprogram(self):
-        window = NewProgramWindow(self.frame, self.menubutton)
+        window = NewProgramWindow(self, self.menubutton)
         window.grab_set()
 
     def deleteprogram(self):
-        window = DeleteProgramWindow(self.frame, self.menubutton)
+        window = DeleteProgramWindow(self, self.menubutton)
         window.grab_set()
 
     def loadprogramminmax(self, program):
@@ -354,14 +356,11 @@ class ProgramSelect(LabelFrame):
         self.root.variables.internalEvents['RefreshStartEnd'] = True
         self.root.variables.internalEvents['TableRefresh'] = True
 
-    def pack(self, *args, **kwargs):
-        self.frame.pack(*args, **kwargs)
-
     def update(self):
-        self.frame.update()
         if self.root.variables.internalEvents['ProgramMenuRefresh']:
             self.createmenu()
             self.root.variables.internalEvents['ProgramMenuRefresh'] = False
+        super().update()
 
 class Positions(LabelFrame):
     def __init__(self, master = None):
@@ -370,10 +369,10 @@ class Positions(LabelFrame):
             self.programs = json.load(jsonfile)
         self.program = {}
         self.widgets = [
-            ttk.Label(master = self.frame, text = self.settings['from']),
-            ttk.Entry(master = self.frame, text = ''),
-            ttk.Label(master = self.frame, text = self.settings['to']),
-            ttk.Entry(master = self.frame, text = '')
+            ttk.Label(master = self, text = self.settings['from']),
+            ttk.Entry(master = self, text = ''),
+            ttk.Label(master = self, text = self.settings['to']),
+            ttk.Entry(master = self, text = '')
         ]
         for widget in self.widgets:
             if isinstance(widget, tk.Entry):
@@ -403,7 +402,6 @@ class Positions(LabelFrame):
         self.root.variables.internalEvents['RefreshStartEnd'] = True
         
     def update(self):
-        self.frame.update()
         for program in self.programs['Programs']:
             if program['Name'] == self.root.variables.currentProgram:
                 self.program = program
@@ -416,3 +414,4 @@ class Positions(LabelFrame):
                     else:
                         widget.insert(0,str(self.root.variables.programposstart))
         self.root.variables.internalEvents['RefreshStartEnd'] = False
+        super().update()

@@ -164,6 +164,7 @@ class Variables(dict):
                 program['ProgramsFilePath'] = self.jsonpath
                 program['stepmode'] = not self['auto']
                 program['automode'] = self['auto']
+                program['running'] = self['ProgramActive']
                 if self.internalEvents['ack']:
                     events['erroracknowledge'] = True
                     self.internalEvents['ack'] = False
@@ -203,6 +204,7 @@ class Variables(dict):
                     self['troley']['servoRESET'] = False
                 
                 else:
+                    self['currentposition'] = 'wiersz {}, krok {}'.format(program['cycle'], program['stepnumber'])
                     self['processtime'] = program['time']
                     self['progress'] = program['cycle']
                     self['step'] = program['stepnumber']

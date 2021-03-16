@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from .Widgets import Font, LabelledScrolledText, getroot
+from .Widgets import Font, LabelledScrolledText, getroot, GeneralWidget
 import json
 from pathlib import Path
 from ..UI import SettingsScreen
@@ -8,17 +8,14 @@ from ..UI import HomeScreen
 from ..UI import TableScreen
 from ..UI import Variables
 
-class Frame(dict):
+class Frame(GeneralWidget):
     def __init__(self, master = None):
-        self.frame = tk.Frame(master = master)
-        dict.__init__(self)
-        self.settings = master.settings['MainWindow']
-        self.root = getroot(master)
-        self.OverallNotebook = ttk.Notebook(self.frame, **self.settings['Notebook']['constructor'])
+        super().__init__(master = master, branch = 'MainWindow')
+        self.OverallNotebook = ttk.Notebook(self, **self.settings['Notebook']['constructor'])
         self.OverallNotebook.__setattr__('settings',self.settings['Notebook'])
         self.widgets = [
-            LabelledScrolledText(master = self.frame, **self.settings['ErrorTextArea']['constructor']),
-            tk.Button(master = self.frame, font = self.root.font(), command = self.ack, **self.settings['ackbutton']['constructor']),
+            LabelledScrolledText(master = self, **self.settings['ErrorTextArea']['constructor']),
+            tk.Button(master = self, font = self.root.font(), command = self.ack, **self.settings['ackbutton']['constructor']),
             HomeScreen(master = self.OverallNotebook),
             SettingsScreen(master = self.OverallNotebook),
             TableScreen(master = self.OverallNotebook) 
@@ -26,12 +23,12 @@ class Frame(dict):
         col = 0
         for widget in self.widgets:
             if hasattr(widget, 'name'):
-                self.OverallNotebook.add(widget.frame, text=widget.name)
+                self.OverallNotebook.add(widget, text=widget.name)
             else:
                 widget.grid(column = col, row=0, sticky = tk.NSEW)
                 col +=1
         self.OverallNotebook.grid(**self.settings['Notebook']['grid'])
-        self.frame.pack()
+        self.pack()
 
     def update(self):
         super().update()

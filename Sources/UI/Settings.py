@@ -8,18 +8,18 @@ class SettingsScreen(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'SettingsScreen')
         self.name = self.settings['Name']
-        self.miscpneumaticsframe = LabelFrame(master = self.frame, branch = "Pneumatics")
+        self.miscpneumaticsframe = LabelFrame(master = self, branch = "Pneumatics")
         self.miscpneumaticsframe.__setattr__('settings', self.settings['Pneumatics'])
         self.widgets = [
-            Troley(self.frame),
-            Laser(self.frame),
-            Robot(self.frame),
-            PistonControl(master = self.miscpneumaticsframe.frame, button = 'ShieldingGas'),
-            PistonControl(master = self.miscpneumaticsframe.frame, button = 'CrossJet'),
-            PistonControl(master = self.miscpneumaticsframe.frame, button = 'HeadCooling'),
+            Troley(self),
+            Laser(self),
+            Robot(self),
+            PistonControl(master = self.miscpneumaticsframe, button = 'ShieldingGas'),
+            PistonControl(master = self.miscpneumaticsframe, button = 'CrossJet'),
+            PistonControl(master = self.miscpneumaticsframe, button = 'HeadCooling'),
             self.miscpneumaticsframe
         ]
-        self.buttonsframe = tk.Frame(master = self.frame)
+        self.buttonsframe = tk.Frame(master = self)
         for number, widget in enumerate(self.widgets):
             if isinstance(widget, LabelFrame):
                 button = tk.Button(master = self.buttonsframe, font = self.font(), text = widget.settings['Label'], command = lambda obj = self, key = number: obj.show(key), **self.settings['Button'])
@@ -40,9 +40,9 @@ class SettingsScreen(GeneralWidget):
 class Troley(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Troley')
-        self.pistonlabeledFrame = ttk.LabelFrame(self.frame, text = self.settings['Pneumatics']['Label'])
+        self.pistonlabeledFrame = ttk.LabelFrame(self, text = self.settings['Pneumatics']['Label'])
         self.pistonlabeledFrame.__setattr__('settings', self.settings['Pneumatics'])
-        self.widgets.append(ServoControl(master = self.frame))
+        self.widgets.append(ServoControl(master = self))
         self.widgets.append(self.pistonlabeledFrame)
         for piston in self.settings['Pneumatics']:
             if piston == 'Label': continue
@@ -53,9 +53,9 @@ class Troley(LabelFrame):
 class Laser(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Laser')
-        self.buttonsframe = tk.Frame(self.frame)
+        self.buttonsframe = tk.Frame(self)
         self.buttonsframe.__setattr__('settings', self.settings)
-        self.lampsframe = tk.Frame(self.frame)
+        self.lampsframe = tk.Frame(self)
         self.lampsframe.__setattr__('settings', self.settings)
         self.widgets = [self.buttonsframe, self.lampsframe]
         buttons = self.settings['buttons']
@@ -65,7 +65,7 @@ class Laser(LabelFrame):
         for key, value in lamps.items():
             self.widgets.append(Lamp(self.lampsframe, text = key, key = value))
         for widget in self.widgets:
-            if widget.master == self.frame:
+            if widget.master == self:
                 widget.pack(side = tk.LEFT, anchor = tk.N)
             else:
                 widget.pack(anchor = tk.N)
@@ -73,11 +73,11 @@ class Laser(LabelFrame):
 class Robot(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Robot')
-        self.buttonsframe = tk.Frame(self.frame)
+        self.buttonsframe = tk.Frame(self)
         self.buttonsframe.__setattr__('settings', self.settings)
-        self.lampsframe = tk.Frame(self.frame)
+        self.lampsframe = tk.Frame(self)
         self.lampsframe.__setattr__('settings', self.settings)
-        self.entriesframe = tk.Frame(self.frame)
+        self.entriesframe = tk.Frame(self)
         self.entriesframe.__setattr__('settings', self.settings)
         self.widgets = [self.buttonsframe, self.lampsframe, self.entriesframe]
         buttons = self.settings['buttons']
@@ -90,7 +90,7 @@ class Robot(LabelFrame):
         for key, value in entries.items():
             self.widgets.append(Entry(self.entriesframe, text = key, key = value))
         for widget in self.widgets:
-            if widget.master == self.frame:
+            if widget.master == self:
                 widget.pack(side = tk.LEFT, anchor = tk.N)
             else:
                 widget.pack(anchor = tk.N)
@@ -98,9 +98,9 @@ class Robot(LabelFrame):
 class ServoControl(LabelFrame):
     def __init__(self, master = None, buttons = {}, lamps = {}):
         super().__init__(master = master, branch = 'Servo')
-        self.buttonsframe = tk.Frame(self.frame)
+        self.buttonsframe = tk.Frame(self)
         self.buttonsframe.__setattr__('settings', self.settings)
-        self.lampsframe = tk.Frame(self.frame)
+        self.lampsframe = tk.Frame(self)
         self.lampsframe.__setattr__('settings', self.settings)
         self.widgets = [self.buttonsframe, self.lampsframe]
         buttons = self.settings['buttons']
@@ -110,7 +110,7 @@ class ServoControl(LabelFrame):
         for key, value in lamps.items():
             self.widgets.append(Lamp(self.lampsframe, text = key, key = value))
         for widget in self.widgets:
-            if widget.master == self.frame:
+            if widget.master == self:
                 widget.pack(side = tk.LEFT, anchor = tk.N)
             else:
                 widget.pack(anchor = tk.N)
@@ -119,27 +119,26 @@ class PistonControl(GeneralWidget):
     def __init__(self, master = None, button = "", **kwargs):
         super().__init__(master = master, branch = button)
         config = self.root.settings['widget']['pistonbutton']
-        self.frame = tk.Frame(master = master, **config['frame'])
-        self.frame.__setattr__('settings',self.settings)
+        self.config(**config['frame'])
         self.elements = self.root.variables[self.settings['masterkey']][self.settings['key']]
         if 'Left' in self.elements.keys():
-            self.buttonLeft = tk.Button(self.frame, font = self.font(), **config['Left']['Button'])
+            self.buttonLeft = tk.Button(self, font = self.font(), **config['Left']['Button'])
             self.buttonLeft.configure(command=self.Left)
         else:
-            self.buttonLeft = tk.Canvas(self.frame, **config['Left']['Canvas'])
+            self.buttonLeft = tk.Canvas(self, **config['Left']['Canvas'])
         self.buttonLeft.place(**config['Left']['place'])
         if 'Right' in self.elements.keys():
-            self.buttonRight = tk.Button(self.frame, font = self.font(), **config['Right']['Button'])
+            self.buttonRight = tk.Button(self, font = self.font(), **config['Right']['Button'])
             self.buttonRight.configure(command=self.Right)
         else:
-            self.buttonRight = tk.Canvas(self.frame, **config['Right']['Canvas'])
+            self.buttonRight = tk.Canvas(self, **config['Right']['Canvas'])
         self.buttonRight.place(**config['Right']['place'])
         if 'Center' in self.elements.keys():
-            self.buttonCenter = tk.Button(self.frame, font = self.font(), **config['Center']['Button'])
+            self.buttonCenter = tk.Button(self, font = self.font(), **config['Center']['Button'])
             self.buttonCenter.config(text=self.settings['Label'])
             self.buttonCenter.configure(command=self.Center)
         else:
-            self.buttonCenter = tk.Canvas(self.frame, **config['Center']['Canvas'])
+            self.buttonCenter = tk.Canvas(self, **config['Center']['Canvas'])
         self.buttonCenter.place(**config['Center']['place'])
 
     def Left(self):
@@ -161,7 +160,6 @@ class PistonControl(GeneralWidget):
             self.elements['Left']['coil'] = False
         
     def update(self):
-        self.frame.update()
         config = self.root.settings['widget']['pistonbutton']
         if 'Left' in self.elements.keys():
             bd = 1
@@ -220,3 +218,4 @@ class PistonControl(GeneralWidget):
             else:
                 color = config['Color']['normal']
             self.buttonCenter.configure(background = color, borderwidth = bd)
+        super().update()

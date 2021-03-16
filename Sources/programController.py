@@ -27,15 +27,15 @@ class programController(object):
         with lockerinstance[0].lock:
             running = lockerinstance[0].program['running']
             lockerinstance[0].program['/running'] = not running
-        safety = control.CheckSafety(lockerinstance)
-        program = control.CheckProgram(lockerinstance)
-        ready = control.CheckPositions(lockerinstance)
-        if safety and program:
-            EventManager.AdaptEvent(lockerinstance, input = 'events.startprogram', callback = control.startprocedure, callbackargs = (lockerinstance))
-        else:
-            with lockerinstance[0].lock:
-                lockerinstance[0].program['running'] = False
         if running:
+            safety = control.CheckSafety(lockerinstance)
+            program = control.CheckProgram(lockerinstance)
+            ready = control.CheckPositions(lockerinstance)
+            if safety and program:
+                EventManager.AdaptEvent(lockerinstance, input = 'events.startprogram', callback = control.startprocedure, callbackargs = (lockerinstance))
+            else:
+                with lockerinstance[0].lock:
+                    lockerinstance[0].program['running'] = False
             if not ready:
                 control.Initialise(lockerinstance)
             else:
