@@ -67,14 +67,10 @@ def CheckProgram(lockerinstance):
             programs = json.load(jsonfile)
         for program in programs['Programs']:
             if program['Name'] == programname:
-        #        minval, maxval = loadprogramminmax(lockerinstance, program)
                 recipesarepresent = checkrecipes(lockerinstance, program)
                 if not recipesarepresent:
                     errmsg = 'Program is invalid'
                 break
-        #with lockerinstance[0].lock:
-        #    lockerinstance[0].program['startpos'] = minval
-        #    lockerinstance[0].program['endpos'] = maxval
     if errmsg:
         ErrorEventWrite(lockerinstance, errmsg)
         return False
@@ -200,21 +196,15 @@ def Initialise(lockerinstance):
             lockerinstance[0].program['initialised'] = True 
 
 def checkrecipes(lockerinstance, program):
-    for line in program['Table']:
-        recipe = line[RECIPE]
+    for recipe in [line[RECIPE] for line in program['Table']]:
         if recipe:
             with lockerinstance[0].lock:
                 path = lockerinstance[0].scout['recipesdir']
-            if Path(path + recipe).is_file():
+            if Path(path + recipe).is_file() and path and recipe:
                 continue
             else:
                 return False
     return True
-
-#def loadprogramminmax(lockerinstance, program):
-#    minimum = reduce(lambda x,y: x[STEP] if x[STEP] <= y[STEP] else y[STEP], program['Table'])
-#    maximum = reduce(lambda x,y: x[STEP] if x[STEP] >= y[STEP] else y[STEP], program['Table'])
-#    return (minimum, maximum)
 
 def loadprogramline(lockerinstance, program, number):
     #program dict with key table, where is list of lists of 9 elements each

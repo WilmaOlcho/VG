@@ -263,7 +263,6 @@ class SharedLocker(object):
                 'automode':False,
                 'running':False,
                 '/running':True,
-                #'programname':'', #doubled key? #TODO#
                 'stepnumber':0,
                 'cycle':0, 
                 'starttime':0.0,
