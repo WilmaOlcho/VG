@@ -441,11 +441,11 @@
                         "variablesFrame":{
                             "currentposition":{
                                 "Label":"Pozycja w tabeli:",
-                                "width":25 
+                                "width":25
                             },
                             "processtime":{
                                 "Label":"Czas cyklu:",
-                                "width":25 
+                                "width":25
                             }
                         },
                         "Button":{

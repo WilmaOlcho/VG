@@ -34,8 +34,7 @@ class ProcessVariables(LabelFrame):
         self.rightFrame.__setattr__('settings',self.settings)
         self.widgets.extend([self.leftFrame, self.rightFrame ])
         for key in self.settings['variablesFrame'].keys():
-            element = variablesFrame(master = self.leftFrame, key = key)
-            self.widgets.append(element)
+            self.widgets.append(variablesFrame(master = self.leftFrame, key = key))
         for key in self.settings['Button'].keys():
             button = tk.Button(master = self.rightFrame, font = self.font(), command = lambda obj = self, k = key: obj.click(k), **self.settings['Button'][key])
             button.__setattr__('settings',self.settings['interactive'][key])
@@ -75,6 +74,7 @@ class variablesFrame(GeneralWidget):
         self.key = key
         self.label = ttk.Label(master = self, text = self.settings[self.key]['Label'])
         self.entry = ttk.Entry(master = self, text = self.root.variables[self.key], width = self.settings[self.key]['width'])
+        self.entry._name = self.key
         self.widgets.extend([self.label, self.entry])
         for widget in self.widgets:
             widget.pack(side = tk.TOP)
@@ -82,11 +82,13 @@ class variablesFrame(GeneralWidget):
 
     def update(self):
         for widget in self.widgets:
-            widget.update()
-            if isinstance(widget,ttk.Entry):
-                if widget.get() != self.root.variables[self.key]:
+            if widget == self.entry:
+                value = widget.get()
+                expected = self.root.variables[self.key]
+                if value != expected:
                     widget.delete(0,tk.END)
-                    widget.insert(0,self.root.variables[self.key])
+                    widget.insert(0,expected)
+            widget.update()
         super().update()
 
 class SecondColumn(GeneralWidget):

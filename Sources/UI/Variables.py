@@ -39,8 +39,8 @@ class Variables(dict):
         self.displayedprogramtableheight = 1000
 
         self['auto'] = False
-        self['processtime'] = 0
-        self['currentposition'] = 0
+        self['processtime'] = '0'
+        self['currentposition'] = '0'
         self['progress'] = 0
         self['ProgramActive'] = False
         self['step'] = 0
@@ -209,9 +209,9 @@ class Variables(dict):
                 
                 else:
                     self['currentposition'] = 'wiersz {}, krok {}'.format(program['cycle'], program['stepnumber'])
-                    self['processtime'] = program['time']
-                    self['progress'] = program['cycle']
-                    self['step'] = program['stepnumber']
+                    self['processtime'] = str(program['time'])
+                    self['progress'] = str(program['cycle'])
+                    self['step'] = str(program['stepnumber'])
                 #status
                 #pneumatics
                 if pneumatics['ShieldingGas'] and pneumatics['sensorShieldingGasOk']:
