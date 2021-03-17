@@ -41,7 +41,6 @@ class ProcessVariables(LabelFrame):
             self.widgets.append(button)
         for widget in self.widgets:
             widget.pack(side = tk.LEFT if isinstance(widget, ttk.Frame) else tk.TOP, fill ='x', anchor = tk.N)
-        self.pack()
 
     def click(self, key):
         for widget in self.widgets:
@@ -58,7 +57,6 @@ class ProcessVariables(LabelFrame):
 
     def update(self):
         for widget in self.widgets:
-            widget.update()
             if isinstance(widget, tk.Button):
                 if 'condition' in widget.settings.keys():
                     condition = eval(widget.settings['condition'])
@@ -66,6 +64,7 @@ class ProcessVariables(LabelFrame):
                         widget.config(widget.settings['active'])
                     else:
                         widget.config(widget.settings['inactive'])
+            widget.update()
         super().update()
 
 class variablesFrame(GeneralWidget):
@@ -73,21 +72,19 @@ class variablesFrame(GeneralWidget):
         super().__init__(master = master, branch = 'variablesFrame')
         self.key = key
         self.label = ttk.Label(master = self, text = self.settings[self.key]['Label'])
-        self.entry = ttk.Entry(master = self, text = self.root.variables[self.key], width = self.settings[self.key]['width'])
-        self.entry._name = self.key
+        self.entry = tk.Entry(master = self, width = self.settings[self.key]['width'])
         self.widgets.extend([self.label, self.entry])
         for widget in self.widgets:
             widget.pack(side = tk.TOP)
-        self.pack()
 
     def update(self):
+        value = self.entry.get()
+        expected = self.root.variables[self.key]
+        if value != expected:
+            if value:
+                self.entry.delete(0,tk.END)
+            self.entry.insert(tk.INSERT,expected)
         for widget in self.widgets:
-            if widget == self.entry:
-                value = widget.get()
-                expected = self.root.variables[self.key]
-                if value != expected:
-                    widget.delete(0,tk.END)
-                    widget.insert(0,expected)
             widget.update()
         super().update()
 
