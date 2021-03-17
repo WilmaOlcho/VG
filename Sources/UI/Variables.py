@@ -1,4 +1,7 @@
 
+INT = type(1)
+STRING = type('')
+
 class Variables(dict):
     def __init__(self, lockerinstance, **widgetsettings):
         self.lockerinstance = lockerinstance
@@ -11,6 +14,7 @@ class Variables(dict):
         self.programcolumns = ["ID","Kolejność","Program SCOUT","Warstwa SCOUT","Pozycja robota","Tabela pozycji","Pozycja serwo","reserved","reserved"]
         self.displayedprogramcolumns = [False,True,True,True,True,True,True,False,False]
         self.columnwidths = [4,10,30,15,14,14,17,15,15]
+        self.columntypes = [INT, INT, STRING, INT, INT, INT, INT, INT, INT]
         self.internalEvents = {
             'ProgramMenuRefresh':False,
             'RefreshStartEnd':False,

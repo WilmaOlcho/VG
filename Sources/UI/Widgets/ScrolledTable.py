@@ -226,7 +226,18 @@ class PosTable(GeneralWidget):
     def RetrieveSynctable(self, event):
         for row, content in enumerate(self.entries):
             for column, value in enumerate(content):
-                if value: self.synctable[row][column] = value.get()
+                if value == event.widget:
+                    changedvariable = value.get()
+                    if self.root.variables.columntypes[column] == type(''):
+                        self.synctable[row][column] = changedvariable
+                        return
+                    if self.root.variables.columntypes[column] == type(1):
+                        if changedvariable.isnumeric():
+                            self.synctable[row][column] = int(changedvariable)
+                        else:
+                            value.delete(0,tk.END)
+                            value.insert(0,self.synctable[row][column])
+                        return
 
     def UpdateJson(self):
         i = self.__getprogram(i = 'only')
