@@ -110,14 +110,10 @@ class Lamp(GeneralWidget):
 
 class Window(GeneralWidget, tk.Toplevel):
     def __init__(self, parent = None, branch = ''):
-        #self.toplevel = tk.Toplevel( master = parent)
-        #self.toplevel.__setattr__('settings', parent.settings)
-        #self.parent = parent
-        #super().__init__(master = self.toplevel, branch = branch)
-        #self.toplevel.title(self.settings['title'])
         GeneralWidget.__init__(self, master = parent, branch = branch)
         tk.Toplevel.__init__(self, master = parent)
         self.title = self.settings['title']
+        self.parent = parent
 
     def center(self):
         screenWidth = GetSystemMetrics(0)

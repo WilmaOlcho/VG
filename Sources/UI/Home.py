@@ -265,7 +265,6 @@ class AgainPrompt(Window):
         for button in self.settings['buttons']:
             self.widgets.append(Button(master = self, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
             self.widgets[-1].grid(**self.settings['buttons'][button]['grid'])
-        self.pack()
 
     def ButtonClick(self, button):
         if button == "DoIt":
@@ -360,6 +359,10 @@ class ProgramSelect(LabelFrame):
         if self.root.variables.internalEvents['ProgramMenuRefresh']:
             self.createmenu()
             self.root.variables.internalEvents['ProgramMenuRefresh'] = False
+        if self.root.variables.internalEvents['start']:
+            self.menubutton.config(state = 'disabled')
+        if self.root.variables.internalEvents['stop']:
+            self.menubutton.config(state = 'normal')
         super().update()
 
 class Positions(LabelFrame):
@@ -414,4 +417,8 @@ class Positions(LabelFrame):
                     else:
                         widget.insert(0,str(self.root.variables.programposstart))
         self.root.variables.internalEvents['RefreshStartEnd'] = False
+        if self.root.variables.internalEvents['start']:
+            for widget in self.widgets: widget.config(state = 'disabled')
+        if self.root.variables.internalEvents['stop']:
+            for widget in self.widgets: widget.config(state = 'normal')
         super().update()

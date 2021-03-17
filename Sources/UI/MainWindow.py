@@ -32,10 +32,16 @@ class Frame(GeneralWidget):
 
     def update(self):
         super().update()
+        start = self.root.variables.internalEvents['start']
+        stop = self.root.variables.internalEvents['stop']
         for widget in self.widgets:
             if isinstance(widget, tk.Button):
                 widget.config(bg = 'red' if self.root.variables.internalEvents['error'] else 'yellow')
             widget.update()
+        if start:
+            self.root.variables.internalEvents['start'] = False
+        if stop:
+            self.root.variables.internalEvents['stop'] = False
 
     def ack(self):
         self.root.variables.internalEvents['ack'] = True

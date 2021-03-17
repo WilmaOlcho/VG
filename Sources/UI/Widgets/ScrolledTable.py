@@ -1,6 +1,7 @@
 import tkinter as tk
 import json
 from .common import LabelFrame, GeneralWidget, getroot
+from functools import reduce
 
 class ScrolledWidget(LabelFrame):
     def __init__(self, widgetCls, text = '', master = None, height = 600, scrolltype = 'both'):
@@ -196,6 +197,18 @@ class PosTable(GeneralWidget):
         self.root.variables.displayedprogramtableheight = tableheight
         self.pack(expand = tk.YES, fill=tk.BOTH)
 
+    def configentries(self, **cfg):
+        table = self.entries[1:]
+        def reduct(x, y):
+            if x: 
+                x = x.copy() #some work for GC, but it prevents from changing self.entries lists
+                if y: x.extend(y) 
+                return x
+            else: return y
+        entries = reduce(reduct, table, [])
+        while None in entries: entries.remove(None)
+        for entry in entries: entry.config(**cfg) #I've no idea why map doesn't work in this case
+
     def update(self):
         super().update()
         self.freeze = not self.root.variables.internalEvents['TableRefresh']
@@ -204,6 +217,10 @@ class PosTable(GeneralWidget):
             return True
         if self.root.variables.internalEvents['DumpProgramToFile']:
             self.WriteSyncTable()
+        if self.root.variables.internalEvents['start']:
+            self.configentries(state = 'disabled')
+        if self.root.variables.internalEvents['stop']:
+            self.configentries(state = 'normal')
         return False
     
     def RetrieveSynctable(self, event):
