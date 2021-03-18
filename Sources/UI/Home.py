@@ -330,19 +330,20 @@ class Positions(LabelFrame):
         return attemptlist[0]
 
     def setvalue(self):
-        for widget in self.widgets:
-            if isinstance(widget, tk.Entry):
-                value = widget.get()
-                if not value.isnumeric(): break
-                value = int(value)
-                positionsintable = [item[1] for item in self.program['Table']]
-                if not value in positionsintable:
-                    value = self.nearest(value, positionsintable)
-                if '2' in widget._name:
-                    self.root.variables.programposend = value
-                else:
-                    self.root.variables.programposstart = value
-        self.root.variables.internalEvents['RefreshStartEnd'] = True
+        if self.program:
+            for widget in self.widgets:
+                if isinstance(widget, tk.Entry):
+                    value = widget.get()
+                    if not value.isnumeric(): break
+                    value = int(value)
+                    positionsintable = [item[1] for item in self.program['Table']]
+                    if not value in positionsintable:
+                        value = self.nearest(value, positionsintable)
+                    if '2' in widget._name:
+                        self.root.variables.programposend = value
+                    else:
+                        self.root.variables.programposstart = value
+            self.root.variables.internalEvents['RefreshStartEnd'] = True
         
     def update(self):
         for program in self.programs['Programs']:

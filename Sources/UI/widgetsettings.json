@@ -208,7 +208,7 @@
                                 }
                             },
                             "TroleyDocked":{
-                                "Label":"Wózek zadokowany",
+                                "Label":"W\u00F3zek zadokowany",
                                 "width":40,
                                 "height":40,
                                 "frame":{
@@ -279,7 +279,7 @@
                             }
                         },
                         "LaserIsOn":{
-                            "Label":"Laser włączony",
+                            "Label":"Laser w\u0142\u0105czony",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -296,7 +296,7 @@
                             }
                         },
                         "LaserAssigned":{
-                            "Label":"Kanał przypisany",
+                            "Label":"Kana\u0142 przypisany",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -330,7 +330,7 @@
                             }
                         },
                         "!LaserError":{
-                            "Label":"Błąd lasera",
+                            "Label":"B\u0142\u0105d lasera",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -347,7 +347,7 @@
                             }
                         },
                         "!LaserWarning":{
-                            "Label":"Ostrzeżenie lasera",
+                            "Label":"Ostrze\u017Cenie lasera",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -364,7 +364,7 @@
                             }
                         },
                         "!ChillerError":{
-                            "Label":"Błąd chłodnicy",
+                            "Label":"B\u0142\u0105d ch\u0142odnicy",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -381,7 +381,7 @@
                             }
                         },
                         "!ChillerWarning":{
-                            "Label":"Ostrzeżenie chłodnicy",
+                            "Label":"Ostrze\u017Cenie ch\u0142odnicy",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -467,7 +467,7 @@
                             }
                         },
                         "RobotHandMode":{
-                            "Label":"Tryb ręczny",
+                            "Label":"Tryb r\u0119czny",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -518,7 +518,7 @@
                             }
                         },
                         "!-ConnectionActive":{
-                            "Label":"Połączenie aktywne",
+                            "Label":"Po\u0142\u0105czenie aktywne",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -540,7 +540,7 @@
                         "width":25
                     },
                     "buttons":{
-                        "Jedź":"RobotGo",
+                        "Jed\u017A":"RobotGo",
                         "Bazuj":"RobotHoming"
                     },
                     "entries":{
@@ -550,14 +550,14 @@
                     }
                 },
                 "Scout":{
-                    "Label":"Głowica skanująca",
+                    "Label":"G\u0142owica skanuj\u0105ca",
                     "Button":{
                         "masterkey":"scout",
                         "width":15,
                         "height":2
                     },
                     "buttons":{
-                        "Ustaw trajektorię":"align",
+                        "Ustaw trajektori\u0119":"align",
                         "Spawaj":"weld",
                         "Pobierz dane trajektorii":"getaligninfo"
                     },
@@ -565,7 +565,7 @@
                         "Label":"Status",
                         "masterkey":"scout",
                         "ready":{
-                            "Label":"Gotowość",
+                            "Label":"Gotowo\u015B\u0107",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -705,7 +705,7 @@
                             }
                         },
                         "connection":{
-                            "Label":"Połączenie",
+                            "Label":"Po\u0142\u0105czenie",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -754,7 +754,7 @@
                             },
                             "buttons":{
                                 "DoIt":{
-                                    "text":"Utwórz Program",
+                                    "text":"Utw\u00F3rz Program",
                                     "grid":{
                                         "column":0,
                                         "row":"2",
@@ -772,14 +772,14 @@
                             }
                         },
                         "DeleteProgram":{
-                            "title":"Usuń program",
+                            "title":"Usu\u0144 program",
                             "Button":{
                                 "width":10,
                                 "height":2
                             },
                             "buttons":{
                                 "DoIt":{
-                                    "text":"Usuń Program",
+                                    "text":"Usu\u0144 Program",
                                     "grid":{
                                         "column":0,
                                         "row":"1",
@@ -797,7 +797,7 @@
                             }
                         },
                         "AgainPrompt":{
-                            "title":"Czy wykonać procedurę ponownie?",
+                            "title":"Czy wykona\u0107 procedur\u0119 ponownie?",
                             "Button":{
                                 "width":10,
                                 "height":2
