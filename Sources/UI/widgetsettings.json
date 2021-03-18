@@ -136,20 +136,93 @@
                             "width":15,
                             "height":2
                         },
-                        "Lamp":{
+                        "StatusIndicators":{
+                            "Label":"Status",
                             "masterkey":"troley",
-                            "width":40,
-                            "height":40,
-                            "frame":{
-                                "relief":"ridge",
-                                "borderwidth":2
+                            "servoON":{
+                                "Label":"Serwo w\u0142\u0105czone",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
                             },
-                            "caption":{
-                                "width":19
+                            "servoCOIN":{
+                                "Label":"Serwo na pozycji",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
                             },
-                            "Color":{
-                                "normal":"black",
-                                "active":"green"
+                            "servoREADY":{
+                                "Label":"Serwo gotowe",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
+                            },
+                            "servoTGON":{
+                                "Label":"Serwo w ruchu",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
+                            },
+                            "TroleyDocked":{
+                                "Label":"Wózek zadokowany",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
                             }
                         },
                         "buttons":{
@@ -157,13 +230,7 @@
                             "Wy\u0142\u0105cz":"servoSTOP",
                             "Krok":"servoSTEP",
                             "Bazowanie":"servoHOMING",
-                            "Reset":"servoRESET"},
-                        "lamps":{
-                            "Serwo w\u0142\u0105czone":"servoON",
-                            "Serwo na pozycji":"servoCOIN",
-                            "Serwo gotowe":"servoREADY",
-                            "Serwo w ruchu":"servoTGON",
-                            "W\u00F3zek zadokowany":"TroleyDocked"}
+                            "Reset":"servoRESET"}
                     }
                 },
                 "Pneumatics":{
@@ -191,37 +258,152 @@
                         "width":15,
                         "height":2
                     },
-                    "Lamp":{
+                    "StatusIndicators":{
+                        "Label":"",
                         "masterkey":"laser",
-                        "width":40,
-                        "height":40,
-                        "frame":{
-                            "relief":"ridge",
-                            "borderwidth":2
+                        "!LaserBusy":{
+                            "Label":"Laser zaj\u0119ty",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
                         },
-                        "caption":{
-                            "width":19
+                        "LaserIsOn":{
+                            "Label":"Laser włączony",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
                         },
-                        "Color":{
-                            "normal":"black",
-                            "active":"green",
-                            "error":"red"
+                        "LaserAssigned":{
+                            "Label":"Kanał przypisany",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "LaserReady":{
+                            "Label":"Laser gotowy",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "!LaserError":{
+                            "Label":"Błąd lasera",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "!LaserWarning":{
+                            "Label":"Ostrzeżenie lasera",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "!ChillerError":{
+                            "Label":"Błąd chłodnicy",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "!ChillerWarning":{
+                            "Label":"Ostrzeżenie chłodnicy",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
                         }
                     },
                     "buttons":{
                         "W\u0142\u0105cz Laser":"LaserOn",
                         "Wy\u0142\u0105cz Laser":"-LaserOn",
                         "Przejmij kana\u0142":"GetChannel",
-                        "Reset b\u0142\u0119d\u00F3w":"ResetErrors"},
-                    "lamps":{
-                        "Laser zaj\u0119ty":"!LaserBusy",
-                        "Laser w\u0142\u0105czony":"LaserIsOn",
-                        "Kana\u0142 przypisany":"LaserAssigned",
-                        "Laser gotowy":"LaserReady",
-                        "B\u0142\u0105d lasera":"!LaserError",
-                        "Ostrze\u017Cenie lasera":"!LaserWarning",
-                        "B\u0142\u0105d ch\u0142odnicy":"!ChillerError",
-                        "Ostrze\u017Cenie ch\u0142odnicy":"!ChillerWarning"}
+                        "Reset b\u0142\u0119d\u00F3w":"ResetErrors"
+                    }
                 },
                 "Robot":{
                     "Label":"Manipulator zrobotyzowany",
@@ -230,21 +412,127 @@
                         "width":15,
                         "height":2
                     },
-                    "Lamp":{
+                    "StatusIndicators":{
+                        "Label":"",
                         "masterkey":"robot",
-                        "width":40,
-                        "height":40,
-                        "frame":{
-                            "relief":"ridge",
-                            "borderwidth":2
+                        "RobotCommandActive":{
+                            "Label":"Operacja w toku",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
                         },
-                        "caption":{
-                            "width":19
+                        "RobotIsHome":{
+                            "Label":"Pozycja domowa",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
                         },
-                        "Color":{
-                            "normal":"black",
-                            "active":"green",
-                            "error":"red"
+                        "RobotInAPosition":{
+                            "Label":"Robot na pozycji",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "RobotHandMode":{
+                            "Label":"Tryb ręczny",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "RobotMotorsOn":{
+                            "Label":"Silniki robota",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "RobotCycle":{
+                            "Label":"Robot w cyklu",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "!-ConnectionActive":{
+                            "Label":"Połączenie aktywne",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
                         }
                     },
                     "Entry":{
@@ -259,15 +547,6 @@
                         "Tabela pozycji":"table",
                         "Pozycja zadana":"position",
                         "Aktualna pozycja":"actualposition"
-                    },
-                    "lamps":{
-                        "Operacja w toku":"RobotCommandActive",
-                        "Pozycja domowa":"RobotIsHome",
-                        "Robot na pozycji":"RobotInAPosition",
-                        "Tryb ręczny":"RobotHandMode",
-                        "Silniki robota aktywne":"RobotMotorsOn",
-                        "Cykl programu robota":"RobotCycle",
-                        "Połączenie aktywne":"!-ConnectionActive"
                     }
                 },
                 "Scout":{
@@ -284,76 +563,165 @@
                     },
                     "StatusIndicators":{
                         "Label":"Status",
+                        "masterkey":"scout",
                         "ready":{
                             "Label":"Gotowość",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "atstart":{
                             "Label":"Autostart",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "alarm":{
                             "Label":"Alarm",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "NA":{
                             "Label":"Parametr nieznany",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "progress":{
                             "Label":"W toku",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "laseron":{
                             "Label":"Laser aktywny",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "wobble":{
                             "Label":"Wobler",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "connection":{
                             "Label":"Połączenie",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         }
                     },
@@ -361,7 +729,7 @@
                         "string":"Ver: {}",
                         "format":"versionvariable"
                     },
-                    "VariablesFrame":{
+                    "VariablesFrames":{
                         "receipt":{
                             "Label":"Receptura: ",
                             "width":25
@@ -463,76 +831,165 @@
                 "SecondColumn":{
                     "StatusIndicators":{
                         "Label":"Status",
-                        "Safety":{
+                        "masterkey":"statusindicators",
+                        "!Safety":{
                             "Label":"Bezpiecze\u0144stwo:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "ShieldingGas":{
                             "Label":"Gaz os\u0142onowy:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "VacuumFilter":{
                             "Label":"Filtrowentylator:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "Air":{
                             "Label":"Powietrze:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "Crossjet":{
                             "Label":"N\u00F3\u017C powietrzny:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "Troley":{
                             "Label":"W\u00F3zek:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "Light":{
                             "Label":"O\u015Bwietlenie:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         },
                         "Robot":{
                             "Label":"Robot:",
-                            "Frame":{
+                            "width":40,
+                            "height":40,
+                            "frame":{
                                 "height":45,
                                 "width":250,
                                 "borderwidth":2,
                                 "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"green",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
                             }
                         }
                     }
@@ -540,7 +997,8 @@
                 "ThirdColumn":{
                     "ProcessVariables":{
                         "Label":"Proces",
-                        "VariablesFrame":{
+                        "VariablesFrames":{
+                            "masterkey":"statusindicators",
                             "currentposition":{
                                 "Label":"Pozycja w tabeli:",
                                 "width":25
@@ -604,6 +1062,7 @@
                 }
             },
             "TableScreen":{
+                "Name":"Tabela programu",
                 "ScrolledWidget":{
                     "Label":"",
                     "scrolltype":"vertical",

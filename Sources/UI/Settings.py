@@ -3,7 +3,7 @@ from tkinter import ttk
 from .Variables import Variables
 from .Widgets.callableFont import Font
 from .Widgets import GeneralWidget, LabelFrame, Button 
-from .Widgets import Entry, Lamp, Frame
+from .Widgets import Entry, Lamp, Frame, KEYWORDS
 from .Widgets import StatusIndicators, VariablesFrames
 
 class SettingsScreen(GeneralWidget):
@@ -15,6 +15,7 @@ class SettingsScreen(GeneralWidget):
             Troley(self),
             Laser(self),
             Robot(self),
+            Scout(self),
             PistonControl(master = self.miscpneumaticsframe, button = 'ShieldingGas'),
             PistonControl(master = self.miscpneumaticsframe, button = 'CrossJet'),
             PistonControl(master = self.miscpneumaticsframe, button = 'HeadCooling'),
@@ -42,89 +43,57 @@ class Troley(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Troley')
         self.pistonlabeledFrame = LabelFrame(self, branch = 'Pneumatics')
-        self.widgets.append(ServoControl(master = self))
-        self.widgets.append(self.pistonlabeledFrame)
+        ServoControl(master = self)
         for piston in self.settings['Pneumatics']:
-            if piston == 'Label': continue
-            self.widgets.append(PistonControl(master = self.pistonlabeledFrame, button=piston))
-        for widget in self.widgets:
+            if piston in KEYWORDS: continue
+            PistonControl(master = self.pistonlabeledFrame, button=piston).pack(anchor = tk.N)
+        for widget in self.winfo_children():
             widget.pack(anchor = tk.NW)
 
 class Laser(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Laser')
         self.buttonsframe = Frame(self)
-        self.lampsframe = Frame(self)
-        self.widgets = [self.buttonsframe, self.lampsframe]
-        buttons = self.settings['buttons']
-        lamps = self.settings['lamps']
-        for key, value in buttons.items():
-            self.widgets.append(Button(self.buttonsframe, text = key, key = value))
-        for key, value in lamps.items():
-            self.widgets.append(Lamp(self.lampsframe, text = key, key = value))
-        for widget in self.widgets:
-            if widget.master == self:
-                widget.pack(side = tk.LEFT, anchor = tk.N)
-            else:
-                widget.pack(anchor = tk.N)
+        StatusIndicators(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
 
 class Scout(LabelFrame):
     def __init__(self, master = None):
-        super().__init__(master = master, branch = 'Laser')
+        super().__init__(master = master, branch = 'Scout')
         self.buttonsframe = Frame(self)
-        self.statusframe = StatusIndicators(self)
-        self.variablesframe = VariablesFrames(self)
+        StatusIndicators(self)
+        VariablesFrames(self)
         self.versionlabel = tk.Label(self)
-        self.widgets = [self.buttonsframe]
-        buttons = self.settings['buttons']
-        lamps = self.settings['lamps']
-        for key, value in buttons.items():
-            self.widgets.append(Button(self.buttonsframe, text = key, key = value))
-        for widget in self.widgets:
-            if widget.master == self:
-                widget.pack(side = tk.LEFT, anchor = tk.N)
-            else:
-                widget.pack(anchor = tk.N)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
 
 class Robot(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Robot')
         self.buttonsframe = Frame(self)
-        self.lampsframe = Frame(self)
+        StatusIndicators(self)
         self.entriesframe = Frame(self)
-        self.widgets = [self.buttonsframe, self.lampsframe, self.entriesframe]
-        buttons = self.settings['buttons']
-        lamps = self.settings['lamps']
-        entries = self.settings['entries']
-        for key, value in buttons.items():
-            self.widgets.append(Button(self.buttonsframe, text = key, key = value))
-        for key, value in lamps.items():
-            self.widgets.append(Lamp(self.lampsframe, text = key, key = value))
-        for key, value in entries.items():
-            self.widgets.append(Entry(self.entriesframe, text = key, key = value))
-        for widget in self.widgets:
-            if widget.master == self:
-                widget.pack(side = tk.LEFT, anchor = tk.N)
-            else:
-                widget.pack(anchor = tk.N)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for key, value in self.settings['entries'].items():
+            Entry(self.entriesframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
 
 class ServoControl(LabelFrame):
     def __init__(self, master = None, buttons = {}, lamps = {}):
         super().__init__(master = master, branch = 'Servo')
         self.buttonsframe = Frame(self)
-        self.lampsframe = Frame(self)
-        self.widgets = [self.buttonsframe, self.lampsframe]
-        buttons = self.settings['buttons']
-        lamps = self.settings['lamps']
-        for key, value in buttons.items():
-            self.widgets.append(Button(self.buttonsframe, text = key, key = value))
-        for key, value in lamps.items():
-            self.widgets.append(Lamp(self.lampsframe, text = key, key = value))
-        for widget in self.widgets:
-            if widget.master == self:
-                widget.pack(side = tk.LEFT, anchor = tk.N)
-            else:
-                widget.pack(anchor = tk.N)
+        StatusIndicators(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
 
 class PistonControl(GeneralWidget):
     def __init__(self, master = None, button = "", **kwargs):

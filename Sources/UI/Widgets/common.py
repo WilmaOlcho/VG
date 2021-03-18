@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from win32api import GetSystemMetrics
 
-KEYWORDS = ["Label"]
+KEYWORDS = ["Label","masterkey", "Name", "masterkey", "width", "height"]
 
 def Blank(*args, **kwargs):
     return None
@@ -86,13 +86,13 @@ class Entry(GeneralWidget):
         super().update()
 
 class Lamp(GeneralWidget):
-    def __init__(self, master = None, text = '', key = ''):
-        super().__init__(master = master, branch = 'Lamp')
+    def __init__(self, master = None, branch = "Lamp"):
+        super().__init__(master = master, branch = branch)
         self.config(**self.settings['frame'])
+        self.key = branch
         self.lamp = tk.Canvas(master = self, width = self.settings['width'], height = self.settings['height'])
-        self.caption = ttk.Label(master = self, text = text, **self.settings['caption'])
-        self.key = key
-        self.masterkey = self.settings['masterkey']
+        self.caption = ttk.Label(master = self, text = self.settings['Label'], **self.settings['caption'])
+        self.masterkey = master.settings['masterkey']
         self.caption.pack(side = tk.LEFT)
         self.lamp.pack(side = tk.LEFT)
         self.lit = False
@@ -100,19 +100,26 @@ class Lamp(GeneralWidget):
     def update(self):
         super().update()
         keystartpos = 0
-        negation = '-' in self.key[:2]
+        negation = '-' in self.key[:3]
         if negation: keystartpos += 1
-        errsign = '!' in self.key[:2]
+        errsign = '!' in self.key[:3]
         if errsign: keystartpos += 1
+        highlight = '~' in self.key[:3]
+        if highlight: keystartpos += 1
         key = self.key[keystartpos:]
         if negation:
             self.lit = not self.root.variables[self.masterkey][key]
         else:
             self.lit = self.root.variables[self.masterkey][key]
-        if errsign:
-            self.lamp.config(bg = self.settings['Color']['error'] if self.lit else self.settings['Color']['normal'])
+        if self.lit:
+            if errsign:
+                self.lamp.config(bg = self.settings['Color']['error'])
+            elif highlight:
+                self.lamp.config(bg = self.settings['Color']['highlighted'])
+            else:
+                self.lamp.config(bg = self.settings['Color']['active'])
         else:
-            self.lamp.config(bg = self.settings['Color']['active'] if self.lit else self.settings['Color']['normal'])
+            self.lamp.config(bg = self.settings['Color']['normal'])
 
 class Window(GeneralWidget, tk.Toplevel):
     def __init__(self, parent = None, branch = ''):

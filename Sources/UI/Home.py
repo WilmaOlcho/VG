@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
 import json
-from .Widgets import VariablesFrame, StatusIndicators, GeneralWidget
+from .Widgets import VariablesFrames, StatusIndicators, GeneralWidget
 from .Widgets import LabelFrame, Window, Button, getroot, KEYWORDS
 from .Widgets import Frame
 from functools import reduce
@@ -12,18 +12,18 @@ class HomeScreen(GeneralWidget):
         super().__init__(master = master, branch = 'HomeScreen')
         self.name = self.settings['Name']
         for key in self.settings.keys():
-            if not key == 'Name':
-                self.widgets.append(eval(key)(self))
-        for widget in self.widgets:
+            if key not in KEYWORDS:
+                eval(key)(self)
+        for widget in self.winfo_children():
             widget.pack(side = tk.LEFT, expand = tk.Y)
-        self.pack(expand = tk.YES, fill=tk.BOTH)
 
 class ThirdColumn(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'ThirdColumn')
         for key in self.settings:
-            self.widgets.append(eval(key)(master = self))
-        for widget in self.widgets:
+            if key not in KEYWORDS:
+                eval(key)(self)
+        for widget in self.winfo_children():
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
 
 class ProcessVariables(LabelFrame):
@@ -31,9 +31,8 @@ class ProcessVariables(LabelFrame):
         super().__init__(master = master, branch = 'ProcessVariables')
         self.leftFrame = Frame(self)
         self.rightFrame = Frame(self)
-        for key in self.settings['VariablesFrame'].keys():
-            vframe = VariablesFrame(self.leftFrame, key = key)
-            vframe.pack(side = tk.TOP)
+        vframes = VariablesFrames(self.leftFrame, side = tk.TOP)
+        vframes.pack(side = tk.TOP)
         for key in self.settings['Button'].keys():
             button = tk.Button(self.rightFrame, font = self.font(), **self.settings['Button'][key])
             button.__setattr__('settings',self.settings['interactive'][key])
@@ -68,21 +67,17 @@ class ProcessVariables(LabelFrame):
 class SecondColumn(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'SecondColumn')
-        self.widgets.append(StatusIndicators(master = self))
-        for widget in self.widgets:
+        StatusIndicators(master = self)
+        for widget in self.winfo_children():
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
-        self.pack()
 
 class FirstColumn(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'FirstColumn')
-        self.widgets.extend([
-            ProgramSelect(self),
-            Positions(self)
-        ])
-        for widget in self.widgets:
+        ProgramSelect(self),
+        Positions(self)
+        for widget in self.winfo_children():
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
-        self.pack()
 
 class NewProgramWindow(Window):
     def __init__(self, parent, menubuttonwidget):

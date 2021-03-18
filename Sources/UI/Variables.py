@@ -26,7 +26,7 @@ class Variables(dict):
             'stop':False
         }
 
-        self.statusindicators = {
+        self['statusindicators'] = {
             'Safety':-1,
             'ShieldingGas':False,
             'VacuumFilter':False,
@@ -44,6 +44,8 @@ class Variables(dict):
         self['progress'] = 0
         self['ProgramActive'] = False
         self['step'] = 0
+        self['receipt'] = ''
+        self['page'] = ''
 
         self['ImportantMessages'] = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
         self['troley'] = {
@@ -231,36 +233,36 @@ class Variables(dict):
                 #status
                 #pneumatics
                 if pneumatics['ShieldingGas'] and pneumatics['sensorShieldingGasOk']:
-                    self.statusindicators['ShieldingGas'] = 1
+                    self['statusindicators']['ShieldingGas'] = 1
                 elif pneumatics['ShieldingGas'] and not pneumatics['sensorShieldingGasOk']:
-                    self.statusindicators['ShieldingGas'] = -1
+                    self['statusindicators']['ShieldingGas'] = -1
                 else:
-                    self.statusindicators['ShieldingGas'] = 0
+                    self['statusindicators']['ShieldingGas'] = 0
                 if pneumatics['CrossJet'] and pneumatics['sensorAirOk']:
-                    self.statusindicators['Crossjet'] = 1
+                    self['statusindicators']['Crossjet'] = 1
                 elif pneumatics['CrossJet'] and not pneumatics['sensorAirOk']:
-                    self.statusindicators['Crossjet'] = -1
+                    self['statusindicators']['Crossjet'] = -1
                 else:
-                    self.statusindicators['Crossjet'] = 0
+                    self['statusindicators']['Crossjet'] = 0
                 if pneumatics['sensorAirOk']:
-                    self.statusindicators['Air'] = 1
+                    self['statusindicators']['Air'] = 1
                 else:
-                    self.statusindicators['Air'] = 0
+                    self['statusindicators']['Air'] = 0
                 if pneumatics['sensorVacuumOk']:
-                    self.statusindicators['VacuumFilter'] = 1
+                    self['statusindicators']['VacuumFilter'] = 1
                 else:
-                    self.statusindicators['VacuumFilter'] = 0
-                self.statusindicators['Light'] = 1
+                    self['statusindicators']['VacuumFilter'] = 0
+                self['statusindicators']['Light'] = 1
                 #troley
                 if troley['docked'] and not troley['error']:
-                    self.statusindicators['Troley'] = 1
+                    self['statusindicators']['Troley'] = 1
                 elif troley['error'] or not troley['Alive']:
-                    self.statusindicators['Troley'] = -1
+                    self['statusindicators']['Troley'] = -1
                 else:
-                    self.statusindicators['Troley'] = 0
+                    self['statusindicators']['Troley'] = 0
                 #robot
                 if robot['Alive'] and not robot['error']:
-                    self.statusindicators['Robot'] = 1
+                    self['statusindicators']['Robot'] = 1
                     self['robot']['actualposition'] = robot['currentpos']
                     self['robot']['RobotCommandActive'] = robot['activecommand']
                     self['robot']['RobotIsHome'] = robot['homepos']
@@ -271,15 +273,15 @@ class Variables(dict):
                     self['robot']['ConnectionActive'] = robot['connection']
 
                 elif robot['error'] or not robot['Alive']:
-                    self.statusindicators['Robot'] = -1
+                    self['statusindicators']['Robot'] = -1
                 else:
-                    self.statusindicators['Robot'] = 0
+                    self['statusindicators']['Robot'] = 0
                 #safety
                 if safety['EstopArmed'] and safety['ZoneArmed']:
-                    self.statusindicators['safety'] = 1
+                    self['statusindicators']['safety'] = 1
                 elif not safety['EstopArmed']:
-                    self.statusindicators['safety'] = -1
+                    self['statusindicators']['safety'] = -1
                 elif safety['Estopresetrecquired'] or safety['Zoneresetrecquired']:
-                    self.statusindicators['safety'] = -2
+                    self['statusindicators']['safety'] = -2
                 else:
-                    self.statusindicators['safety'] = 0
+                    self['statusindicators']['safety'] = 0
