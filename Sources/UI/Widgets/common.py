@@ -29,8 +29,10 @@ class GeneralWidget(tk.Frame):
 
     def update(self):
         super().update()
-        for widget in self.widgets:
+        for widget in self.winfo_children():
             widget.update()
+
+Frame = GeneralWidget
 
 class LabelFrame(GeneralWidget, ttk.LabelFrame):
     def __init__(self, master = None, branch = ''):
@@ -71,13 +73,17 @@ class Entry(GeneralWidget):
     def ReadEntry(self, event):
         self.root.variables[self.masterkey][self.key] = self.entry.get()
 
+    def WriteEntry(self):
+        value = self.root.variables[self.masterkey][self.key]
+        if self.entry.get() != value:
+            self.entry.delete(0,tk.END)
+            self.entry.insert(0,value)
+
     def update(self):
         focus = self.focus_get()
         if focus != self.entry:
-            value = self.root.variables[self.masterkey][self.key]
-            if self.entry.get() != value:
-                self.entry.delete(0,tk.END)
-                self.entry.insert(0,value)
+            self.WriteEntry()
+        super().update()
 
 class Lamp(GeneralWidget):
     def __init__(self, master = None, text = '', key = ''):

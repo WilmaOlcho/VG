@@ -85,6 +85,22 @@ class Variables(dict):
             'ChillerWarning':False,
             'LaserBusy':False
         }
+        self['scout'] = {
+            'ready':False,
+            'atstart':False,
+            'alarm':False,
+            'NA':False,
+            'progress':False,
+            'laseron':False,
+            'wobble':False,
+            'connection':False,
+            'align':False,
+            "weld":False,
+            'getaligninfo':False,
+            'versionvariable':"",
+            'receipt':"",
+            "page":0
+        }
         self['pistoncontrol'] = {
             'seal':{
                 'Left':{

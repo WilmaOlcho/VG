@@ -40,7 +40,3 @@ class LabelledScrolledText(GeneralWidget, ttk.LabelFrame):
         ttk.LabelFrame.__init__(self, master = master, text = text)
         self.text = ScrolledText(master = self, InternalVariable = InternalVariable, scrolltype = scrolltype, height=height, width=width)
         self.text.pack()
-
-    def update(self):
-        super().update()
-        self.text.update()

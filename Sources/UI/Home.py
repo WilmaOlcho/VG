@@ -2,7 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
 import json
-from .Widgets import GeneralWidget, LabelFrame, Window, Button, getroot, KEYWORDS
+from .Widgets import VariablesFrame, StatusIndicators, GeneralWidget
+from .Widgets import LabelFrame, Window, Button, getroot, KEYWORDS
+from .Widgets import Frame
 from functools import reduce
 
 class HomeScreen(GeneralWidget):
@@ -23,40 +25,37 @@ class ThirdColumn(GeneralWidget):
             self.widgets.append(eval(key)(master = self))
         for widget in self.widgets:
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
-        self.pack()
 
 class ProcessVariables(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'ProcessVariables')
-        self.leftFrame = ttk.Frame(master = self)
-        self.leftFrame.__setattr__('settings',self.settings)
-        self.rightFrame = ttk.Frame(master = self)
-        self.rightFrame.__setattr__('settings',self.settings)
-        self.widgets.extend([self.leftFrame, self.rightFrame ])
-        for key in self.settings['variablesFrame'].keys():
-            self.widgets.append(variablesFrame(master = self.leftFrame, key = key))
+        self.leftFrame = Frame(self)
+        self.rightFrame = Frame(self)
+        for key in self.settings['VariablesFrame'].keys():
+            vframe = VariablesFrame(self.leftFrame, key = key)
+            vframe.pack(side = tk.TOP)
         for key in self.settings['Button'].keys():
-            button = tk.Button(master = self.rightFrame, font = self.font(), command = lambda obj = self, k = key: obj.click(k), **self.settings['Button'][key])
+            button = tk.Button(self.rightFrame, font = self.font(), **self.settings['Button'][key])
             button.__setattr__('settings',self.settings['interactive'][key])
-            self.widgets.append(button)
-        for widget in self.widgets:
-            widget.pack(side = tk.LEFT if isinstance(widget, ttk.Frame) else tk.TOP, fill ='x', anchor = tk.N)
+            button.config(command = lambda obj = self, k = key, btn = button: obj.click(k, btn))
+            button.pack(side = tk.TOP)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, fill ='x', anchor = tk.N)
 
-    def click(self, key):
-        for widget in self.widgets:
-            if 'action' in widget.settings:
-                action = widget.settings['action']
-                anticondition = eval(widget.settings['anticondition']) if 'anticondition' in widget.settings else False
-                if action == key and not anticondition:
-                    result = widget.settings['result'].split('\n')
-                    for line in result:
-                        if '=' in line:
-                            exec(line)
-                        else:
-                            eval(line)
+    def click(self, key, button):
+        if 'action' in button.settings:
+            action = button.settings['action']
+            anticondition = eval(button.settings['anticondition']) if 'anticondition' in button.settings else False
+            if action == key and not anticondition:
+                result = button.settings['result'].split('\n')
+                for line in result:
+                    if '=' in line:
+                        exec(line)
+                    else:
+                        eval(line)
 
     def update(self):
-        for widget in self.widgets:
+        for widget in self.rightFrame.winfo_children():
             if isinstance(widget, tk.Button):
                 if 'condition' in widget.settings.keys():
                     condition = eval(widget.settings['condition'])
@@ -64,28 +63,6 @@ class ProcessVariables(LabelFrame):
                         widget.config(widget.settings['active'])
                     else:
                         widget.config(widget.settings['inactive'])
-            widget.update()
-        super().update()
-
-class variablesFrame(GeneralWidget):
-    def __init__(self, master = None, key = 'auto'):
-        super().__init__(master = master, branch = 'variablesFrame')
-        self.key = key
-        self.label = ttk.Label(master = self, text = self.settings[self.key]['Label'])
-        self.entry = tk.Entry(master = self, width = self.settings[self.key]['width'])
-        self.widgets.extend([self.label, self.entry])
-        for widget in self.widgets:
-            widget.pack(side = tk.TOP)
-
-    def update(self):
-        value = self.entry.get()
-        expected = self.root.variables[self.key]
-        if value != expected:
-            if value:
-                self.entry.delete(0,tk.END)
-            self.entry.insert(tk.INSERT,expected)
-        for widget in self.widgets:
-            widget.update()
         super().update()
 
 class SecondColumn(GeneralWidget):
@@ -132,7 +109,6 @@ class NewProgramWindow(Window):
         for button in self.settings['buttons']:
             self.widgets.append(Button(master = self, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
             self.widgets[-1].grid(**self.settings['buttons'][button]['grid'])
-
 
     def ButtonClick(self, button):
         if button == "DoIt":
@@ -213,7 +189,6 @@ class DeleteProgramWindow(Window):
             self.widgets.append(Button(master = self, text = self.settings['buttons'][button]['text'], callback = lambda obj = self, btn = button: obj.ButtonClick(btn)))
             self.widgets[-1].grid(**self.settings['buttons'][button]['grid'])
 
-
     def ButtonClick(self, button):
         if button == "DoIt":
             self._deleteprogram()
@@ -278,35 +253,6 @@ class AgainPrompt(Window):
 
     def cancel(self):
         self.destroy()
-
-class StatusIndicators(LabelFrame):
-    def __init__(self, master = None):
-        super().__init__(master = master, branch = 'StatusIndicators')
-        for key, indicator in self.settings.items():
-            if key in KEYWORDS: continue
-            self.widgets.append(StatusIndicators.line(self, label = indicator['Label'], indicator = key))
-        for widget in self.widgets:
-            widget.pack()
-        self.pack()
-
-    class line(GeneralWidget):
-        def __init__(self, master = None, label = '', indicator = ''):
-            super().__init__(master = master, branch = indicator)
-            self.key = indicator
-            self.config(**self.settings['Frame'])
-            self.cwidth = self.settings['Frame']['height']
-            self.place = self.cwidth//2
-            self.__setattr__('settings', self.settings)
-            self.label = ttk.Label(self)
-            self.label.config(text=label)
-            self.label.place(anchor='w', x='3', y=self.place)
-            self.indicator = tk.Canvas(self)
-            self.indicator.config(background='Black', height=self.cwidth, width=self.cwidth, bd = 0)
-            self.indicator.place(anchor='e', x=self.settings['Frame']['width'], y=self.place)
-        
-        def update(self):
-            self.indicator.config(bg = 'lightgreen' if self.root.variables.statusindicators[self.key]==1 else 'black' if self.root.variables.statusindicators[self.key]==0 else 'red' if self.root.variables.statusindicators[self.key]==-1 else 'blue')
-            super().update()
 
 class ProgramSelect(LabelFrame):
     def __init__(self, master = None):

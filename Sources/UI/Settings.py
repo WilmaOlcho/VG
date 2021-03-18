@@ -2,14 +2,15 @@ import tkinter as tk
 from tkinter import ttk
 from .Variables import Variables
 from .Widgets.callableFont import Font
-from .Widgets import GeneralWidget, LabelFrame, Button, Entry, Lamp
+from .Widgets import GeneralWidget, LabelFrame, Button 
+from .Widgets import Entry, Lamp, Frame
+from .Widgets import StatusIndicators, VariablesFrames
 
 class SettingsScreen(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'SettingsScreen')
         self.name = self.settings['Name']
         self.miscpneumaticsframe = LabelFrame(master = self, branch = "Pneumatics")
-        self.miscpneumaticsframe.__setattr__('settings', self.settings['Pneumatics'])
         self.widgets = [
             Troley(self),
             Laser(self),
@@ -40,8 +41,7 @@ class SettingsScreen(GeneralWidget):
 class Troley(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Troley')
-        self.pistonlabeledFrame = ttk.LabelFrame(self, text = self.settings['Pneumatics']['Label'])
-        self.pistonlabeledFrame.__setattr__('settings', self.settings['Pneumatics'])
+        self.pistonlabeledFrame = LabelFrame(self, branch = 'Pneumatics')
         self.widgets.append(ServoControl(master = self))
         self.widgets.append(self.pistonlabeledFrame)
         for piston in self.settings['Pneumatics']:
@@ -53,10 +53,8 @@ class Troley(LabelFrame):
 class Laser(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Laser')
-        self.buttonsframe = tk.Frame(self)
-        self.buttonsframe.__setattr__('settings', self.settings)
-        self.lampsframe = tk.Frame(self)
-        self.lampsframe.__setattr__('settings', self.settings)
+        self.buttonsframe = Frame(self)
+        self.lampsframe = Frame(self)
         self.widgets = [self.buttonsframe, self.lampsframe]
         buttons = self.settings['buttons']
         lamps = self.settings['lamps']
@@ -70,15 +68,30 @@ class Laser(LabelFrame):
             else:
                 widget.pack(anchor = tk.N)
 
+class Scout(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Laser')
+        self.buttonsframe = Frame(self)
+        self.statusframe = StatusIndicators(self)
+        self.variablesframe = VariablesFrames(self)
+        self.versionlabel = tk.Label(self)
+        self.widgets = [self.buttonsframe]
+        buttons = self.settings['buttons']
+        lamps = self.settings['lamps']
+        for key, value in buttons.items():
+            self.widgets.append(Button(self.buttonsframe, text = key, key = value))
+        for widget in self.widgets:
+            if widget.master == self:
+                widget.pack(side = tk.LEFT, anchor = tk.N)
+            else:
+                widget.pack(anchor = tk.N)
+
 class Robot(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Robot')
-        self.buttonsframe = tk.Frame(self)
-        self.buttonsframe.__setattr__('settings', self.settings)
-        self.lampsframe = tk.Frame(self)
-        self.lampsframe.__setattr__('settings', self.settings)
-        self.entriesframe = tk.Frame(self)
-        self.entriesframe.__setattr__('settings', self.settings)
+        self.buttonsframe = Frame(self)
+        self.lampsframe = Frame(self)
+        self.entriesframe = Frame(self)
         self.widgets = [self.buttonsframe, self.lampsframe, self.entriesframe]
         buttons = self.settings['buttons']
         lamps = self.settings['lamps']
@@ -98,10 +111,8 @@ class Robot(LabelFrame):
 class ServoControl(LabelFrame):
     def __init__(self, master = None, buttons = {}, lamps = {}):
         super().__init__(master = master, branch = 'Servo')
-        self.buttonsframe = tk.Frame(self)
-        self.buttonsframe.__setattr__('settings', self.settings)
-        self.lampsframe = tk.Frame(self)
-        self.lampsframe.__setattr__('settings', self.settings)
+        self.buttonsframe = Frame(self)
+        self.lampsframe = Frame(self)
         self.widgets = [self.buttonsframe, self.lampsframe]
         buttons = self.settings['buttons']
         lamps = self.settings['lamps']

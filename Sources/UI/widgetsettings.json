@@ -269,6 +269,108 @@
                         "Cykl programu robota":"RobotCycle",
                         "Połączenie aktywne":"!-ConnectionActive"
                     }
+                },
+                "Scout":{
+                    "Label":"Głowica skanująca",
+                    "Button":{
+                        "masterkey":"scout",
+                        "width":15,
+                        "height":2
+                    },
+                    "buttons":{
+                        "Ustaw trajektorię":"align",
+                        "Spawaj":"weld",
+                        "Pobierz dane trajektorii":"getaligninfo"
+                    },
+                    "StatusIndicators":{
+                        "Label":"Status",
+                        "ready":{
+                            "Label":"Gotowość",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "atstart":{
+                            "Label":"Autostart",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "alarm":{
+                            "Label":"Alarm",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "NA":{
+                            "Label":"Parametr nieznany",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "progress":{
+                            "Label":"W toku",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "laseron":{
+                            "Label":"Laser aktywny",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "wobble":{
+                            "Label":"Wobler",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        },
+                        "connection":{
+                            "Label":"Połączenie",
+                            "Frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            }
+                        }
+                    },
+                    "VersionLabel":{
+                        "string":"Ver: {}",
+                        "format":"versionvariable"
+                    },
+                    "VariablesFrame":{
+                        "receipt":{
+                            "Label":"Receptura: ",
+                            "width":25
+                        },
+                        "page":{
+                            "Label":"Warstwa: ",
+                            "width":25
+                        }
+                    }
                 }
             },
             "HomeScreen":{
@@ -438,7 +540,7 @@
                 "ThirdColumn":{
                     "ProcessVariables":{
                         "Label":"Proces",
-                        "variablesFrame":{
+                        "VariablesFrame":{
                             "currentposition":{
                                 "Label":"Pozycja w tabeli:",
                                 "width":25

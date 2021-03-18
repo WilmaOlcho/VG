@@ -40,3 +40,5 @@ Sources/__pycache__/procedures.cpython-37.pyc
 Sources/__pycache__/programController.cpython-37.pyc
 Sources/__pycache__/scout.cpython-37.pyc
 Sources/__pycache__/Servo.cpython-37.pyc
+Sources/UI/Widgets/__pycache__/statusindicators.cpython-37.pyc
+Sources/UI/Widgets/__pycache__/variablesframe.cpython-37.pyc

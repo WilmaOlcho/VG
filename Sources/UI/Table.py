@@ -14,12 +14,6 @@ class TableScreen(GeneralWidget):
                     ]
         for widget in self.widgets:
             widget.pack()
-        self.pack(expand = tk.YES, fill=tk.BOTH)
-    
-    def update(self):
-        super().update()
-        for widget in self.widgets:
-            widget.update()
 
     def btnclick(self):
         self.root.variables.internalEvents['DumpProgramToFile'] = True

@@ -8,11 +8,15 @@ from ..UI import HomeScreen
 from ..UI import TableScreen
 from ..UI import Variables
 
+class Notebook(GeneralWidget, ttk.Notebook):
+    def __init__(self, master = None, branch = "Notebook"):
+        GeneralWidget.__init__(self, master, branch = branch)
+        ttk.Notebook.__init__(self, master, **self.settings['constructor'])
+
 class Frame(GeneralWidget):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'MainWindow')
-        self.OverallNotebook = ttk.Notebook(self, **self.settings['Notebook']['constructor'])
-        self.OverallNotebook.__setattr__('settings',self.settings['Notebook'])
+        self.OverallNotebook = Notebook(self)
         self.widgets = [
             LabelledScrolledText(master = self, **self.settings['ErrorTextArea']['constructor']),
             tk.Button(master = self, font = self.root.font(), command = self.ack, **self.settings['ackbutton']['constructor']),
@@ -31,17 +35,14 @@ class Frame(GeneralWidget):
         self.pack()
 
     def update(self):
-        super().update()
         start = self.root.variables.internalEvents['start']
         stop = self.root.variables.internalEvents['stop']
+        super().update()
         for widget in self.widgets:
             if isinstance(widget, tk.Button):
                 widget.config(bg = 'red' if self.root.variables.internalEvents['error'] else 'yellow')
-            widget.update()
-        if start:
-            self.root.variables.internalEvents['start'] = False
-        if stop:
-            self.root.variables.internalEvents['stop'] = False
+        if start: self.root.variables.internalEvents['start'] = False
+        if stop: self.root.variables.internalEvents['stop'] = False
 
     def ack(self):
         self.root.variables.internalEvents['ack'] = True
