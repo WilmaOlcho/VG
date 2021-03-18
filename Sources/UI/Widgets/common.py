@@ -28,9 +28,9 @@ class GeneralWidget(tk.Frame):
         self.master = master
 
     def update(self):
-        super().update()
-        for widget in self.winfo_children():
+        for widget in list(self.children.values()): #winfo_children() returns full list of childrens, even if some of them are destroyed
             widget.update()
+        super().update()
 
 Frame = GeneralWidget
 
