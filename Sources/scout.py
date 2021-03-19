@@ -347,6 +347,7 @@ class SCOUT():
             else:
                 with lockerinstance[0].lock:
                     lockerinstance[0].scout['Alive'] = True
+                    lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
                 self.Alive = True
                 self.connection = KDrawTCPInterface(lockerinstance, configfile)
                 self.connection.connect()

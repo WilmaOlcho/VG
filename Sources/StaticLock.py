@@ -254,6 +254,7 @@ class SharedLocker(object):
                 'outputmap':manager.dict({})
                 }),
             'program':manager.dict({
+                'recipes':manager.list(),
                 'ProgramsFilePath':'',
                 'ProgramName':'',
                 'Alive':False,

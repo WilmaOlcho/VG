@@ -273,6 +273,7 @@ class Variables(dict):
                     self['troley']['servoRESET'] = False
                 
                 else:
+                    print(program['recipes'])
                     self['currentposition'] = 'wiersz {}, krok {}'.format(program['cycle'], program['stepnumber'])
                     self['processtime'] = str(program['time'])
                     self['progress'] = str(program['cycle'])

@@ -36,8 +36,8 @@ class ApplicationManager(object):
             #Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
             #Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
             #Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,)),
-            Process(name = 'Program', target = programController, args=(self.lock, self.programs,))
-            #Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
+            Process(name = 'Program', target = programController, args=(self.lock, self.programs,)),
+            Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
         ]    
         for process in self.processes: 
             process.start()

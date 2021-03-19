@@ -1,6 +1,8 @@
 import json
 import Sources.procedures as control
 from Sources import EventManager, WDT, ErrorEventWrite
+from os import listdir
+from os.path import isfile, join
 #
 
 class programController(object):
@@ -27,19 +29,34 @@ class programController(object):
         with lockerinstance[0].lock:
             running = lockerinstance[0].program['running']
             lockerinstance[0].program['/running'] = not running
-        if running:
-            safety = control.CheckSafety(lockerinstance)
-            program = control.CheckProgram(lockerinstance)
-            ready = control.CheckPositions(lockerinstance)
-            if safety and program:
-                EventManager.AdaptEvent(lockerinstance, input = 'events.startprogram', callback = control.startprocedure, callbackargs = (lockerinstance))
-            else:
+        if running: self.running(lockerinstance)
+        self.CheckProgramsDirectory(lockerinstance)
+
+    def CheckProgramsDirectory(self, lockerinstance):
+        try:
+            with lockerinstance[0].lock:
+                path = lockerinstance[0].scout['recipesdir']
+                recipes = lockerinstance[0].program['recipes']
+            files = [file for file in listdir(path) if isfile(join(path, file))]
+            if files != recipes:
                 with lockerinstance[0].lock:
-                    lockerinstance[0].program['running'] = False
-            if not ready:
-                control.Initialise(lockerinstance)
-            else:
-                control.Program(lockerinstance)
+                    lockerinstance[0].program['recipes'] = files
+        except:
+            pass
+
+    def running(self, lockerinstance):
+        safety = control.CheckSafety(lockerinstance)
+        program = control.CheckProgram(lockerinstance)
+        ready = control.CheckPositions(lockerinstance)
+        if safety and program:
+            EventManager.AdaptEvent(lockerinstance, input = 'events.startprogram', callback = control.startprocedure, callbackargs = (lockerinstance))
+        else:
+            with lockerinstance[0].lock:
+                lockerinstance[0].program['running'] = False
+        if not ready:
+            control.Initialise(lockerinstance)
+        else:
+            control.Program(lockerinstance)
 
     def automode(self, lockerinstance):
         with lockerinstance[0].lock:
