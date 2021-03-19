@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from win32api import GetSystemMetrics
+import re
 
 KEYWORDS = ["Label","masterkey", "Name", "masterkey", "width", "height"]
 
@@ -142,4 +143,43 @@ class Window(GeneralWidget, tk.Toplevel):
         x = int(screenWidth/2 - size[0]/2)
         y = int(screenHeigth/2 - size[1]/2)
         self.geometry('+{}+{}'.format(x,y))
+
+class RecipesMenu(Frame):
+    def __init__(self, master = None, items = [], variable = '', settings = {}, text = '', side = tk.TOP):
+        super().__init__(master, branch = '')
+        if settings: self.settings = settings
+        self.menubutton = tk.Menubutton(self, relief = 'sunken', bg = 'white', text = text)
+        self.menu = None
+        self.items = items
+        self.variable = variable
+        self.createmenu()
+        for widget in self.winfo_children():
+            widget.pack(side = side, fill = 'both')
+
+    def createmenu(self):
+        if isinstance(self.menu, tk.Menu):
+            self.menu.destroy()
+        self.menu = tk.Menu(self.menubutton, tearoff = 0)
+        self.menubutton['menu'] = self.menu
+        for item in self.items:
+            self.menu.add_command(label = item, command = lambda obj = self, choice = item: obj.setvariable(choice))
+        self.menubutton.pack(expand = 1, fill = 'both')
+
+    def update(self):
+        self.menubutton.config(text = self.variable)
+        super().update()
+
+    def setvariable(self, recipe):
+        self.menubutton.configure(text = recipe)
+        self.variable = recipe
+
+    def get(self):
+        return self.variable
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    def insert(self, index, value, *args, **kwargs):
+        self.variable = value
+    
 

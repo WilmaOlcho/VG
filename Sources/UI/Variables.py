@@ -1,6 +1,7 @@
 
 INT = type(1)
 STRING = type('')
+MENU = ''
 
 class Variables(dict):
     def __init__(self, lockerinstance, **widgetsettings):
@@ -14,7 +15,7 @@ class Variables(dict):
         self.programcolumns = ["ID","Kolejność","Program SCOUT","Warstwa SCOUT","Pozycja robota","Tabela pozycji","Pozycja serwo","reserved","reserved"]
         self.displayedprogramcolumns = [False,True,True,True,True,True,True,False,False]
         self.columnwidths = [4,10,30,15,14,14,17,15,15]
-        self.columntypes = [INT, INT, STRING, INT, INT, INT, INT, INT, INT]
+        self.columntypes = [INT, INT, MENU, INT, INT, INT, INT, INT, INT]
         self.internalEvents = {
             'ProgramMenuRefresh':False,
             'RefreshStartEnd':False,
@@ -108,7 +109,8 @@ class Variables(dict):
             "page":0,
             'AlignInfoA':0.0,
             'AlignInfoX':0.0,
-            'AlignInfoY':0.0            
+            'AlignInfoY':0.0,
+            'recipes':[]      
         }
         self['pistoncontrol'] = {
             'seal':{
@@ -195,14 +197,12 @@ class Variables(dict):
                 program['stepmode'] = not self['auto']
                 program['automode'] = self['auto']
                 program['running'] = self['ProgramActive']
-
+                self['scout']['recipes'] = program['recipes']
                 if self.internalEvents['ack']:
                     events['erroracknowledge'] = True
                     self.internalEvents['ack'] = False
                 if not self['ProgramActive']:
                 #SCOUT gui binding
-                    self['scout']['receipt'] = scout['recipe']
-                    self['receipt'] = scout['recipe']
                     self['scout']['ready'] = scout['status']['ReadyOn']
                     self['scout']['atstart'] = scout['status']['AutoStart']
                     self['scout']['alarm'] = scout['status']['Alarm']
@@ -224,6 +224,7 @@ class Variables(dict):
                         scout['SetRecipe'] |= True
                     else:
                         self['scout']['receipt'] = scout['recipe']
+                        self['receipt'] = scout['recipe']
                     scout['ManualAlign'] |= self['scout']['align']
                     scout['ManualWeld'] |= self['scout']['weld']
                     scout['AlarmReset'] |= self['scout']['alarmreset']

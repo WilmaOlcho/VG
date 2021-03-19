@@ -18,6 +18,7 @@ Entry = __base.Entry
 Lamp = __base.Lamp
 Window = __base.Window
 Frame = __base.Frame
+RecipesMenu = __base.RecipesMenu
 StatusIndicators = __status.StatusIndicators
 VariablesFrame = __vframe.VariablesFrame
 VariablesFrames = __vframe.VariablesFrames

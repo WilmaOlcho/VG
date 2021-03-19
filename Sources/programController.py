@@ -2,7 +2,7 @@ import json
 import Sources.procedures as control
 from Sources import EventManager, WDT, ErrorEventWrite
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, isdir
 #
 
 class programController(object):
@@ -33,16 +33,15 @@ class programController(object):
         self.CheckProgramsDirectory(lockerinstance)
 
     def CheckProgramsDirectory(self, lockerinstance):
-        try:
-            with lockerinstance[0].lock:
-                path = lockerinstance[0].scout['recipesdir']
-                recipes = lockerinstance[0].program['recipes']
+        with lockerinstance[0].lock:
+            path = lockerinstance[0].scout['recipesdir']
+            recipes = lockerinstance[0].program['recipes']
+        if isdir(path):
             files = [file for file in listdir(path) if isfile(join(path, file))]
             if files != recipes:
                 with lockerinstance[0].lock:
                     lockerinstance[0].program['recipes'] = files
-        except:
-            pass
+
 
     def running(self, lockerinstance):
         safety = control.CheckSafety(lockerinstance)

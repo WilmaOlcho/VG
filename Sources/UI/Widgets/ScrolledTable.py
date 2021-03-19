@@ -1,6 +1,6 @@
 import tkinter as tk
 import json
-from .common import LabelFrame, GeneralWidget, getroot
+from .common import LabelFrame, GeneralWidget, getroot, RecipesMenu
 from functools import reduce
 
 class ScrolledWidget(LabelFrame):
@@ -51,6 +51,7 @@ class PosTable(GeneralWidget):
         self.synctable = []
         self.focused_on = [0,0]
         self.width = 20
+        self.recipes = self.root.variables['scout']['recipes']
         with open(self.root.variables.jsonpath, 'r') as jsonfile:
             self.tjson = json.load(jsonfile)
 
@@ -172,7 +173,10 @@ class PosTable(GeneralWidget):
         self.__bindEvents(row, column)
         
     def __entry(self, row, column, value):
-        entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
+        if row != 0 and self.root.variables.columntypes[column] == '':
+            entry = RecipesMenu(self, items = self.recipes)
+        else:
+            entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
         self.entries[row][column] = entry
         self.entries[row][column].delete(0,tk.END)
         if row == 0:
@@ -213,6 +217,7 @@ class PosTable(GeneralWidget):
         super().update()
         self.freeze = not self.root.variables.internalEvents['TableRefresh']
         if not self.freeze:
+            self.recipes = self.root.variables['scout']['recipes']
             self.TableChanged()
             return True
         if self.root.variables.internalEvents['DumpProgramToFile']:
