@@ -559,6 +559,7 @@
                     "buttons":{
                         "Ustaw trajektori\u0119":"align",
                         "Spawaj":"weld",
+                        "Potwierdź Alarmy":"alarmreset",
                         "Pobierz dane trajektorii":"getaligninfo"
                     },
                     "StatusIndicators":{

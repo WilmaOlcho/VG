@@ -28,9 +28,9 @@ class GeneralWidget(tk.Frame):
         self.master = master
 
     def update(self):
+        super().update()
         for widget in list(self.children.values()): #winfo_children() returns full list of childrens, even if some of them are destroyed
             widget.update()
-        super().update()
 
 Frame = GeneralWidget
 
@@ -125,8 +125,15 @@ class Window(GeneralWidget, tk.Toplevel):
     def __init__(self, parent = None, branch = ''):
         GeneralWidget.__init__(self, master = parent, branch = branch)
         tk.Toplevel.__init__(self, master = parent)
-        self.title = self.settings['title']
-        self.parent = parent
+        self.destroyed = False
+        if 'title' in self.settings:
+            self.title(self.settings['title'])
+        else:
+            self.title(self._name)
+
+    def destroy(self):
+        self.destroyed = True
+        super().destroy()
 
     def center(self):
         screenWidth = GetSystemMetrics(0)

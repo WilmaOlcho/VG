@@ -5,6 +5,7 @@ from .Widgets.callableFont import Font
 from .Widgets import GeneralWidget, LabelFrame, Button 
 from .Widgets import Entry, Lamp, Frame, KEYWORDS
 from .Widgets import StatusIndicators, VariablesFrames
+from .Widgets import Window
 
 class SettingsScreen(GeneralWidget):
     def __init__(self, master = None):
@@ -71,6 +72,45 @@ class Scout(LabelFrame):
             Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
         for widget in self.winfo_children():
             widget.pack(side = tk.LEFT, anchor = tk.N)
+
+    def update(self):
+        super().update()
+        if self.root.variables['scout']['showaligninfo']:
+            window = AlignInfoWindow(self)
+            window.grab_set()
+            self.root.variables['scout']['showaligninfo'] = False
+
+class AlignInfoWindow(Window):
+    def __init__(self, master = None, cls = None, args = ()):
+        super().__init__(master, branch = "")
+        ttk.Label(self, text = "Różnica trajektorii").grid(column = 0, columnspan = 2, row = 0)
+        ttk.Label(self, text = 'Kąt').grid(column = 0, row = 1)
+        self.A = tk.Entry(self, width = 15)
+        self.A.grid(column = 1, row = 1)
+        ttk.Label(self, text = 'X').grid(column = 0, row = 2)
+        self.X = tk.Entry(self, width = 15)
+        self.X.grid(column = 1, row = 2)
+        ttk.Label(self, text = 'Y').grid(column = 0, row = 3)
+        self.Y = tk.Entry(self, width = 15)
+        self.Y.grid(column = 1, row = 3)
+        self.center()
+        Button(master = self, text = "Ok", callback = self.destroy).grid(column = 0, row = 4, columnspan = 2)
+
+    def update(self):
+        if not self.destroyed:
+            super().update()
+            A = self.A.get()
+            X = self.X.get()
+            Y = self.Y.get()
+            if float(A if A else 'inf') != self.root.variables['scout']['AlignInfoA']:
+                self.A.delete(0,tk.END)
+                self.A.insert(0,self.root.variables['scout']['AlignInfoA'])
+            if float(X if X else 'inf') != self.root.variables['scout']['AlignInfoX']:
+                self.X.delete(0,tk.END)
+                self.X.insert(0,self.root.variables['scout']['AlignInfoX'])
+            if float(Y if Y else 'inf') != self.root.variables['scout']['AlignInfoY']:
+                self.Y.delete(0,tk.END)
+                self.Y.insert(0,self.root.variables['scout']['AlignInfoY'])
 
 class Robot(LabelFrame):
     def __init__(self, master = None):

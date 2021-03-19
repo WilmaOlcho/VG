@@ -216,7 +216,7 @@ class DeleteProgramWindow(Window):
             self.root.variables.internalEvents['TableRefresh'] = True
             self.root.variables.internalEvents['RefreshStartEnd'] = True
             self.root.variables.internalEvents['ProgramMenuRefresh'] = True
-        prompt = AgainPrompt(master = self.parent, cls = DeleteProgramWindow, args = (self.masterwidget,))
+        prompt = AgainPrompt(master = self.master, cls = DeleteProgramWindow, args = (self.masterwidget,))
         prompt.grab_set()
         self.destroy()
 

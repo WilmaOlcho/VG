@@ -99,9 +99,16 @@ class Variables(dict):
             'align':False,
             "weld":False,
             'getaligninfo':False,
+            'showaligninfo':False,
             'versionvariable':"",
+            'setreceipt':False,
+            'alarmreset':False,
             'receipt':"",
-            "page":0
+            'setpage':False,
+            "page":0,
+            'AlignInfoA':0.0,
+            'AlignInfoX':0.0,
+            'AlignInfoY':0.0            
         }
         self['pistoncontrol'] = {
             'seal':{
@@ -159,6 +166,7 @@ class Variables(dict):
                 servo = lockerinstance[0].servo
                 events = lockerinstance[0].events
                 program = lockerinstance[0].program
+                scout = lockerinstance[0].scout
                 self['pistoncontrol']['seal']['Left']['sensor'] = pneumatics['sensorSealDown']
                 self['pistoncontrol']['pusher']['Left']['sensor'] = pneumatics['sensorTroleyPusherBack']
                 self['pistoncontrol']['pusher']['Right']['sensor'] = pneumatics['sensorTroleyPusherFront']
@@ -187,10 +195,47 @@ class Variables(dict):
                 program['stepmode'] = not self['auto']
                 program['automode'] = self['auto']
                 program['running'] = self['ProgramActive']
+
                 if self.internalEvents['ack']:
                     events['erroracknowledge'] = True
                     self.internalEvents['ack'] = False
                 if not self['ProgramActive']:
+                #SCOUT gui binding
+                    self['scout']['receipt'] = scout['recipe']
+                    self['receipt'] = scout['recipe']
+                    self['scout']['ready'] = scout['status']['ReadyOn']
+                    self['scout']['atstart'] = scout['status']['AutoStart']
+                    self['scout']['alarm'] = scout['status']['Alarm']
+                    self['scout']['NA'] = scout['status']['rsv']
+                    self['scout']['progress'] = scout['status']['WeldingProgress']
+                    self['scout']['laseron'] = scout['status']['LaserIsOn']
+                    self['scout']['wobble'] = scout['status']['Wobble']
+                    self['scout']['connection'] = scout['StatusCheckCode']
+                    if scout['version']:
+                        self['scout']['versionvariable'] = scout['version']
+                    else:
+                        scout['GetVersion'] |= True
+                    if self['scout']['setpage']:
+                        scout['ManualAlignPage'] = self['scout']['page']
+                    else:
+                        self['scout']['page'] = scout['ManualAlignPage']
+                    if self['scout']['setreceipt']:
+                        scout['recipe'] = self['scout']['receipt']
+                        scout['SetRecipe'] |= True
+                    else:
+                        self['scout']['receipt'] = scout['recipe']
+                    scout['ManualAlign'] |= self['scout']['align']
+                    scout['ManualWeld'] |= self['scout']['weld']
+                    scout['AlarmReset'] |= self['scout']['alarmreset']
+                    scout['ManualWeld'] |= self['scout']['weld']
+                    scout['GetAlignInfo'] |= self['scout']['getaligninfo']
+                    if scout['AlignInfoReceived']:
+                        self['scout']['AlignInfoA'] = float('{}.{}'.format(scout['AlignInfo']['A'],scout['AlignInfo']['dotA']))
+                        self['scout']['AlignInfoX'] = float('{}.{}'.format(scout['AlignInfo']['X'],scout['AlignInfo']['dotX']))
+                        self['scout']['AlignInfoY'] = float('{}.{}'.format(scout['AlignInfo']['Y'],scout['AlignInfo']['dotY']))
+                        self['scout']['showaligninfo'] = True
+                        scout['AlignInfoReceived'] = False
+                #Pneumatics GUI binding
                     pneumatics['TroleyPusherFront'] |= self['pistoncontrol']['pusher']['Right']['coil']
                     pneumatics['TroleyPusherBack'] |= self['pistoncontrol']['pusher']['Left']['coil']
                     pneumatics['SealUp'] |= self['pistoncontrol']['seal']['Right']['coil']
@@ -198,22 +243,24 @@ class Variables(dict):
                     pneumatics['ShieldingGas'] |= self['pistoncontrol']['shieldinggas']['Right']['coil']
                     pneumatics['HeadCooling'] |= self['pistoncontrol']['headcooling']['Right']['coil']
                     pneumatics['CrossJet'] |= self['pistoncontrol']['crossjet']['Right']['coil']
-
+                #Servo GUI binding
                     servo['homing'] |= self['troley']['servoHOMING']
                     servo['run'] |= self['troley']['servoRUN']
                     servo['stop'] |= self['troley']['servoSTOP']
                     servo['reset'] |= self['troley']['servoRESET']
                     servo['step'] |= self['troley']['servoSTEP']
+                #Laser GUI binding
                     laser['SetChannel'] |= self['laser']['GetChannel'] #Here are the issues
                     multiplexer['acquire'] |= self['laser']['GetChannel']
                     laser['LaserTurnOn'] |= self['laser']['LaserOn'] & (not laser['LaserOn'])
                     laser['LaserTurnOff'] |= (not self['laser']['LaserOn']) & laser['LaserOn']
                     laser['LaserReset'] |= self['laser']['ResetErrors']
+                #robot GUI binding
                     robot['go'] |= self['robot']['RobotGo']
                     robot['homing'] |= self['robot']['RobotHoming']
                     robot['settable'] = self['robot']['table']
                     robot['setpos'] = self['robot']['position']
-                    
+                #resetting variables after changes
                     self['laser']['GetChannel'] = False
                     self['laser']['ResetErrors'] = False
 

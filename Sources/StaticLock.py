@@ -76,7 +76,8 @@ class SharedLocker(object):
                 'ManualWeld':False,
                 'WeldStart':False, #requires pages to weld list
                 'Wobble':False,
-
+                'GetAlignInfo':False,
+                'AlignInfoReceived':False,
                 'Recipechangedsuccesfully':False
 
             }),
