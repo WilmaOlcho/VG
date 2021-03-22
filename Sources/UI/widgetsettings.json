@@ -1096,10 +1096,111 @@
                         ]
                     }
                 },
-                "Button":{
-                    "Label":"Zapisz",
-                    "action":"save"
-                }
+                "NewProgram":{
+                    "title":"Nowy program",
+                    "Button":{
+                        "width":10,
+                        "height":2
+                    },
+                    "buttons":{
+                        "DoIt":{
+                            "text":"Utw\u00F3rz Program",
+                            "grid":{
+                                "column":0,
+                                "row":"2",
+                                "sticky":"W"
+                            }
+                        },
+                        "Cancel":{
+                            "text":"Zaniechaj",
+                            "grid":{
+                                "column":2,
+                                "row":"2",
+                                "sticky":"E"
+                            }
+                        }
+                    }
+                },
+                "DeleteProgram":{
+                    "title":"Usu\u0144 program",
+                    "Button":{
+                        "width":10,
+                        "height":2
+                    },
+                    "buttons":{
+                        "DoIt":{
+                            "text":"Usu\u0144 Program",
+                            "grid":{
+                                "column":0,
+                                "row":"1",
+                                "sticky":"W"
+                            }
+                        },
+                        "Cancel":{
+                            "text":"Zaniechaj",
+                            "grid":{
+                                "column":2,
+                                "row":"1",
+                                "sticky":"E"
+                            }
+                        }
+                    }
+                },
+                "AgainPrompt":{
+                    "title":"Czy wykona\u0107 procedur\u0119 ponownie?",
+                    "Button":{
+                        "width":10,
+                        "height":2
+                    },
+                    "buttons":{
+                        "DoIt":{
+                            "text":"Wykonaj ponownie",
+                            "grid":{
+                                "column":0,
+                                "row":"1",
+                                "sticky":"W"
+                            }
+                        },
+                        "Cancel":{
+                            "text":"Zaniechaj",
+                            "grid":{
+                                "column":2,
+                                "row":"1",
+                                "sticky":"E"
+                            }
+                        }
+                    }
+                },
+                "Buttons":[
+                    {
+                        "Label":"Zapisz",
+                        "action":"save",
+                        "grid":
+                        {
+                            "row":1,
+                            "column":1,
+                            "sticky":"WE"
+                        }
+                    },{
+                        "Label":"Nowy",
+                        "action":"new",
+                        "grid":
+                        {
+                            "row":1,
+                            "column":2,
+                            "sticky":"WE"
+                        }
+                    },{
+                        "Label":"Usuń",
+                        "action":"delete",
+                        "grid":
+                        {
+                            "row":1,
+                            "column":3,
+                            "sticky":"WE"
+                        }
+                    }
+                ]
             }
         },
         "ErrorTextArea":{

@@ -1,107 +1,48 @@
 import tkinter as tk
-import json
-from .common import LabelFrame, GeneralWidget, getroot, RecipesMenu
-from functools import reduce
 
-class ScrolledWidget(LabelFrame):
-    def __init__(self, widgetCls, text = '', master = None, height = 600, scrolltype = 'both'):
-        super().__init__(master = master, branch = "ScrolledWidget")
-        self.width, self.height = 0, self.root.variables.displayedprogramtableheight
-        self.widgetheight = self.settings['LabelFrame']['height']
-        for i, state in enumerate(self.root.variables.displayedprogramcolumns):
-            if state: self.width += (self.root.variables.columnwidths[i]*6)
-        self['width'] = self.width
-        self.pack(expand = tk.N)
-        self.cnv = tk.Canvas(master = self, width = self.width, height = self.widgetheight)
-        self.cnv.__setattr__('settings',self.settings)
-        self.xscrollbar = tk.Scrollbar(master = self, orient='horizontal', command = self.cnv.xview) if self.settings['scrolltype'] in ['h', 'horizontal', 'x', 'xy', 'yx', 'both'] else False
-        self.yscrollbar = tk.Scrollbar(master = self, orient='vertical', command = self.cnv.yview) if self.settings['scrolltype'] in ['v', 'vertical', 'y', 'xy', 'yx', 'both'] else False
-        if self.xscrollbar:
-            self.cnv.configure(xscrollcommand=self.xscrollbar.set)
-            self.xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        if self.yscrollbar:
-            self.cnv.configure(yscrollcommand=self.yscrollbar.set)
-            self.yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.cnv.pack(expand = tk.YES, fill = tk.BOTH)
-        self.container = tk.Frame(master= self.cnv, width = self.width, height = self.widgetheight)
-        self.container.__setattr__('settings',self.settings)
-        self.content = widgetCls(master = self.container)
-        self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
-        self.intid1 = self.cnv.create_window((0,0),window = self.container, anchor = tk.NW )
-        self.cnv.config(scrollregion = (0,0,self.width, self.widgetheight), highlightthickness = 0)
+class jsonimport(dict):
+    def __init__(self, filepath):
+        super().__init__()
 
-    def update(self):
-        if self.content.update():
-            self.height = self.root.variables.displayedprogramtableheight
-            self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
-            self.cnv.itemconfig(self.intid1, window = self.container)        
-            self.cnv.config(scrollregion = (0,0,self.width,self.height), highlightthickness = 0)
-            self.cnv.xview_moveto(0)
-            self.cnv.yview_moveto(0)
-        super().update()
+class csvimport(dict):
+    def __init__(self, filepath):
+        super().__init__()
 
-class PosTable(GeneralWidget):
-    def __init__(self, master = None):
-        super().__init__(master = master, branch = "PosTable")
+class __BasicSettings(dict):
+    def __init__(self):
+        super().__init__()
+        self['ContextMenu'] = [
+            "separator",
+            {"Label":"NewlineUP", "command":"self.createnewlineUP"},
+            {"Label":"NewlineDOWN", "command":"self.createnewlineDOWN"},
+            {"Label":"DeleteLine", "command":"self.deleteline"},
+            {"Label":"Sort", "command":"self.sorttable"},
+            "separator"
+        ]
+
+class PosTable(tk.Frame):
+    def __init__(self, **kwargs):
+        self.acceptableargs = ('columns', 'rows', 'file', 'table', 'settings', 'master')
+        self.checkkwargs(kwargs)
+        super().__init__(master = kwargs['master'])
+        
+        if 'settings' in kwargs:
+            self.settings = kwargs.pop('settings')
+        else:
+            self.settings = __BasicSettings()
+
         self.freeze = False
         self.menu = self.CreateContextMenu()
         self.table = []
-        self.program = []
         self.entries = []
         self.synctable = []
-        self.blankprogram = {
-            "Name":"",
-            "Table":[[0,0,'',0,0,0,0,0,0]]
-        }
-        self.visibleColumns = []
-        for i, val in enumerate(self.root.variables.displayedprogramcolumns):
-            if val: self.visibleColumns.append(i)
         self.focused_on = [0,0]
         self.width = 20
-        self.recipes = self.root.variables['scout']['recipes']
-        with open(self.root.variables.jsonpath, 'r') as jsonfile:
-            self.tjson = json.load(jsonfile)
 
-    def ChangeFocus(self, event = '', column = 0, row = 0, type = 'inc'):
-        if event:
-            button = event.keysym
-            if button == 'Up':
-                row = -1
-            elif button == 'Down':
-                row = 1
-            elif button == 'Left':
-                column = -1
-            elif button == 'Right':
-                column = 1
-        currentcolumn = self.visibleColumns.index(self.focused_on[1])
-        currentrow = self.focused_on[0] 
-        if type == 'inc':
-            if currentcolumn + column > len(self.visibleColumns)-1:
-                currentcolumn -= len(self.visibleColumns)
-                currentcolumn += column
-            elif currentcolumn + column < 0:
-                currentcolumn += len(self.visibleColumns) + column
-            else:
-                currentcolumn += column
-            if currentrow + row > len(self.table) - 1:
-                currentrow -= len(self.table)
-                currentrow += row
-                if currentrow == 0:
-                    currentrow = 1
-            elif currentrow + row <= 0:
-                if currentrow == 0: currentrow = len(self.table) - 1
-                else: currentrow += len(self.table) + row - 1
-            else:
-                currentrow += row
-            
-
-            self.focused_on[1] = self.visibleColumns[currentcolumn]
-            self.focused_on[0] = currentrow
-        else:
-            self.focused_on[1] = column
-            self.focused_on[0] = row
-        print(self.focused_on)
-        self.entries[self.focused_on[0]][self.focused_on[1]].focus_set()
+    def checkkwargs(self, kwargs):
+        for arg in kwargs.keys():
+            if not arg in self.acceptableargs:
+                raise TypeError('argument {} is not acceptable'.format(arg))
 
     def CreateContextMenu(self):
         menu = tk.Menu(master = self, tearoff = 0)
@@ -122,7 +63,7 @@ class PosTable(GeneralWidget):
         focus = self.focus_get()
         for row, row_content in enumerate(self.entries):
             for column, entry in enumerate(row_content):
-                if entry:
+                if isinstance(entry, tk.Entry):
                     if entry == focus:
                         entry.config(bg='lightblue')
                         self.focused_on = [row,column]
@@ -147,22 +88,16 @@ class PosTable(GeneralWidget):
         row = self.getActiveRow()
         self.synctable.insert(row,[self.CreateID(),0,0,0,0,0,0,0,0])
         self.UpdateJson()
-        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
-        self.root.variables.internalEvents['TableRefresh'] = True
 
     def AddRowAfter(self):
         row = self.getActiveRow()
         self.synctable.insert(row+1,[self.CreateID(),0,0,0,0,0,0,0,0])
         self.UpdateJson()
-        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
-        self.root.variables.internalEvents['TableRefresh'] = True
 
     def DeleteRow(self):
         row = self.getActiveRow()
         del self.synctable[row]
         self.UpdateJson()
-        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
-        self.root.variables.internalEvents['TableRefresh'] = True
 
     def SortTable(self):
         def sortconditions(element):
@@ -170,8 +105,6 @@ class PosTable(GeneralWidget):
             return value
         self.synctable.sort(key = sortconditions)
         self.UpdateJson()
-        while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
-        self.root.variables.internalEvents['TableRefresh'] = True
 
     def __reframe(self):
         for child in list(self.children.values()):
@@ -210,11 +143,6 @@ class PosTable(GeneralWidget):
         self.entries[row][column].bind('<FocusOut>',self.RetrieveSynctable)
         self.entries[row][column].bind('<FocusIn>',self.GetFocus)
         self.entries[row][column].bind('<Button-3>',self.ContextMenuPopup)
-        self.bind_all('<Up>',self.ChangeFocus)
-        self.bind_all('<Down>',self.ChangeFocus)
-        self.bind_all('<Left>',self.ChangeFocus)
-        self.bind_all('<Right>',self.ChangeFocus)
-
 
     def __createnameentry(self, row, column):
         self.entries[row][column].insert(0,self.root.variables.programcolumns[column])
@@ -227,19 +155,14 @@ class PosTable(GeneralWidget):
         self.__bindEvents(row, column)
         
     def __entry(self, row, column, value):
-        sticky = tk.NS
-        if row != 0 and self.root.variables.columntypes[column] == 'MENU':
-            entry = RecipesMenu(self, callback = self.RetrieveSynctable, items = self.recipes)
-            sticky = tk.EW
-        else:
-            entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
+        entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
         self.entries[row][column] = entry
         self.entries[row][column].delete(0,tk.END)
         if row == 0:
             self.__createnameentry(row, column)
         else:
             self.__createnormalnentry(row, column, value)
-        self.entries[row][column].grid(row = row, column = column, sticky = sticky)
+        self.entries[row][column].grid(row = row, column = column)
 
     def __createnewtable(self):
         for row, content in enumerate(self.table):
@@ -252,9 +175,6 @@ class PosTable(GeneralWidget):
         self.__reframe()
         self.__resetTable()
         self.__createnewtable()
-        self.root.variables.internalEvents['TableRefresh'] = False
-        tableheight = (self.width * len(self.table)) - len(self.table)
-        self.root.variables.displayedprogramtableheight = tableheight
         self.pack(expand = tk.YES, fill=tk.BOTH)
 
     def configentries(self, **cfg):
@@ -307,6 +227,7 @@ class PosTable(GeneralWidget):
 
     def UpdateJson(self):
         i = self.__getprogram(i = 'only')
+        self.tjson['Programs'][i]['Table'] = []
         self.tjson['Programs'][i]['Table'] = self.synctable[1:].copy()
         pass
 

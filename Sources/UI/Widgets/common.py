@@ -167,6 +167,9 @@ class RecipesMenu(Frame):
             self.menu.add_command(label = item, command = lambda obj = self, choice = item: obj.setvariable(choice))
         self.menubutton.pack(expand = 1, fill = 'both')
 
+    def config(self, **kwargs):
+        self.menubutton.config(**kwargs)
+
     def update(self):
         self.menubutton.config(text = self.variable)
         super().update()

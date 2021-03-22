@@ -4,6 +4,13 @@ from . import ScrolledTable as __cTable
 from . import ScrolledText as __cText
 from . import statusindicators as __status
 from . import variablesframe as __vframe
+from . import AgainPromptWindow as __APW
+from . import DeleteProgramWindow as __DPW
+from . import NewProgramWindow as __NPW
+
+AgainPrompt = __APW.AgainPrompt
+DeleteProgramWindow = __DPW.DeleteProgramWindow
+NewProgramWindow = __NPW.NewProgramWindow
 PosTable = __cTable.PosTable
 ScrolledWidget = __cTable.ScrolledWidget
 ScrolledText = __cText.ScrolledText

@@ -22,17 +22,23 @@ class VariablesFrame(Frame):
         self.entry = entryclass(master = self)
         if isinstance(self.entry, tk.Entry):
             self.entry.config(width = self.settings['width'])
+            self.entry.bind('<FocusOut>', self.valueUpdate)
         for widget in self.winfo_children():
             widget.pack(side = side)
 
+    def valueUpdate(self, event):
+        entry = event.widget
+        self.root.variables[entry.master.key] = entry.get()
+
     def update(self):
         if isinstance(self.entry, tk.Entry):
-            value = self.entry.get()
-            expected = self.root.variables[self.key]
-            if value != expected:
-                if value:
-                    self.entry.delete(0,tk.END)
-                self.entry.insert(tk.INSERT,expected)
+            if not self.focus_get() == self.entry:
+                value = self.entry.get()
+                expected = self.root.variables[self.key]
+                if value != expected:
+                    if value:
+                        self.entry.delete(0,tk.END)
+                    self.entry.insert(tk.INSERT,expected)
         super().update()
 
 class VariablesMenu(Frame):
@@ -46,8 +52,10 @@ class VariablesMenu(Frame):
         self.changemasterkey, self.changekey = self.settings['changeevent'].split('.')
         self.items = self.root.variables[self.itemsmasterkey][self.itemskey]
         self.createmenu()
-        for widget in self.winfo_children():
-            widget.pack(side = side)
+        self.menubutton.bind('<Return>',self.popupmenu)
+
+    def config(self, **kwargs):
+        self.menubutton.config(**kwargs)
 
     def removefromstring(self, string, substring):
         searchresult = re.search(substring, string)
@@ -59,6 +67,9 @@ class VariablesMenu(Frame):
             return newstring
         return string
 
+    def popupmenu(self):
+        self.menu.tk_popup(self.menubutton.winfo_x, self.menubutton.winfo_y)
+
     def createmenu(self):
         if isinstance(self.menu, tk.Menu):
             self.menu.destroy()
@@ -68,11 +79,12 @@ class VariablesMenu(Frame):
             name = item
             if self.settings['notforlabel'] in name:
                 name = self.removefromstring(name,self.settings['notforlabel'])
-            self.menu.add_command(label = name[0], command = lambda obj = self, choice = name: obj.setvariable(choice))
+            self.menu.add_command(label = name, command = lambda obj = self, choice = name: obj.setvariable(choice))
         self.menubutton.pack
 
     def update(self):
         text = self.root.variables[self.variablemasterkey][self.variablekey]
+        text = self.removefromstring(text,self.settings['notforlabel'])
         items = self.root.variables[self.itemsmasterkey][self.itemskey]
         itemschanged = False
         if not items == self.items:

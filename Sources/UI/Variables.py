@@ -1,6 +1,6 @@
 
-INT = 1
-STRING = ''
+INT = type(1)
+STRING = type('')
 MENU = "MENU"
 
 class Variables(dict):
