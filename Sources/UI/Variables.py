@@ -1,7 +1,7 @@
 
-INT = type(1)
-STRING = type('')
-MENU = ''
+INT = 1
+STRING = ''
+MENU = "MENU"
 
 class Variables(dict):
     def __init__(self, lockerinstance, **widgetsettings):

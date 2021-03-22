@@ -49,6 +49,10 @@ class PosTable(GeneralWidget):
         self.program = []
         self.entries = []
         self.synctable = []
+        self.blankprogram = {
+            "Name":"",
+            "Table":[[0,0,'',0,0,0,0,0,0]]
+        }
         self.focused_on = [0,0]
         self.width = 20
         self.recipes = self.root.variables['scout']['recipes']
@@ -147,6 +151,7 @@ class PosTable(GeneralWidget):
                         return j, program
                 else:
                     return program
+        return self.blankprogram
 
     def __resetTable(self):
         self.table = [[0,0,0,0,0,0,0,0,0]].copy()
@@ -173,8 +178,10 @@ class PosTable(GeneralWidget):
         self.__bindEvents(row, column)
         
     def __entry(self, row, column, value):
+        sticky = tk.NS
         if row != 0 and self.root.variables.columntypes[column] == '':
-            entry = RecipesMenu(self, items = self.recipes)
+            entry = RecipesMenu(self, callback = self.RetrieveSynctable, items = self.recipes)
+            sticky = tk.EW
         else:
             entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
         self.entries[row][column] = entry
@@ -183,7 +190,7 @@ class PosTable(GeneralWidget):
             self.__createnameentry(row, column)
         else:
             self.__createnormalnentry(row, column, value)
-        self.entries[row][column].grid(row = row, column = column)
+        self.entries[row][column].grid(row = row, column = column, sticky = sticky)
 
     def __createnewtable(self):
         for row, content in enumerate(self.table):
@@ -216,6 +223,7 @@ class PosTable(GeneralWidget):
     def update(self):
         super().update()
         self.freeze = not self.root.variables.internalEvents['TableRefresh']
+        if self.recipes != self.root.variables['scout']['recipes']: self.freeze = False
         if not self.freeze:
             self.recipes = self.root.variables['scout']['recipes']
             self.TableChanged()
@@ -229,11 +237,15 @@ class PosTable(GeneralWidget):
         return False
     
     def RetrieveSynctable(self, event):
+        if isinstance(event, tk.Event):
+            widget = event.widget
+        else:
+            widget = event
         for row, content in enumerate(self.entries):
             for column, value in enumerate(content):
-                if value == event.widget:
+                if value == widget:
                     changedvariable = value.get()
-                    if self.root.variables.columntypes[column] == type(''):
+                    if self.root.variables.columntypes[column] == type('') or isinstance(self.root.variables.columntypes[column],str):
                         self.synctable[row][column] = changedvariable
                         return
                     if self.root.variables.columntypes[column] == type(1):

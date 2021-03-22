@@ -145,16 +145,18 @@ class Window(GeneralWidget, tk.Toplevel):
         self.geometry('+{}+{}'.format(x,y))
 
 class RecipesMenu(Frame):
-    def __init__(self, master = None, items = [], variable = '', settings = {}, text = '', side = tk.TOP):
+    def __init__(self, master = None, callback = Blank,items = [], width = 20, variable = '', settings = {}, text = '', side = tk.TOP):
         super().__init__(master, branch = '')
         if settings: self.settings = settings
-        self.menubutton = tk.Menubutton(self, relief = 'sunken', bg = 'white', text = text)
+        self.width = width
+        self.callback = callback
+        self.menubutton = tk.Menubutton(self, width = self.width, relief = 'sunken', bg = 'white', text = text)
         self.menu = None
         self.items = items
         self.variable = variable
         self.createmenu()
         for widget in self.winfo_children():
-            widget.pack(side = side, fill = 'both')
+            widget.pack(side = side, expand = 1, fill = 'both')
 
     def createmenu(self):
         if isinstance(self.menu, tk.Menu):
@@ -172,6 +174,10 @@ class RecipesMenu(Frame):
     def setvariable(self, recipe):
         self.menubutton.configure(text = recipe)
         self.variable = recipe
+        self.callback(self)
+
+    def __type__(self):
+        return "MENU"
 
     def get(self):
         return self.variable
