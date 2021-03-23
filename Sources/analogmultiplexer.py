@@ -144,9 +144,9 @@ class LaserControl(ADAMDataAcquisitionModule):
                     state = []
                     inputstate = []
                     for coil in ['ResetError','LaserRequest','OpticalChannelbit0','OpticalChannelbit1','OpticalChannelbit2','OpticalChannelbit3']:
-                        state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters[coil])))
+                        state.append(self.read_coils(lockerinstance, input = 'DO' + str(self.LconParameters[coil]))[0])
                     for coil in ['LaserReady','LaserError','LaserAssigned','LaserIsOn','LaserWarning','ChillerWarning','ChillerError']:
-                        inputstate.append(self.read_coils(lockerinstance, input = 'DI' + str(self.LconParameters[coil])))
+                        inputstate.append(self.read_coils(lockerinstance, input = 'DI' + str(self.LconParameters[coil]))[0])
                     with lockerinstance[0].lock:
                         lockerinstance[0].lcon['LaserError'] = inputstate[1]
                         lockerinstance[0].lcon['LaserWarning'] = inputstate[4]

@@ -12,7 +12,7 @@ class GMOD(SICKGmod):
                 self.parameters = json.load(open(configFile))
                 self.address = self.parameters['basics']['address']
                 self.port = self.parameters['basics']['port']
-                super().__init__(lockerinstance, self.address, self.port, *args,**kwargs)
+                super().__init__(lockerinstance, address = self.address, port = self.port, *args,**kwargs)
             except json.JSONDecodeError:
                 errstring = '\nGMOD init error - Error while parsing config file'
                 ErrorEventWrite(lockerinstance, errstring)

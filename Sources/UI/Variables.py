@@ -24,7 +24,8 @@ class Variables(dict):
             'ack' : False,
             'error': True,
             'start':False,
-            'stop':False
+            'stop':False,
+            'buttonclicked':False
         }
 
         self['statusindicators'] = {
@@ -169,6 +170,10 @@ class Variables(dict):
                 events = lockerinstance[0].events
                 program = lockerinstance[0].program
                 scout = lockerinstance[0].scout
+                if self.internalEvents['buttonclicked']:
+                    self.internalEvents['buttonclicked'] = False
+                    lockerinstance[0].GPIO['somethingChanged'] = True
+
                 self['pistoncontrol']['seal']['Left']['sensor'] = pneumatics['sensorSealDown']
                 self['pistoncontrol']['pusher']['Left']['sensor'] = pneumatics['sensorTroleyPusherBack']
                 self['pistoncontrol']['pusher']['Right']['sensor'] = pneumatics['sensorTroleyPusherFront']
@@ -237,13 +242,13 @@ class Variables(dict):
                         self['scout']['showaligninfo'] = True
                         scout['AlignInfoReceived'] = False
                 #Pneumatics GUI binding
-                    pneumatics['TroleyPusherFront'] |= self['pistoncontrol']['pusher']['Right']['coil']
-                    pneumatics['TroleyPusherBack'] |= self['pistoncontrol']['pusher']['Left']['coil']
-                    pneumatics['SealUp'] |= self['pistoncontrol']['seal']['Right']['coil']
-                    pneumatics['SealDown'] |= self['pistoncontrol']['seal']['Left']['coil']
-                    pneumatics['ShieldingGas'] |= self['pistoncontrol']['shieldinggas']['Right']['coil']
-                    pneumatics['HeadCooling'] |= self['pistoncontrol']['headcooling']['Right']['coil']
-                    pneumatics['CrossJet'] |= self['pistoncontrol']['crossjet']['Right']['coil']
+                    pneumatics['TroleyPusherFront'] = self['pistoncontrol']['pusher']['Right']['coil']
+                    pneumatics['TroleyPusherBack'] = self['pistoncontrol']['pusher']['Left']['coil']
+                    pneumatics['SealUp'] = self['pistoncontrol']['seal']['Right']['coil']
+                    pneumatics['SealDown'] = self['pistoncontrol']['seal']['Left']['coil']
+                    pneumatics['ShieldingGas'] = self['pistoncontrol']['shieldinggas']['Right']['coil']
+                    pneumatics['HeadCooling'] = self['pistoncontrol']['headcooling']['Right']['coil']
+                    pneumatics['CrossJet'] = self['pistoncontrol']['crossjet']['Right']['coil']
                 #Servo GUI binding
                     servo['homing'] |= self['troley']['servoHOMING']
                     servo['run'] |= self['troley']['servoRUN']
@@ -264,7 +269,6 @@ class Variables(dict):
                 #resetting variables after changes
                     self['laser']['GetChannel'] = False
                     self['laser']['ResetErrors'] = False
-
                     self['robot']['RobotGo'] = False
                     self['robot']['RobotHoming'] = False
                     self['troley']['servoRUN'] = False
@@ -272,6 +276,8 @@ class Variables(dict):
                     self['troley']['servoHOMING'] = False
                     self['troley']['servoSTEP'] = False
                     self['troley']['servoRESET'] = False
+
+
                 
                 else:
                     print(program['recipes'])

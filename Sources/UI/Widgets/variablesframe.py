@@ -45,14 +45,13 @@ class VariablesMenu(Frame):
     def __init__(self, master = None, branch = '', text = '', side = tk.TOP):
         super().__init__(master, branch = branch)
         self.key = branch
-        self.menubutton = tk.Menubutton(self, relief = 'sunken', bg = 'white', text = text, width = self.settings['width'])
+        self.menubutton = tk.Menubutton(self, relief = 'sunken', takefocus = 1, bg = 'white', text = text, width = self.settings['width'])
         self.menu = None
         self.itemsmasterkey, self.itemskey = self.settings['items'].split('.')
         self.variablemasterkey, self.variablekey = self.settings['variable'].split('.')
         self.changemasterkey, self.changekey = self.settings['changeevent'].split('.')
         self.items = self.root.variables[self.itemsmasterkey][self.itemskey]
         self.createmenu()
-        self.menubutton.bind('<Return>',self.popupmenu)
 
     def config(self, **kwargs):
         self.menubutton.config(**kwargs)
@@ -67,8 +66,15 @@ class VariablesMenu(Frame):
             return newstring
         return string
 
-    def popupmenu(self):
-        self.menu.tk_popup(self.menubutton.winfo_x, self.menubutton.winfo_y)
+    def popupmenu(self, event):
+        try:
+            self.menubutton.focus_set()
+            self.menubutton.event_generate('<<Invoke>>')
+            #param = (event.widget.winfo_rootx(), event.widget.winfo_rooty(),event.widget.winfo_width(), event.widget.winfo_height())
+            #self.menu.tk_popup(param[0]+param[2],param[1]+param[3], 0)
+        finally:
+            pass
+            # self.menu.grab_release()
 
     def createmenu(self):
         if isinstance(self.menu, tk.Menu):
@@ -80,9 +86,11 @@ class VariablesMenu(Frame):
             if self.settings['notforlabel'] in name:
                 name = self.removefromstring(name,self.settings['notforlabel'])
             self.menu.add_command(label = name, command = lambda obj = self, choice = name: obj.setvariable(choice))
+        self.bind('<Return>',self.popupmenu)
         self.menubutton.pack
 
     def update(self):
+        #print(self.focus_get())
         text = self.root.variables[self.variablemasterkey][self.variablekey]
         text = self.removefromstring(text,self.settings['notforlabel'])
         items = self.root.variables[self.itemsmasterkey][self.itemskey]

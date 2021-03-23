@@ -139,7 +139,7 @@
                         "StatusIndicators":{
                             "Label":"Status",
                             "masterkey":"troley",
-                            "servoON":{
+                            "-servoON":{
                                 "Label":"Serwo w\u0142\u0105czone",
                                 "width":40,
                                 "height":40,
@@ -156,7 +156,7 @@
                                     "error":"red"
                                 }
                             },
-                            "servoCOIN":{
+                            "-servoCOIN":{
                                 "Label":"Serwo na pozycji",
                                 "width":40,
                                 "height":40,
@@ -173,7 +173,7 @@
                                     "error":"red"
                                 }
                             },
-                            "servoREADY":{
+                            "-servoREADY":{
                                 "Label":"Serwo gotowe",
                                 "width":40,
                                 "height":40,
@@ -190,7 +190,7 @@
                                     "error":"red"
                                 }
                             },
-                            "servoTGON":{
+                            "-servoTGON":{
                                 "Label":"Serwo w ruchu",
                                 "width":40,
                                 "height":40,

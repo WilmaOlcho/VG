@@ -999,7 +999,7 @@ class ADAMDataAcquisitionModule(ModbusClient):
                 raise ParameterDictionaryError(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
         if access == 'w':
             raise ParameterIsNotReadable(lockerinstance, self.moduleName + ' read_coils, parameter = ' + str(input))
-        return super().read_coils(address-1, NumberOfCoils, **kwargs)
+        return super().read_coils(address-1, NumberOfCoils, **kwargs).bits
 
     def write_coils(self, lockerinstance, startCoil = 'DO0', listOfValues = [True], **kwargs):
         access = ''
@@ -1157,15 +1157,17 @@ class FX0GMOD(object):
 class SICKGmod(FX0GMOD, ModbusClient):
     def __init__(self, lockerinstance, address = '192.168.255.255', port = 9100, *args, **kwargs):
         FX0GMOD.__init__(self)
-        ModbusClient.__init__(self, address, port, *args, **kwargs)
-        self.InputDatablock = [25*[0]],[16*[0]],[30*[0]],[30*[0]]
-        self.OutputDatablock = 5*[5*[0]]
+        ModbusClient.__init__(self, host = address, port = port, *args, **kwargs)
+        self.InputDatablock = [25*[0],16*[0],30*[0],30*[0]]
+        self.OutputDatablock = [5*[0],5*[0],5*[0],5*[0],5*[0]]
         self.Bits = Bits(len = 16)
 
     def read_datablock(self, datablockNumber): ##TODO errorhandling
         datablockToDealWith = self.datablocks['ReqInputDataset'+str(datablockNumber)]
         RdHandle = super().read_holding_registers(datablockToDealWith[0],datablockToDealWith[1][1][0])
-        self.InputDatablock[datablockNumber - 1] = RdHandle.registers
+        if not isinstance(RdHandle, Exception): 
+            self.InputDatablock[datablockNumber - 1] = RdHandle.registers
+        
 
     def write_datablock(self, datablockNumber): ##TODO ErrorHandling
         datablockToDealWith = self.datablocks['WriteOutputDataset'+str(datablockNumber)]
