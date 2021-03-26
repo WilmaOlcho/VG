@@ -73,7 +73,7 @@ class ModifiedModbusSparseDataBlock(ModbusSparseDataBlock):
         super().__init__(addresses)
         for address, value in self.values.items():
             with self.lockerinstance[0].lock:
-                lockerinstance[0].shared['GMOD']['datablock'][address] = value
+                lockerinstance[0].shared['SICKGMOD0']['datablock'][address] = value
 
     def setValues(self, address, value):
         super().setValues(address, value)
@@ -104,11 +104,8 @@ class GMOD(SICKGmod):
     def __init__(self, lockerinstance, configFile, *args, **kwargs): #configFile must have path to csv generated in FlexiSoft Designer
         while True:
             try:
-                with open(configfile, 'r') as jsonfile:
-                    self.config = json.load(jsonfile)['server']
-                
-
-
+                with open(configFile, 'r') as jsonfile:
+                    self.parameters = json.load(jsonfile)
             except json.JSONDecodeError:
                 errstring = '\nGMOD init error - Error while parsing config file'
                 ErrorEventWrite(lockerinstance, errstring)
@@ -119,6 +116,8 @@ class GMOD(SICKGmod):
                 try:
                     inputscsvfile = self.parameters['inputscsv']
                     outputscsvfile = self.parameters['outputscsv']
+                    self.datainputoffset = self.parameters['datablocksOffset']['InputDataset1']
+                    self.dataoutputoffset = self.parameters['datablocksOffset']['OutputDataset1']
                     inputscsv = csv.reader(open(inputscsvfile))
                     outputscsv = csv.reader(open(outputscsvfile))
                     self.inputs = []
@@ -151,10 +150,11 @@ class GMOD(SICKGmod):
                         ErrorEventWrite(lockerinstance, errstring)
                     else:
                         try:
+                            ModbusServerForGMOD(lockerinstance, configFile)
                             self.Alive = True
                             with lockerinstance[0].lock:
                                 lockerinstance[0].SICKGMOD0['Alive'] = True
-                        except:
+                        except Exception as e:
                             errstring = 'GMOD error ' + str(e)
                             ErrorEventWrite(lockerinstance, errstring)
                         else:
@@ -181,7 +181,7 @@ class GMOD(SICKGmod):
             bit = re.findall(r'\d+',positionInDatablock[1])[0]
             address = 8*int(byte)+int(bit)
             try:
-                result = self.read_coils(address)
+                result = self.read_coils(address + self.datainputoffset)
             except Exception as e:
                 errstring = "\nGMOD error - can't retrieve inputs " + str(e)
                 ErrorEventWrite(lockerinstance, errstring)
@@ -196,7 +196,7 @@ class GMOD(SICKGmod):
             positionInDatablock = item[0].split('.')
             address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
             try:
-                self.write_coil(address, item[1])
+                self.write_coil(address + self.dataoutputoffset, item[1])
             except Exception as e:
                 errstring = "\nGMOD error - can't retrieve outputs " + str(e)
                 ErrorEventWrite(lockerinstance, errstring)
