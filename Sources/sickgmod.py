@@ -1,18 +1,114 @@
-from Sources.modbusTCPunits import SICKGmod
-from Sources import ErrorEventWrite, dictKeyByVal
+from Sources import ErrorEventWrite, dictKeyByVal, Bits
 import json
 import csv
 import re
 from xml.etree.ElementTree import ElementTree as ET
+from pymodbus.version import version
+from pymodbus.server.asynchronous import StartTcpServer
+from pymodbus.device import ModbusDeviceIdentification
+from pymodbus.datastore import ModbusSparseDataBlock, ModbusSlaveContext, ModbusServerContext
+
+class FX0GMOD(object):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.datablocks = {
+            'ReqInputDataset1':(400001,('list',(25,)),'r'),
+            'ReqInputDataset2':(400100,('list',(16,)),'r'),
+            'ReqInputDataset3':(400200,('list',(30,)),'r'),
+            'ReqInputDataset4':(400300,('list',(30,)),'r'),
+            'WriteOutputDataset1':(401000,('list',(5,)),'w'),
+            'WriteOutputDataset2':(401100,('list',(5,)),'w'),
+            'WriteOutputDataset3':(401200,('list',(5,)),'w'),
+            'WriteOutputDataset4':(401300,('list',(5,)),'w'),
+            'WriteOutputDataset5':(401400,('list',(5,)),'w')}
+
+class SICKGmod(FX0GMOD):
+    def __init__(self, lockerinstance):
+        FX0GMOD.__init__(self)
+        self.lockerinstance = lockerinstance
+        self.Bits = Bits(len = 16)
+
+    def read_holding_registers(self, registerToStart, amountOfRegisters = 1):
+        result = []
+        for address in range(registerToStart, registerToStart+amountOfRegisters,1):
+            with self.lockerinstance[0].lock:
+                result.append(self.lockerinstance[0].shared['GMOD']['datablock'][address])
+        return result
+
+    def read_coils(self, address, amount = 1):
+        startbyte = address//8
+        endbyte = (address+amount)//8
+        startbit = address%8
+        endbit = (address+amount)%8
+        bytesToRead = range(startbyte,endbyte)
+        result = []
+        for byte in bytesToRead:
+            with self.lockerinstance[0].lock:
+                readbyte = self.lockerinstance[0].shared['GMOD']['datablock'][byte]
+            for i, bit in enumerate(self.Bits(readbyte)):
+                if byte == startbyte:
+                    if i < startbit: continue
+                if byte == endbyte:
+                    if i >= endbit: break
+                result.append(bit)
+        return result
+
+    def write_coil(self, address, value):
+        byte = address//8
+        bit = address%8
+        with self.lockerinstance[0].lock:
+            readbyte = self.lockerinstance[0].shared['GMOD']['datablock'][byte]
+        writebyte = (~(0b1<<bit)&readbyte)|(value<<bit)
+        # 0b1<<bit - binary position for bit to write
+        # ~(0b1<<bit) - negated position represents bitmask for every other bits
+        # ~(0b1<<bit)&readbyte - whole value except one bit to write
+        # (value<<bit) - bit to write on position (0 if False) 
+        # (~(0b1<<bit)&readbyte)|(value<<bit) - write bit to it's position
+        with self.lockerinstance[0].lock:
+            self.lockerinstance[0].shared['GMOD']['datablock'][byte] = writebyte
+
+class ModifiedModbusSparseDataBlock(ModbusSparseDataBlock):
+    def __init__(self, lockerinstance, addresses):
+        self.lockerinstance = lockerinstance
+        super().__init__(addresses)
+        for address, value in self.values.items():
+            with self.lockerinstance[0].lock:
+                lockerinstance[0].shared['GMOD']['datablock'][address] = value
+
+    def setValues(self, address, value):
+        super().setValues(address, value)
+        with self.lockerinstance[0].lock:
+            self.lockerinstance[0].shared['GMOD']['datablock']['address'] = value
+
+    def getValues(self, address, count = 1):
+        values = []
+        for address in range(address, address+count, 1):
+            with self.lockerinstance[0].lock:
+                values.append(self.lockerinstance[0].shared['GMOD']['datablock'][address])
+        return values
+
+class ModbusServerForGMOD():
+    def __init__(self, lockerinstance, configfile):
+        with open(configfile, 'r') as jsonfile:
+            self.config = json.load(jsonfile)['server']
+        identity = ModbusDeviceIdentification()
+        identity.VendorName = self.config['vendorname']#"AIC MW"
+        identity.ProductCode = self.config['productcode']#'HMI'
+        identity.ProductName = self.config['productname']#'Cela spawania lsterkowego'
+        datablock = ModifiedModbusSparseDataBlock(lockerinstance, {addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
+        store = ModbusSlaveContext(hr = datablock)
+        context = ModbusServerContext(slaves = store, single=True)
+        StartTcpServer(context = context, identity = identity, address = ('localhost',self.config['port']))
 
 class GMOD(SICKGmod):
     def __init__(self, lockerinstance, configFile, *args, **kwargs): #configFile must have path to csv generated in FlexiSoft Designer
         while True:
             try:
-                self.parameters = json.load(open(configFile))
-                self.address = self.parameters['basics']['address']
-                self.port = self.parameters['basics']['port']
-                super().__init__(lockerinstance, address = self.address, port = self.port, *args,**kwargs)
+                with open(configfile, 'r') as jsonfile:
+                    self.config = json.load(jsonfile)['server']
+                
+
+
             except json.JSONDecodeError:
                 errstring = '\nGMOD init error - Error while parsing config file'
                 ErrorEventWrite(lockerinstance, errstring)
@@ -81,7 +177,9 @@ class GMOD(SICKGmod):
             itemmap = lockerinstance[0].SICKGMOD0['inputmap'].keys()
         for item in itemmap:
             positionInDatablock = item.split('.')
-            address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
+            byte = re.findall(r'\d+',positionInDatablock[0])[0]
+            bit = re.findall(r'\d+',positionInDatablock[1])[0]
+            address = 8*int(byte)+int(bit)
             try:
                 result = self.read_coils(address)
             except Exception as e:
@@ -89,7 +187,7 @@ class GMOD(SICKGmod):
                 ErrorEventWrite(lockerinstance, errstring)
             else:
                 with lockerinstance[0].lock:
-                    lockerinstance[0].SICKGMOD0['inputmap']['item'] = result
+                    lockerinstance[0].SICKGMOD0['inputmap'][item] = result
 
     def retrieveoutputs(self, lockerinstance):
         with lockerinstance[0].lock:
@@ -112,9 +210,13 @@ class GMOD(SICKGmod):
                     continue
                 if src == 'safety':
                     with lockerinstance[0].lock:
-                        signal = dictKeyByVal(lockerinstance[0].shared[dst]['outputs'],item[1])
+                        outputs = lockerinstance[0].shared[dst]['outputs']
+                    signal = dictKeyByVal(outputs,item[1])
+                    with lockerinstance[0].lock:
                         lockerinstance[0].shared[dst]['outputmap'][signal] = lockerinstance[0].shared[src][item[0]]
                 else:
                     with lockerinstance[0].lock:
-                        signal = dictKeyByVal(lockerinstance[0].shared[src]['inputs'],item[0])
+                        inputs = lockerinstance[0].shared[src]['inputs']
+                    signal = dictKeyByVal(inputs,item[0])
+                    with lockerinstance[0].lock:
                         lockerinstance[0].shared[dst][item[1]] = lockerinstance[0].shared[src]['inputmap'][signal]

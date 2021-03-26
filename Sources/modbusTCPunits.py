@@ -1,10 +1,15 @@
-from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+from pymodbus.client.sync import ModbusTcpClient
 from functools import wraps, partial
-from pymodbus.transaction import ModbusAsciiFramer
+from pymodbus.transaction import ModbusAsciiFramer, ModbusSocketFramer, ModbusBinaryFramer, ModbusRtuFramer
+from pymodbus.factory import ClientDecoder
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from Sources.TactWatchdog import TactWatchdog as WDT
 from Sources import Bits, ErrorEventWrite
 import re
+import struct
+from pymodbus.framer import SOCKET_FRAME_HEADER
+from pyModbusTCP.client import ModbusClient
+
 
 class ADAMModule(object):
     def __init__(self, *args, **kwargs):
@@ -958,7 +963,7 @@ class ADAMModule(object):
         self.ADAM6060 = {} #TODO
         self.ADAM6066 = {} #TODO
 
-class ADAMDataAcquisitionModule(ModbusClient):
+class ADAMDataAcquisitionModule(ModbusTcpClient):
     def __init__(self, lockerinstance, moduleName = 'ADAM6052', address = '192.168.0.1', port = 502, *args, **kwargs):
         super().__init__(host = address, port = port, *args, **kwargs)
         self.moduleName = moduleName
@@ -1138,133 +1143,6 @@ class ParameterIsNotWritable(TypeError):
         self.args = args
         ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
     
-class FX0GMOD(object):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.datablocks = {
-            'ReqAllActivatedInputDatasets':(1000,('list',(16,101)),'r'),
-            'ReqInputDataset1':(1100,('list',(25,)),'r'),
-            'ReqInputDataset2':(1200,('list',(16,)),'r'),
-            'ReqInputDataset3':(1300,('list',(30,)),'r'),
-            'ReqInputDataset4':(1400,('list',(30,)),'r'),
-            'WriteAllActivatedOutputDatasets':(2000,('list',(5,25)),'w'),
-            'WriteOutputDataset1':(2100,('list',(5,)),'w'),
-            'WriteOutputDataset2':(2200,('list',(5,)),'w'),
-            'WriteOutputDataset3':(2300,('list',(5,)),'w'),
-            'WriteOutputDataset4':(2400,('list',(5,)),'w'),
-            'WriteOutputDataset5':(2500,('list',(5,)),'w')}
-
-class SICKGmod(FX0GMOD, ModbusClient):
-    def __init__(self, lockerinstance, address = '192.168.255.255', port = 9100, *args, **kwargs):
-        FX0GMOD.__init__(self)
-        ModbusClient.__init__(self, host = address, port = port, *args, **kwargs)
-        self.InputDatablock = [25*[0],16*[0],30*[0],30*[0]]
-        self.OutputDatablock = [5*[0],5*[0],5*[0],5*[0],5*[0]]
-        self.Bits = Bits(len = 16)
-
-    def read_datablock(self, datablockNumber): ##TODO errorhandling
-        datablockToDealWith = self.datablocks['ReqInputDataset'+str(datablockNumber)]
-        RdHandle = super().read_holding_registers(datablockToDealWith[0],datablockToDealWith[1][1][0])
-        if not isinstance(RdHandle, Exception): 
-            self.InputDatablock[datablockNumber - 1] = RdHandle.registers
-        
-
-    def write_datablock(self, datablockNumber): ##TODO ErrorHandling
-        datablockToDealWith = self.datablocks['WriteOutputDataset'+str(datablockNumber)]
-        outputBlock = self.OutputDatablock[datablockNumber-1]
-        if any(outputBlock):
-            super().write_registers(datablockToDealWith, outputBlock)
-
-    def read_coils(self, startCoil, numberOfCoils = 1):
-        self.read_datablock(1)
-        datablockToDealWith = self.InputDatablock[0] #GMOD000000 have one input dataset
-        startword = startCoil//16
-        endword = (startCoil+numberOfCoils)//16
-        startbit = startCoil%16
-        endbit = (startCoil+numberOfCoils)%16
-        result = []
-        for i, word in enumerate(datablockToDealWith[startword:len(datablockToDealWith)-1-endword]):
-            bitlist = self.Bits.Bits(word)
-            if startword==endword:
-                bits = bitlist[startbit:len(bitlist)-1-endbit]
-            else:
-                if i == startword:
-                    bits = bitlist[startbit:]
-                elif i == endword:
-                    bits = bitlist[:len(bitlist)-1-endbit]
-                else:
-                    bits = bitlist
-            for bit in bits: result.append(bit)
-            bits = []
-        return result
-    
-    def __splitWordInHalf(self, word):
-        result = []
-        result.append(word & 0xFF)
-        result.append(((word&0xFF00)//0x100) & 0xFF)
-        return result
-            
-    def read_holding_registers(self, registerToStart, amountOfRegisters = 1):
-        self.read_datablock(1)
-        #All registers are bytes, but they are in words in datablock
-        startWord = registerToStart//2
-        endWord = (registerToStart+amountOfRegisters)//2
-        startbyte = registerToStart%2
-        endbyte = (registerToStart+amountOfRegisters)%2
-        result = []
-        bytelist = []
-        for i, word in enumerate(self.InputDatablock[0][startWord:len(self.InputDatablock[0])-1-endWord]):
-            bytelist = self.__splitWordInHalf(word)
-            if startbyte == endbyte:
-                bytes = bytelist[startbyte:len(bytelist)-1-endbyte]
-            else:
-                if i == startbyte:
-                    bytes = bytelist[startbyte:]
-                elif i == endbyte:
-                    bytes = bytelist[:len(bytelist)-1-endbyte]
-                else:
-                    bytes = bytelist
-            for byte in bytes: result.append(byte)
-            bytes = []
-        return result
-
-    def write_coil(self, coil, value = True):
-        #25words in 5 for datablock
-        bitsPerDatablock = 16*5 #bits per word * words in datablock
-        datablockToDealWith = coil//bitsPerDatablock
-        wordToDealWith = coil//16 #bits per word
-        bitToDealWith = coil%16
-        valueToChange = self.OutputDatablock[datablockToDealWith][wordToDealWith]
-        bitlist = self.Bits(valueToChange)
-        bitlist[bitToDealWith] = value
-        wordToWrite = self.Bits(bitlist)
-        self.OutputDatablock[datablockToDealWith][wordToDealWith] = wordToWrite
-        self.write_datablock(datablockToDealWith+1) #numbers of datablocks in GMOD registers are starting from 1
-
-    def __mergeBytes(self, bytelist = [0,0], le = False):
-        result = 0
-        if le: bytelist = bytelist[::-1]
-        for i, byte in enumerate(bytelist):
-            result += byte * pow(256,i)
-        return result
-
-    def write_register(self, register, value, byte=True):
-        datablockToDealWith, wordToDealWith = 0,0
-        if byte:
-            datablockToDealWith = register//(5*5*2) #Datablocks * registers per block * bytes per register
-            wordToDealWith = (register//2) - datablockToDealWith #Bytes per word - calculated datablock
-            byteToDealWith = register%2 #Byte in word register
-            wordToChange = self.OutputDatablock[datablockToDealWith][wordToDealWith]
-            bytes = self.__splitWordInHalf(wordToChange)
-            bytes[byteToDealWith] = value
-            wordToChange = self.__mergeBytes(bytes)
-        else:
-            datablockToDealWith = register//(5*5) #Datablocks * registers per block
-            wordToDealWith = register - datablockToDealWith
-            wordToChange = value
-        self.OutputDatablock[datablockToDealWith][wordToDealWith] = wordToChange
-        self.write_datablock(datablockToDealWith+1) #numbers of datablocks in GMOD registers are starting from 1
-
 class KawasakiRobot(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1400,7 +1278,7 @@ class KawasakiRobot(object):
             **self.correction,
             **self.status}
         
-class KawasakiVG(ModbusClient):
+class KawasakiVG(ModbusTcpClient):
     def __init__(self, lockerinstance, address = '192.168.0.1', port = 9200, *args, **kwargs):
         super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
         self.params = KawasakiRobot()
