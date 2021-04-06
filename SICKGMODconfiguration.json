@@ -9,21 +9,21 @@
         "vendorname":"AIC",
         "productcode":"HMI",
         "productname":"Cela spawania lusterkowego VG",
-        "startaddress":400000,
-        "endaddress":401500,
-        "port":5020
+        "startaddress":0,
+        "endaddress":1500,
+        "port":502
 
     },
     "datablocksOffset":{
-        "InputDataset1":400001,
-        "InputDataset2":400100,
-        "InputDataset3":400200,
-        "InputDataset4":400300,
-        "OutputDataset1":401000,
-        "OutputDataset2":401100,
-        "OutputDataset3":401200,
-        "OutputDataset4":401300,
-        "OutputDataset5":401400
+        "InputDataset1":1,
+        "InputDataset2":100,
+        "InputDataset3":200,
+        "InputDataset4":300,
+        "OutputDataset1":1000,
+        "OutputDataset2":1100,
+        "OutputDataset3":1200,
+        "OutputDataset4":1300,
+        "OutputDataset5":1400
     },
     "inputbinding":{
         "sourcemasterkey":"SICKGMOD0",

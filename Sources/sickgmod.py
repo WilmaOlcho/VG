@@ -4,9 +4,14 @@ import csv
 import re
 from xml.etree.ElementTree import ElementTree as ET
 from pymodbus.version import version
-from pymodbus.server.asynchronous import StartTcpServer
+from pymodbus.server.sync import StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSparseDataBlock, ModbusSlaveContext, ModbusServerContext
+from threading import Thread
+import logging
+logging.basicConfig()
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
 
 class FX0GMOD(object):
     def __init__(self, *args, **kwargs):
@@ -44,7 +49,10 @@ class SICKGmod(FX0GMOD):
         result = []
         for byte in bytesToRead:
             with self.lockerinstance[0].lock:
-                readbyte = self.lockerinstance[0].shared['GMOD']['datablock'][byte]
+                if byte in self.lockerinstance[0].shared['SICKGMOD0']['datablock'].keys():
+                    readbyte = self.lockerinstance[0].shared['SICKGMOD0']['datablock'][byte]
+                else:
+                    break
             for i, bit in enumerate(self.Bits(readbyte)):
                 if byte == startbyte:
                     if i < startbit: continue
@@ -57,7 +65,10 @@ class SICKGmod(FX0GMOD):
         byte = address//8
         bit = address%8
         with self.lockerinstance[0].lock:
-            readbyte = self.lockerinstance[0].shared['GMOD']['datablock'][byte]
+            if byte in self.lockerinstance[0].shared['SICKGMOD0']['datablock'].keys():
+                readbyte = self.lockerinstance[0].shared['SICKGMOD0']['datablock'][byte]
+            else:
+                readbyte = 0
         writebyte = (~(0b1<<bit)&readbyte)|(value<<bit)
         # 0b1<<bit - binary position for bit to write
         # ~(0b1<<bit) - negated position represents bitmask for every other bits
@@ -65,7 +76,7 @@ class SICKGmod(FX0GMOD):
         # (value<<bit) - bit to write on position (0 if False) 
         # (~(0b1<<bit)&readbyte)|(value<<bit) - write bit to it's position
         with self.lockerinstance[0].lock:
-            self.lockerinstance[0].shared['GMOD']['datablock'][byte] = writebyte
+            self.lockerinstance[0].shared['SICKGMOD0']['datablock'][byte] = writebyte
 
 class ModifiedModbusSparseDataBlock(ModbusSparseDataBlock):
     def __init__(self, lockerinstance, addresses):
@@ -78,13 +89,13 @@ class ModifiedModbusSparseDataBlock(ModbusSparseDataBlock):
     def setValues(self, address, value):
         super().setValues(address, value)
         with self.lockerinstance[0].lock:
-            self.lockerinstance[0].shared['GMOD']['datablock']['address'] = value
+            self.lockerinstance[0].shared['SICKGMOD0']['datablock']['address'] = value
 
     def getValues(self, address, count = 1):
         values = []
         for address in range(address, address+count, 1):
             with self.lockerinstance[0].lock:
-                values.append(self.lockerinstance[0].shared['GMOD']['datablock'][address])
+                values.append(self.lockerinstance[0].shared['SICKGMOD0']['datablock'][address])
         return values
 
 class ModbusServerForGMOD():
@@ -97,11 +108,17 @@ class ModbusServerForGMOD():
         identity.ProductName = self.config['productname']#'Cela spawania lsterkowego'
         datablock = ModifiedModbusSparseDataBlock(lockerinstance, {addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
         store = ModbusSlaveContext(hr = datablock)
-        context = ModbusServerContext(slaves = store, single=True)
-        StartTcpServer(context = context, identity = identity, address = ('localhost',self.config['port']))
+        context = ModbusServerContext(slaves = {0x01:store}, single=False)
+        TCPServerargs= {'context':context,
+                         'identity':identity,
+                         #'console':True,
+                         'address':('',self.config['port'])}
+        self.thread = Thread(target = StartTcpServer, kwargs = TCPServerargs)
+        self.thread.start()
 
 class GMOD(SICKGmod):
     def __init__(self, lockerinstance, configFile, *args, **kwargs): #configFile must have path to csv generated in FlexiSoft Designer
+        self.lockerinstance = lockerinstance
         while True:
             try:
                 with open(configFile, 'r') as jsonfile:
