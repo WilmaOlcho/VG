@@ -144,6 +144,7 @@ class SharedLocker(object):
             'safety':manager.dict({
                 'EstopArmed':False,
                 'DoorOpen':False,
+                'OpenTheDoor':False,
                 'DoorClosed':False,
                 'DoorLocked':False,
                 'TroleyInside':False,

@@ -86,7 +86,7 @@ class SICKGmod(FX0GMOD):
         # (value<<bit) - bit to write on position (0 if False) 
         # (~(0b1<<bit)&readbyte)|(value<<bit) - write bit to it's position
         with self.lockerinstance[0].lock:
-            self.lockerinstance[0].shared['SICKGMOD0']['datablock'][address] = writeword
+            self.lockerinstance[0].shared['SICKGMOD0']['datablock'][word] = writeword
 
 class ModifiedModbusSparseDataBlock(ModbusSparseDataBlock):
     def __init__(self, lockerinstance, addresses):
@@ -238,7 +238,7 @@ class GMOD(SICKGmod):
             positionInDatablock = item[0].split('.')
             address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
             try:
-                self.write_coil(address + self.dataoutputoffset, item[1])
+                self.write_coil(address + self.dataoutputoffset*16, item[1])
             except Exception as e:
                 errstring = "\nGMOD error - can't retrieve outputs " + str(e)
                 ErrorEventWrite(lockerinstance, errstring)
@@ -261,4 +261,5 @@ class GMOD(SICKGmod):
                         inputs = lockerinstance[0].shared[src]['inputs']
                     signal = dictKeyByVal(inputs,item[0])
                     with lockerinstance[0].lock:
-                        lockerinstance[0].shared[dst][item[1]] = lockerinstance[0].shared[src]['inputmap'][signal]
+                        byte = lockerinstance[0].shared[src]['inputmap'][signal]
+                        lockerinstance[0].shared[dst][item[1]] = byte

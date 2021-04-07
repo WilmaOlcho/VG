@@ -36,13 +36,13 @@
         "EDMErrorRobotEStop":"RobotError",
         "EDMErrorLaserDrzwiowe":"LaserError",
         "EDMErrorServoOn":"ServoError",
-        "EDMErrorZawórPowGłówny":"sValve1Error",
+        "EDMErrorZaworPowGlowny":"sValve1Error",
         "ServoPowerONEDM.XTIO[2].I3":"ServoEDM",
         "RobotEStopEDM.XTIO[2].I1":"RobotEDM",
         "LaserDrzwioweEDM.XTIO[2].I4":"LaserEDM",
         "StrefaWewn_OK":"ZoneArmed",
         "RobotTeachMode.XTIO[1].I7":"RobotTeachMode",
-        "TrybRęczny_OK":"DeadMan",
+        "TrybReczny_OK":"DeadMan",
         "Reset.XTIO[2].I5":"resetbutton",
         "E-StopWymagaResetu":"Estopresetrecquired",
         "StrefaWewnWymagaResetu":"Zoneresetrecquired"
@@ -50,7 +50,7 @@
     "outputbinding":{
         "sourcemasterkey":"safety",
         "destinymasterkey":"SICKGMOD0",
-        "DoorOpen":"OtwórzDrzwi",
-        "TroleyReady":"WózekGotowy"
+        "OpenTheDoor":"OtworzDrzwi",
+        "TroleyReady":"WozekGotowy"
     }    
 }

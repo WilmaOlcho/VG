@@ -26,7 +26,7 @@ Byte2.5;THC right NC.XTIO[3].I6
 Byte2.6;
 Byte2.7;
 Byte 3;Module 4 [XTIO[4]]
-Byte3.0;KierunekWózka.XTIO[4].I1
+Byte3.0;KierunekWozka.XTIO[4].I1
 Byte3.1;
 Byte3.2;RobotDeadman.XTIO[4].I3I4
 Byte3.3;-
@@ -84,7 +84,7 @@ Byte9.0;EDMErrorServoOn
 Byte9.1;EDMErrorRobotEStop
 Byte9.2;EDMErrorRobotDrzwiowe
 Byte9.3;EDMErrorLaserDrzwiowe
-Byte9.4;EDMErrorZawórPowGłówny
+Byte9.4;EDMErrorZaworPowGlowny
 Byte9.5;StrefaWewn_OK
-Byte9.6;TrybRęczny_OK
+Byte9.6;TrybReczny_OK
 Byte9.7;

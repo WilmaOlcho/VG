@@ -89,6 +89,18 @@ class Variables(dict):
             'ChillerWarning':False,
             'LaserBusy':False
         }
+        self['safety'] = {
+            'EstopArmed':False,
+            'DoorLocked':False,
+            'TroleyInside':False,
+            'THCPushed':False,
+            'RobotTeachMode':False,
+            'DeadMan':False,
+            'ZoneArmed':False,
+            'Estopresetrecquired':False,
+            'Zoneresetrecquired':False,
+            'OpenTheDoor':False
+        }
         self['scout'] = {
             'ready':False,
             'atstart':False,
@@ -173,6 +185,17 @@ class Variables(dict):
                 if self.internalEvents['buttonclicked']:
                     self.internalEvents['buttonclicked'] = False
                     lockerinstance[0].GPIO['somethingChanged'] = True
+
+                self['safety']['EstopArmed'] = safety['EstopArmed']
+                self['safety']['DoorLocked'] = safety['DoorLocked']
+                self['safety']['TroleyInside'] = safety['TroleyInside']
+                self['safety']['THCPushed'] = safety['THCPushed']
+                self['safety']['RobotTeachMode'] = safety['RobotTeachMode']
+                self['safety']['DeadMan'] = safety['DeadMan']
+                self['safety']['ZoneArmed'] = safety['ZoneArmed']
+                self['safety']['Estopresetrecquired'] = safety['Estopresetrecquired']
+                self['safety']['Zoneresetrecquired'] = safety['Zoneresetrecquired']
+                safety['OpenTheDoor'] = self['safety']['OpenTheDoor']
 
                 self['pistoncontrol']['seal']['Left']['sensor'] = pneumatics['sensorSealDown']
                 self['pistoncontrol']['pusher']['Left']['sensor'] = pneumatics['sensorTroleyPusherBack']

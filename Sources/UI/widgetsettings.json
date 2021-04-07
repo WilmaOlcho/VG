@@ -405,6 +405,174 @@
                         "Reset b\u0142\u0119d\u00F3w":"ResetErrors"
                     }
                 },
+                "Safety":{
+                    "Label":"Sterownik Bezpiecze\u0144stwa",
+                    "Button":{
+                        "masterkey":"safety",
+                        "width":15,
+                        "height":2
+                    },
+                    "StatusIndicators":{
+                        "Label":"",
+                        "masterkey":"safety",
+                        "EstopArmed":{
+                            "Label":"Obw\u00F3d zazbrojony",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "DoorLocked":{
+                            "Label":"Drzwi zaryglowane",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "TroleyInside":{
+                            "Label":"W\u00F3zek zadokowany",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "THCPushed":{
+                            "Label":"Przycisk dwur\u0119czny aktywowany",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "RobotTeachMode":{
+                            "Label":"Robot w trybie r\u0119cznym",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "DeadMan":{
+                            "Label":"Silniki w\u0142\u0105czone",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "ZoneArmed":{
+                            "Label":"Strefa bezpieczna",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "Estopresetrecquired":{
+                            "Label":"Estop wymaga resetu",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "Zoneresetrecquired":{
+                            "Label":"Strefa wymaga resetu",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        }
+                    },
+                    "buttons":{
+                        "Otw\u00F3rz drzwi":"OpenTheDoor"
+                    }
+                },
                 "Robot":{
                     "Label":"Manipulator zrobotyzowany",
                     "Button":{
@@ -559,7 +727,7 @@
                     "buttons":{
                         "Ustaw trajektori\u0119":"align",
                         "Spawaj":"weld",
-                        "Potwierdź Alarmy":"alarmreset",
+                        "Potwierd\u017A Alarmy":"alarmreset",
                         "Pobierz dane trajektorii":"getaligninfo"
                     },
                     "StatusIndicators":{
@@ -1191,7 +1359,7 @@
                             "sticky":"WE"
                         }
                     },{
-                        "Label":"Usuń",
+                        "Label":"Usu\u0144",
                         "action":"delete",
                         "grid":
                         {

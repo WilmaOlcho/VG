@@ -17,6 +17,7 @@ class SettingsScreen(GeneralWidget):
             Laser(self),
             Robot(self),
             Scout(self),
+            Safety(self),
             PistonControl(master = self.miscpneumaticsframe, button = 'ShieldingGas'),
             PistonControl(master = self.miscpneumaticsframe, button = 'CrossJet'),
             PistonControl(master = self.miscpneumaticsframe, button = 'HeadCooling'),
@@ -54,6 +55,16 @@ class Troley(LabelFrame):
 class Laser(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Laser')
+        self.buttonsframe = Frame(self)
+        StatusIndicators(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
+
+class Safety(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Safety')
         self.buttonsframe = Frame(self)
         StatusIndicators(self)
         for key, value in self.settings['buttons'].items():
