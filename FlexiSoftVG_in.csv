@@ -77,41 +77,14 @@ Byte8.2;KierunekWózka
 Byte8.3;DrzwiSerwisoweOD
 Byte8.4;DrzwiSerwisoweOT
 Byte8.5;DrzwiSerwisoweOL
-Byte8.6;
-Byte8.7;
+Byte8.6;THCPushed
+Byte8.7;E-Stop_OK
 Byte 9;
 Byte9.0;EDMErrorServoOn
 Byte9.1;EDMErrorRobotEStop
 Byte9.2;EDMErrorRobotDrzwiowe
 Byte9.3;EDMErrorLaserDrzwiowe
 Byte9.4;EDMErrorZawórPowGłówny
-Byte9.5;
-Byte9.6;
+Byte9.5;StrefaWewn_OK
+Byte9.6;TrybRęczny_OK
 Byte9.7;
-Byte 10;CPU memory byte 0
-Byte10.0;E-Stop_OK
-Byte10.1;StrefaWewn_OK
-Byte10.2;TrybRęczny_OK
-Byte10.3;THC_pushed
-Byte10.4;Marker 0.4
-Byte10.5;Marker 0.5
-Byte10.6;Marker 0.6
-Byte10.7;Marker 0.7
-Byte 11;Status input data, Byte 1
-Byte11.0;XTIO[1].Status input data
-Byte11.1;XTIO[2].Status input data
-Byte11.2;XTIO[3].Status input data
-Byte11.3;XTIO[4].Status input data
-Byte11.4;
-Byte11.5;
-Byte11.6;
-Byte11.7;
-Byte 12;Status output data, Byte 1
-Byte12.0;XTIO[1].Status output data
-Byte12.1;XTIO[2].Status output data
-Byte12.2;XTIO[3].Status output data
-Byte12.3;XTIO[4].Status output data
-Byte12.4;
-Byte12.5;
-Byte12.6;
-Byte12.7;
