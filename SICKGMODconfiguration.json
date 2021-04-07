@@ -30,6 +30,7 @@
         "destinymasterkey":"safety",
         "E-Stop_OK":"EstopArmed",
         "DrzwiSerwisoweOT":"DoorClosed",
+        "DrzwiSerwisoweOD":"DoorOpen",
         "DrzwiZaryglowane.XTIO[1].I5I6":"DoorLocked",
         "WozekZadokowany.XTIO[1].I3I4":"TroleyInside",
         "THCPushed":"THCPushed",
