@@ -144,6 +144,7 @@ class SharedLocker(object):
             'safety':manager.dict({
                 'EstopArmed':False,
                 'DoorOpen':False,
+                "OpenTheDoorAck":False,
                 'OpenTheDoor':False,
                 'DoorClosed':False,
                 'DoorLocked':False,
@@ -248,7 +249,6 @@ class SharedLocker(object):
                 'O25':False, 'O26':False, 'O27':False, 'O28':False,
                 'O29':False, 'O30':False, 'O31':False, 'O32':False}),
             'SICKGMOD0':manager.dict({
-                'datablock':manager.dict(),
                 'Alive':False,
                 'inputs':manager.dict({}), 
                 'outputs':manager.dict({}),

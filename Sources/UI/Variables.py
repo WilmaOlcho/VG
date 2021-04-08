@@ -196,7 +196,7 @@ class Variables(dict):
                 self['safety']['Estopresetrecquired'] = safety['Estopresetrecquired']
                 self['safety']['Zoneresetrecquired'] = safety['Zoneresetrecquired']
                 safety['OpenTheDoor'] = self['safety']['OpenTheDoor']
-                if not safety['DoorOpen']:
+                if safety['OpenTheDoorAck']:
                     self['safety']['OpenTheDoor'] = False
                 self['pistoncontrol']['seal']['Left']['sensor'] = pneumatics['sensorSealDown']
                 self['pistoncontrol']['pusher']['Left']['sensor'] = pneumatics['sensorTroleyPusherBack']

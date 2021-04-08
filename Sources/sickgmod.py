@@ -31,32 +31,19 @@ class FX0GMOD(object):
             'WriteOutputDataset5':(401400,('list',(5,)),'w')}
 
 class SICKGmod(FX0GMOD):
-    def __init__(self, lockerinstance):
+    def __init__(self, lockerinstance, datablock = None):
         FX0GMOD.__init__(self)
+        self.datablock = datablock
         self.lockerinstance = lockerinstance
         self.Bits = Bits(len = 16)
-
-    def read_holding_registers(self, registerToStart, amountOfRegisters = 1):
-        result = []
-        for address in range(registerToStart, registerToStart+amountOfRegisters,1):
-            with self.lockerinstance[0].lock:
-                result.append(self.lockerinstance[0].shared['GMOD']['datablock'][address])
-        return result
 
     def read_coils(self, address, amount = 1):
         startword = address//16
         endword = (address+amount)//16
         startbit = address%16
         endbit = (address+amount)%16
-        wordsToRead = range(startword,endword+1)
         result = []
-        for word in wordsToRead:
-            with self.lockerinstance[0].lock:
-                if word in self.lockerinstance[0].shared['SICKGMOD0']['datablock'].keys():
-                    readword = self.lockerinstance[0].shared['SICKGMOD0']['datablock'][word]
-                    #print('{:0>16b}'.format(readword))
-                else:
-                    break
+        for word, readword in enumerate(self.datablock.getValues(startword, endword-startword+1),startword):
             for i, bit in enumerate(self.Bits(readword)):
                 if word == startword:
                     if i < startbit: continue
@@ -74,40 +61,14 @@ class SICKGmod(FX0GMOD):
             else:
                 bit = i
                 break
-        with self.lockerinstance[0].lock:
-            if word in self.lockerinstance[0].shared['SICKGMOD0']['datablock'].keys():
-                readword = self.lockerinstance[0].shared['SICKGMOD0']['datablock'][word]
-            else:
-                readword = 0
+        readword = self.Bits(self.datablock.getValues(word))
         writeword = (~(0b1<<bit)&readword)|(value<<bit)
         # 0b1<<bit - binary position for bit to write
         # ~(0b1<<bit) - negated position represents bitmask for every other bits
         # ~(0b1<<bit)&readbyte - whole value except one bit to write
         # (value<<bit) - bit to write on position (0 if False) 
         # (~(0b1<<bit)&readbyte)|(value<<bit) - write bit to it's position
-        with self.lockerinstance[0].lock:
-            self.lockerinstance[0].shared['SICKGMOD0']['datablock'][word] = writeword
-
-class ModifiedModbusSparseDataBlock(ModbusSparseDataBlock):
-    def __init__(self, lockerinstance, addresses):
-        self.lockerinstance = lockerinstance
-        super().__init__(addresses)
-        for address, value in self.values.items():
-            with self.lockerinstance[0].lock:
-                lockerinstance[0].shared['SICKGMOD0']['datablock'][address] = value
-
-    def setValues(self, address, value):
-        super().setValues(address, value)
-        for i, word in enumerate(value):
-            with self.lockerinstance[0].lock:
-                self.lockerinstance[0].shared['SICKGMOD0']['datablock'][address+i] = word
-
-    def getValues(self, address, count = 1):
-        values = []
-        for address in range(address, address+count, 1):
-            with self.lockerinstance[0].lock:
-                values.append(self.lockerinstance[0].shared['SICKGMOD0']['datablock'][address])
-        return values
+        self.datablock.setValues(word, self.Bits(writeword))
 
 class ModbusServerForGMOD():
     def __init__(self, lockerinstance, configfile):
@@ -117,12 +78,11 @@ class ModbusServerForGMOD():
         identity.VendorName = self.config['vendorname']#"AIC MW"
         identity.ProductCode = self.config['productcode']#'HMI'
         identity.ProductName = self.config['productname']#'Cela spawania lsterkowego'
-        datablock = ModifiedModbusSparseDataBlock(lockerinstance, {addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
-        store = ModbusSlaveContext(hr = datablock)
+        self.datablock = ModbusSparseDataBlock({addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
+        store = ModbusSlaveContext(hr = self.datablock)
         context = ModbusServerContext(slaves = {0x01:store}, single=False)
         TCPServerargs= {'context':context,
                          'identity':identity,
-                         #'console':True,
                          'address':('',self.config['port'])}
         self.thread = Thread(target = StartTcpServer, kwargs = TCPServerargs)
         self.thread.start()
@@ -178,7 +138,7 @@ class GMOD(SICKGmod):
                         ErrorEventWrite(lockerinstance, errstring)
                     else:
                         try:
-                            ModbusServerForGMOD(lockerinstance, configFile)
+                            SICKGmod.__init__(self, lockerinstance, ModbusServerForGMOD(lockerinstance, configFile).datablock)
                             self.Alive = True
                             with lockerinstance[0].lock:
                                 lockerinstance[0].SICKGMOD0['Alive'] = True
@@ -198,20 +158,8 @@ class GMOD(SICKGmod):
             self.retrieveinputs(lockerinstance)
             self.retrieveoutputs(lockerinstance)
             self.safetysignals(lockerinstance)
-            #self.printvalues(lockerinstance)
             with lockerinstance[0].lock:
                 self.Alive = lockerinstance[0].SICKGMOD0['Alive']
-
-    def printvalues(self, lockerinstance):
-        with lockerinstance[0].lock:
-            block = lockerinstance[0].shared['SICKGMOD0']['datablock'].items()
-        for address, value in block:
-            if address > 25:
-                break
-            byte1 = value & 0xFF
-            byte2 = value & 0xFF00
-            byte2>>=8
-            print('address: {},  word: {},  byte1: {:0>8b},  byte2: {:0>8b}'.format(address, value, byte1, byte2))
 
     def retrieveinputs(self, lockerinstance):
         with lockerinstance[0].lock:
@@ -223,7 +171,10 @@ class GMOD(SICKGmod):
             offset = self.datainputoffset * 16
             address = 8*int(byte)+int(bit)+offset
             try:
-                result = self.read_coils(address)[0]
+                receive = self.read_coils(address)
+                if receive:
+                    result = receive[0]
+                else: result = False
             except Exception as e:
                 errstring = "\nGMOD error - can't retrieve inputs " + str(e)
                 ErrorEventWrite(lockerinstance, errstring)
