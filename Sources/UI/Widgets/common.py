@@ -109,14 +109,12 @@ class Lamp(GeneralWidget):
         highlight = '~' in self.key[:3]
         if highlight: keystartpos += 1
         key = self.key[keystartpos:]
-        if negation:
-            self.lit = not self.root.variables[self.masterkey][key]
-        else:
-            self.lit = self.root.variables[self.masterkey][key]
+        lit = self.root.variables[self.masterkey][key]
+        self.lit = lit!=0
         if self.lit:
-            if errsign:
+            if errsign and lit == -1:
                 self.lamp.config(bg = self.settings['Color']['error'])
-            elif highlight:
+            elif highlight and lit  == -2:
                 self.lamp.config(bg = self.settings['Color']['highlighted'])
             else:
                 self.lamp.config(bg = self.settings['Color']['active'])

@@ -93,6 +93,7 @@ class SharedLocker(object):
                 'LaserTurnOff':False,
                 "LaserReset":False,
                 'SetChannel':False,
+                'ReleaseChannel':False,
                 'LaserError':False,
                 'LaserWarning':False,
                 'ChillerError':False,
@@ -122,6 +123,7 @@ class SharedLocker(object):
                 'ServoStepComplete':False,
                 'closeApplication':False,
                 'OutputChangedByRobot':False,
+                'requestlconresettimer':False,
                 'OutputsChangedByRobot':''}),
             'pistons':manager.dict({
                 'Alive':False,

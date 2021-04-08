@@ -78,8 +78,11 @@ class Variables(dict):
         }
         self['laser'] = {
             'LaserOn':False,
+            'LaserTurnOn':False,
+            'LaserTurnOff':False,
             'LaserIsOn':False,
             'GetChannel':False,
+            "ReleaseChannel":False,
             'ResetErrors':False,
             'LaserReady':False,
             'LaserAssigned':False,
@@ -282,8 +285,10 @@ class Variables(dict):
                 #Laser GUI binding
                     laser['SetChannel'] |= self['laser']['GetChannel'] #Here are the issues
                     multiplexer['acquire'] |= self['laser']['GetChannel']
-                    laser['LaserTurnOn'] |= self['laser']['LaserOn'] & (not laser['LaserOn'])
-                    laser['LaserTurnOff'] |= (not self['laser']['LaserOn']) & laser['LaserOn']
+                    laser['ReleaseChannel'] |= self['laser']['GetChannel'] #Here are the issues
+                    multiplexer['release'] |= self['laser']['GetChannel']
+                    laser['LaserTurnOn'] |= self['laser']['LaserTurnOn']
+                    laser['LaserTurnOff'] |= self['laser']['LaserTurnOff']
                     laser['LaserReset'] |= self['laser']['ResetErrors']
                 #robot GUI binding
                     robot['go'] |= self['robot']['RobotGo']
@@ -291,7 +296,10 @@ class Variables(dict):
                     robot['settable'] = self['robot']['table']
                     robot['setpos'] = self['robot']['position']
                 #resetting variables after changes
+                    self['laser']['LaserTurnOn'] = False
+                    self['laser']['LaserTurnOff'] = False
                     self['laser']['GetChannel'] = False
+                    self['laser']['ReleaseChannel'] = False
                     self['laser']['ResetErrors'] = False
                     self['robot']['RobotGo'] = False
                     self['robot']['RobotHoming'] = False
@@ -357,10 +365,10 @@ class Variables(dict):
                     self['statusindicators']['Robot'] = 0
                 #safety
                 if safety['EstopArmed'] and safety['ZoneArmed']:
-                    self['statusindicators']['safety'] = 1
+                    self['statusindicators']['Safety'] = 1
                 elif not safety['EstopArmed']:
-                    self['statusindicators']['safety'] = -1
+                    self['statusindicators']['Safety'] = -1
                 elif safety['Estopresetrecquired'] or safety['Zoneresetrecquired']:
-                    self['statusindicators']['safety'] = -2
+                    self['statusindicators']['Safety'] = -2
                 else:
-                    self['statusindicators']['safety'] = 0
+                    self['statusindicators']['Safety'] = 0
