@@ -45,7 +45,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
                     if 'DO0' in args or self.currentState[0]:
                         prohibited = True
             else:
-                if 'DO1' in args or 'DO0' in args:
+                if ('DO1' in args or 'DO0' in args) and args[1]:
                     prohibited = True
         return prohibited  
     
@@ -68,52 +68,54 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
 
     def isBusy(self, lockerinstance):
         self.getState(lockerinstance)
-        if self.currentState[2]:
-            return True
-        if self.currentState[self.myOutput] or not any(self.currentState):
+        if self.currentState[self.myOutput] or not any(self.currentState[:2]):
             return False
         else:
             return True
 
     def setPath(self, lockerinstance):
-        if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.myOutput), True)):
+        if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(self.myOutput), True)):
             try:
-                self.write_coil(lockerinstance, coil = 'DO'+str(self.myOutput), value = True)
+                self.write_coil(lockerinstance, Coil = 'DO'+str(self.myOutput), value = True)
             except Exception as e:
                 errmessage = 'AnalogMultiplexer Error - setPath Error' + str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
-            raise AnalogMultiplexerError(lockerinstance, args = ('setPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
+            errmessage = 'setPath() DO'+str(self.myOutput)+' is prohibited'
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def resetPath(self, lockerinstance):
-        if self.getState(lockerinstance)[self.myOutput] and not self.isBusy(lockerinstance):
+        if self.getState(lockerinstance)[self.myOutput]:
             try:
-                self.write_coil(lockerinstance, coil = 'DO'+str(self.myOutput), value = False)
+                self.write_coil(lockerinstance, Coil = 'DO'+str(self.myOutput), value = False)
             except Exception as e:
                 errmessage = 'AnalogMultiplexer Error - resetPath Error' + str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
-            raise AnalogMultiplexerError(lockerinstance, args = ('resetPath() ', 'DO'+str(self.myOutput), ' is prohibited'))
+            errmessage = 'resetPath() DO'+str(self.myOutput)+' is prohibited'
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def activatePath(self, lockerinstance):
-        if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(2), True)):
+        if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(2), True)):
             try:
-                self.write_coil(lockerinstance, coil = 'DO'+str(2), value = True)
+                self.write_coil(lockerinstance, Coil = 'DO'+str(2), value = True)
             except Exception as e:
                 errmessage = 'AnalogMultiplexer Error - activatePath Error' + str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
-            raise AnalogMultiplexerError(lockerinstance, args = ('activatePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
+            errmessage = 'activatePath() DO'+str(self.myOutput)+' is prohibited'
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def releasePath(self, lockerinstance):
-        if not self.isBusy(lockerinstance) and not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(2), False)):
+        if not self.__prohibitedBehaviour(lockerinstance, action = self.write_coil, args = ('DO'+str(2), False)):
             try:
-                self.write_coil(lockerinstance, coil = 'DO'+str(2), value = False)
+                self.write_coil(lockerinstance, Coil = 'DO'+str(2), value = False)
             except Exception as e:
                 errmessage = 'AnalogMultiplexer Error - releasePath Error' + str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
-            raise AnalogMultiplexerError(lockerinstance, args = ('releasePath() ', 'DO'+str(self.myOutput), ' is prohibited'))
+            errmessage = 'releasePath() DO'+str(self.myOutput)+' is prohibited'
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
 class LaserControl(ADAMDataAcquisitionModule):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):
@@ -129,7 +131,7 @@ class LaserControl(ADAMDataAcquisitionModule):
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         try:
             super().__init__(lockerinstance, moduleName = self.moduleName, address =  self.IPAddress, port = self.Port, *args, **kwargs)
-            self.inputState = []
+            self.inputState = [False, False, False, False, False, False, False]
             self.currentState = self.getState(lockerinstance)
         except Exception as e:
             errmessage = 'LaserControl init error ' + str(e)
@@ -320,15 +322,15 @@ class MyMultiplexer(AnalogMultiplexer):
                 self.setPath(lockerinstance)
 
     def __release(self, lockerinstance):
-        if self.currentState[self.myOutput]:
-            if not self.currentState[2]:
-                if self.currentState[self.myOutput]:
-                    self.resetPath(lockerinstance)
+        if self.currentState[self.myOutput] or not any(self.currentState[:2]):
+            if not self.currentState[self.myOutput]:
+                if self.currentState[2]:
+                    self.releasePath(lockerinstance)
                 else:
                     with lockerinstance[0].lock:
                         lockerinstance[0].mux['release'] = False
             else:
-                self.releasePath(lockerinstance)
+                self.resetPath(lockerinstance)
 
     def MUXloop(self, lockerinstance, *args, **kwargs):
         while self.Alive:
@@ -337,19 +339,21 @@ class MyMultiplexer(AnalogMultiplexer):
             if not self.Alive: break
             try:
                 self.getState(lockerinstance)
+                self.isBusy(lockerinstance)
             except:
                 pass
             with lockerinstance[0].lock:
                 ack, rel = lockerinstance[0].mux['acquire'], lockerinstance[0].mux['release']
-            if ack: 
-                try:
-                    self.__acquire(lockerinstance)
-                except Exception as e:
-                    errstring = str(e)
-                    ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
             if rel:
                 try:
                     self.__release(lockerinstance)
+                except Exception as e:
+                    errstring = str(e)
+                    ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
+                continue
+            if ack: 
+                try:
+                    self.__acquire(lockerinstance)
                 except Exception as e:
                     errstring = str(e)
                     ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
@@ -404,15 +408,3 @@ class MyLaserControl(LaserControl):
                 self.getState(lockerinstance)
                 self.resetError(lockerinstance)
 
-class LaserControlError(Exception):
-    def __init__(self, lockerinstance, *args, **kwargs):
-        self.args = args
-        errstring = 'Laser Control Error:' + ''.join(map(str, *args))
-        ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
-
-class AnalogMultiplexerError(Exception):
-    def __init__(self, lockerinstance, *args, **kwargs):
-        self.args = args
-        errstring = 'Analog multiplexer Error:' + ''.join(map(str, *args))
-        ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
-        
