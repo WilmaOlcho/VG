@@ -155,6 +155,7 @@ class RecipesMenu(Frame):
         self.variable = variable
         self.createmenu()
         for widget in self.winfo_children():
+            widget.unbind('<Button-3>')
             widget.pack(side = side, expand = 1, fill = 'both')
 
     def createmenu(self):

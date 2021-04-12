@@ -235,7 +235,7 @@ class Variables(dict):
                 program['stepmode'] = not self['auto']
                 program['automode'] = self['auto']
                 program['running'] = self['ProgramActive']
-                self['scout']['recipes'] = program['recipes']
+                self['scout']['recipes'] = list(program['recipes'])
                 if self.internalEvents['ack']:
                     events['erroracknowledge'] = True
                     self.internalEvents['ack'] = False

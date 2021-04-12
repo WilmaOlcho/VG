@@ -102,6 +102,7 @@ class PosTable(GeneralWidget):
             self.focused_on[0] = row
         print(self.focused_on)
         self.entries[self.focused_on[0]][self.focused_on[1]].focus_set()
+        self.GetFocus(self.entries[self.focused_on[0]][self.focused_on[1]])
 
     def CreateContextMenu(self):
         menu = tk.Menu(master = self, tearoff = 0)
@@ -118,8 +119,9 @@ class PosTable(GeneralWidget):
         finally:
             self.menu.grab_release()
 
-    def GetFocus(self, event):
-        focus = self.focus_get()
+    def GetFocus(self, event='', focus = None):
+        if not focus:
+            focus = self.focus_get()
         for row, row_content in enumerate(self.entries):
             for column, entry in enumerate(row_content):
                 if entry:
@@ -207,14 +209,24 @@ class PosTable(GeneralWidget):
             self.synctable.append(row.copy())
     
     def __bindEvents(self, row, column):
-        self.entries[row][column].bind('<FocusOut>',self.RetrieveSynctable)
-        self.entries[row][column].bind('<FocusIn>',self.GetFocus)
-        self.entries[row][column].bind('<Button-3>',self.ContextMenuPopup)
-        self.bind_all('<Up>',self.ChangeFocus)
-        self.bind_all('<Down>',self.ChangeFocus)
-        self.bind_all('<Left>',self.ChangeFocus)
-        self.bind_all('<Right>',self.ChangeFocus)
-
+        widget = self.entries[row][column]
+        self.unbind_all('<Button-3>')
+        widget.bind('<FocusOut>',self.RetrieveSynctable)
+        widget.bind('<FocusIn>',self.GetFocus)
+        widget.bind('<ButtonRelease-3>',lambda event, _=self: _.ChangeFocus(event,row=row, column = column,type = 'abs') ^ _.ContextMenuPopup(event))
+        if not isinstance(widget, tk.Entry):
+            def popup(event, widget = widget):
+                try:
+                    widget.menu.tk_popup(widget.winfo_rootx(), widget.winfo_rooty(), 0)
+                finally:
+                    widget.menu.grab_release()
+            widget.menubutton.bind('<ButtonRelease-3>',lambda event, _=self: _.ChangeFocus(event,row=row, column = column,type = 'abs') ^ _.ContextMenuPopup(event))
+            widget.menubutton.bind('<Button-1>',lambda event, _=self: _.ChangeFocus(event,row=row, column = column,type = 'abs'))
+            widget.bind('<space>', popup)
+        widget.bind('<Up>',self.ChangeFocus)
+        widget.bind('<Down>',self.ChangeFocus)
+        widget.bind('<Left>',self.ChangeFocus)
+        widget.bind('<Right>',self.ChangeFocus)
 
     def __createnameentry(self, row, column):
         self.entries[row][column].insert(0,self.root.variables.programcolumns[column])
@@ -276,6 +288,7 @@ class PosTable(GeneralWidget):
         if not self.freeze:
             self.recipes = self.root.variables['scout']['recipes']
             self.TableChanged()
+            self.root.variables.internalEvents['TableRefresh'] = False
             return True
         if self.root.variables.internalEvents['DumpProgramToFile']:
             self.WriteSyncTable()
