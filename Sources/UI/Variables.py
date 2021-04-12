@@ -198,9 +198,15 @@ class Variables(dict):
                 self['safety']['ZoneArmed'] = safety['ZoneArmed']
                 self['safety']['Estopresetrecquired'] = safety['Estopresetrecquired']
                 self['safety']['Zoneresetrecquired'] = safety['Zoneresetrecquired']
-                safety['OpenTheDoor'] = self['safety']['OpenTheDoor']
-                if safety['OpenTheDoorAck']:
-                    self['safety']['OpenTheDoor'] = False
+
+                #releasing laser and opening the door when 'open the door' button is pushed
+                if self['safety']['OpenTheDoor']:
+                    if laser['LaserReady']:
+                        laser['ReleaseChannel'] = True
+                    else:
+                        safety['OpenTheDoor'] = True
+                    self['safety']['OpenTheDoor'] = not safety['OpenTheDoorAck']
+
                 self['pistoncontrol']['seal']['Left']['sensor'] = pneumatics['sensorSealDown']
                 self['pistoncontrol']['pusher']['Left']['sensor'] = pneumatics['sensorTroleyPusherBack']
                 self['pistoncontrol']['pusher']['Right']['sensor'] = pneumatics['sensorTroleyPusherFront']

@@ -400,7 +400,6 @@
                     },
                     "buttons":{
                         "W\u0142\u0105cz Laser":"LaserTurnOn",
-                        "Wy\u0142\u0105cz Laser":"LaserTurnOff",
                         "Przejmij kana\u0142":"GetChannel",
                         "Zwolnij kana\u0142":"ReleaseChannel",
                         "Reset b\u0142\u0119d\u00F3w":"ResetErrors"
