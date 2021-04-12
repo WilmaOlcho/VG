@@ -16,11 +16,12 @@ def dictKeyByVal(dict, byVal): #There is no default method to search for keys in
         return keys[0]
     return keys
 
-def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255):
+def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255, noerror = False):
     with lockerinstance[0].lock:
         if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring + '\n'
-        lockerinstance[0].errorlevel[errorlevel] = True
-        lockerinstance[0].events['Error'] = True
+        if not noerror:
+            lockerinstance[0].errorlevel[errorlevel] = True
+            lockerinstance[0].events['Error'] = True
 
 class EventManager():
     def __init__(self, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):

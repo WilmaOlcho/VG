@@ -20,7 +20,6 @@ class programController(object):
         with lockerinstance[0].lock:
             automode = lockerinstance[0].program['automode']
             stepmode = lockerinstance[0].program['stepmode']
-            automode = lockerinstance[0].program['automode']
         if automode: self.automode(lockerinstance)
         if stepmode: self.stepmode(lockerinstance)
         self.retrievestate(lockerinstance)
@@ -42,13 +41,12 @@ class programController(object):
                 with lockerinstance[0].lock:
                     lockerinstance[0].program['recipes'] = files
 
-
     def running(self, lockerinstance):
         safety = control.CheckSafety(lockerinstance)
         program = control.CheckProgram(lockerinstance)
         ready = control.CheckPositions(lockerinstance)
         if safety and program:
-            EventManager.AdaptEvent(lockerinstance, input = 'events.startprogram', callback = control.startprocedure, callbackargs = (lockerinstance))
+            EventManager.AdaptEvent(lockerinstance, input = 'events.startprogram', callback = control.startprocedure, callbackargs = (lockerinstance,))
         else:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['running'] = False

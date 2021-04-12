@@ -50,6 +50,28 @@ def startprocedure(lockerinstance):
     if step: nextstep(lockerinstance)
 
 def CheckSafety(lockerinstance):
+    with lockerinstance[0].lock:
+        zonearmed = lockerinstance[0].safety['ZoneArmed']
+        estoparmed = lockerinstance[0].safety['EstopArmed']
+        robotmode = lockerinstance[0].safety['RobotTeachMode']
+        resetreq = lockerinstance[0].safety['Zoneresetrecquired'] or lockerinstance[0].safety['Estopresetrecquired']
+        deadman = lockerinstance[0].safety['DeadMan']
+        door = lockerinstance[0].safety['DoorClosed']
+        troley = lockerinstance[0].safety['TroleyInside']
+    if not estoparmed:
+        ErrorEventWrite(lockerinstance, "Przerwany obwód bezpieczeństwa!", noerror=True)
+    if not zonearmed:
+        ErrorEventWrite(lockerinstance, "Strefa bezpieczeństwa otwarta!", noerror=True)
+    if not door:
+        ErrorEventWrite(lockerinstance, "Drzwi serwisowe otwarte!", noerror=True)
+    if not door:
+        ErrorEventWrite(lockerinstance, "Drzwi serwisowe otwarte!", noerror=True)
+    if not troley:
+        ErrorEventWrite(lockerinstance, "Wózek poza pozycją bezpieczną!", noerror=True)
+    if resetreq:
+        ErrorEventWrite(lockerinstance, "Uzbrojenie maszyny wymagane!", noerror=True)
+    if (zonearmed and estoparmed) or (robotmode and deadman):
+        return True
     return False
 
 def CheckProgram(lockerinstance):
