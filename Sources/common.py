@@ -54,7 +54,7 @@ class EventManager():
     def loop(self, lockerinstance):
         while True:
             with lockerinstance[0].lock:
-                self.Alive = self.name in lockerinstance[0].ect
+                self.Alive = self.name in lockerinstance[0].ect and not lockerinstance[0].events['closeApplication']
                 currentstate = self.inputpath[self.input]
             if not self.Alive: break
             if not self.edge:

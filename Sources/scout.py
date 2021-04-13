@@ -20,13 +20,7 @@ class KDrawTCPInterface(socket.socket):
     def connect(self):
         address = self.config['connection']['IP']
         port = self.config['connection']['port']
-        while True:
-            try:
-                super().connect((address,port))
-            except Exception:
-                pass
-            else:
-                break
+        super().connect((address,port))
 
     def receive(self, lockerinstance):
         def start(lockerinstance = lockerinstance):
@@ -350,18 +344,25 @@ class SCOUT():
                     lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
                 self.Alive = True
                 self.connection = KDrawTCPInterface(lockerinstance, configfile)
-                self.connection.connect()
-                self.loop(lockerinstance)
+                try:
+                    self.connection.connect()
+                except Exception as e:
+                    ErrorEventWrite(lockerinstance, 'SCOUT manager cant connect with k-draw:\n{}'.format(str(e)))
+                else:
+                    self.loop(lockerinstance)
             finally:
                 with lockerinstance[0].lock:
                     self.Alive = lockerinstance[0].scout['Alive']
                     letdie = lockerinstance[0].events['closeApplication']
-                if not self.Alive or letdie: break
+                if not self.Alive or letdie:
+                    self.connection.close()
+                    break
 
     def loop(self, lockerinstance):
         while self.Alive:
             with lockerinstance[0].lock:
                 self.Alive = lockerinstance[0].scout['Alive'] and not lockerinstance[0].events['closeApplication']
+                if not self.Alive: break
                 lastrecv = lockerinstance[0].scout['LastMessageType']
                 alarm = lockerinstance[0].scout['status']['Alarm']
                 alarmReset = lockerinstance[0].scout['AlarmReset']

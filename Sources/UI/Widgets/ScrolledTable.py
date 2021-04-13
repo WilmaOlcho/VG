@@ -213,20 +213,26 @@ class PosTable(GeneralWidget):
         self.unbind_all('<Button-3>')
         widget.bind('<FocusOut>',self.RetrieveSynctable)
         widget.bind('<FocusIn>',self.GetFocus)
-        widget.bind('<ButtonRelease-3>',lambda event, _=self: _.ChangeFocus(event,row=row, column = column,type = 'abs') ^ _.ContextMenuPopup(event))
         if not isinstance(widget, tk.Entry):
             def popup(event, widget = widget):
                 try:
                     widget.menu.tk_popup(widget.winfo_rootx(), widget.winfo_rooty(), 0)
                 finally:
                     widget.menu.grab_release()
-            widget.menubutton.bind('<ButtonRelease-3>',lambda event, _=self: _.ChangeFocus(event,row=row, column = column,type = 'abs') ^ _.ContextMenuPopup(event))
+            widget.menubutton.bind('<ButtonRelease-3>',lambda event, _=self: [_.ChangeFocus(event,row=row, column = column,type = 'abs'), _.ContextMenuPopup(event)])
             widget.menubutton.bind('<Button-1>',lambda event, _=self: _.ChangeFocus(event,row=row, column = column,type = 'abs'))
             widget.bind('<space>', popup)
-        widget.bind('<Up>',self.ChangeFocus)
-        widget.bind('<Down>',self.ChangeFocus)
-        widget.bind('<Left>',self.ChangeFocus)
-        widget.bind('<Right>',self.ChangeFocus)
+            widget.bind('<Up>',self.ChangeFocus)
+            widget.bind('<Down>',self.ChangeFocus)
+            widget.bind('<Left>',self.ChangeFocus)
+            widget.bind('<Right>',self.ChangeFocus)
+        else:
+            widget.bind('<ButtonRelease-3>',lambda event, _=self: [_.ChangeFocus(event,row=row, column = column,type = 'abs'), _.ContextMenuPopup(event)])
+            #widget.bind('<FocusIn>',lambda e: e.widget.select_range(0,tk.END))
+            widget.bind('<Up>',self.ChangeFocus)
+            widget.bind('<Down>',self.ChangeFocus)
+            widget.bind('<Left>',self.ChangeFocus)
+            widget.bind('<Right>',self.ChangeFocus)
 
     def __createnameentry(self, row, column):
         self.entries[row][column].insert(0,self.root.variables.programcolumns[column])

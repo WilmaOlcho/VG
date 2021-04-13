@@ -2,12 +2,14 @@ from Sources import ErrorEventWrite, dictKeyByVal, Bits
 import json
 import csv
 import re
+from .common import EventManager
 from xml.etree.ElementTree import ElementTree as ET
 from pymodbus.version import version
-from pymodbus.server.sync import StartTcpServer
+from pymodbus.server.sync import ModbusTcpServer, StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
 from pymodbus.datastore import ModbusSparseDataBlock, ModbusSlaveContext, ModbusServerContext
-from threading import Thread
+from threading import Thread, _active
+from pymodbus.transaction import ModbusSocketFramer
 DEBUG = False
 #DEBUG = True
 if DEBUG:
@@ -70,6 +72,23 @@ class SICKGmod(FX0GMOD):
         # (~(0b1<<bit)&readbyte)|(value<<bit) - write bit to it's position
         self.datablock.setValues(word, self.Bits(writeword))
 
+class ModbusTcpServerExternallyTerminated(ModbusTcpServer):
+    def __init__(self, context, framer=None, identity=None,
+                 address=None, handler=None, allow_reuse_address=False,
+                 **kwargs):
+        if 'lockerinstance' in kwargs.keys():
+            self.lockerinstance = kwargs.pop('lockerinstance')
+            EventManager.AdaptEvent(self.lockerinstance, input = 'events.closeApplication', callback = super().shutdown)
+        super().__init__(self, context, **kwargs)
+
+def StartTcpServerExternallyTerminated(context=None, identity=None, address=None,
+                   custom_functions=[], **kwargs):
+    framer = kwargs.pop("framer", ModbusSocketFramer)
+    server = ModbusTcpServerExternallyTerminated(context, framer, identity, address, **kwargs)
+    for f in custom_functions:
+        server.decoder.register(f)
+    server.serve_forever()
+
 class ModbusServerForGMOD():
     def __init__(self, lockerinstance, configfile):
         with open(configfile, 'r') as jsonfile:
@@ -81,10 +100,11 @@ class ModbusServerForGMOD():
         self.datablock = ModbusSparseDataBlock({addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
         store = ModbusSlaveContext(hr = self.datablock)
         context = ModbusServerContext(slaves = {0x01:store}, single=False)
-        TCPServerargs= {'context':context,
+        TCPServerargs= { 'lockerinstance':lockerinstance,
+                         'context':context,
                          'identity':identity,
                          'address':('',self.config['port'])}
-        self.thread = Thread(target = StartTcpServer, kwargs = TCPServerargs)
+        self.thread = Thread(target = StartTcpServerExternallyTerminated, kwargs = TCPServerargs)
         self.thread.start()
 
 class GMOD(SICKGmod):
@@ -138,7 +158,8 @@ class GMOD(SICKGmod):
                         ErrorEventWrite(lockerinstance, errstring)
                     else:
                         try:
-                            SICKGmod.__init__(self, lockerinstance, ModbusServerForGMOD(lockerinstance, configFile).datablock)
+                            self.server =  ModbusServerForGMOD(lockerinstance, configFile)
+                            SICKGmod.__init__(self, lockerinstance, self.server.datablock)
                             self.Alive = True
                             with lockerinstance[0].lock:
                                 lockerinstance[0].SICKGMOD0['Alive'] = True
@@ -159,7 +180,7 @@ class GMOD(SICKGmod):
             self.retrieveoutputs(lockerinstance)
             self.safetysignals(lockerinstance)
             with lockerinstance[0].lock:
-                self.Alive = lockerinstance[0].SICKGMOD0['Alive']
+                self.Alive = lockerinstance[0].SICKGMOD0['Alive'] and not lockerinstance[0].events['closeApplication']
 
     def retrieveinputs(self, lockerinstance):
         with lockerinstance[0].lock:

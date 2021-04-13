@@ -69,7 +69,7 @@ class TactWatchdog(object):
                 self.Destruct()
                 break
             with lockerinstance[0].lock:
-                Alive = thr.currentThread().name in lockerinstance[0].wdt
+                Alive = thr.currentThread().name in lockerinstance[0].wdt and not lockerinstance[0].events['closeApplication']
             if self.destruct or not Alive:
                 break
         self.active = False
