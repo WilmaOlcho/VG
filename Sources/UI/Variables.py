@@ -199,14 +199,6 @@ class Variables(dict):
                 self['safety']['Estopresetrecquired'] = safety['Estopresetrecquired']
                 self['safety']['Zoneresetrecquired'] = safety['Zoneresetrecquired']
 
-                #releasing laser and opening the door when 'open the door' button is pushed
-                if self['safety']['OpenTheDoor']:
-                    if laser['LaserReady']:
-                        laser['ReleaseChannel'] = True
-                    else:
-                        safety['OpenTheDoor'] = True
-                    self['safety']['OpenTheDoor'] = not safety['OpenTheDoorAck']
-
                 self['pistoncontrol']['seal']['Left']['sensor'] = pneumatics['sensorSealDown']
                 self['pistoncontrol']['pusher']['Left']['sensor'] = pneumatics['sensorTroleyPusherBack']
                 self['pistoncontrol']['pusher']['Right']['sensor'] = pneumatics['sensorTroleyPusherFront']
@@ -274,6 +266,15 @@ class Variables(dict):
                         self['scout']['AlignInfoY'] = float('{}.{}'.format(scout['AlignInfo']['Y'],scout['AlignInfo']['dotY']))
                         self['scout']['showaligninfo'] = True
                         scout['AlignInfoReceived'] = False
+
+                #releasing laser and opening the door when 'open the door' button is pushed
+                    if self['safety']['OpenTheDoor']:
+                        if laser['LaserReady']:
+                            laser['ReleaseChannel'] = True
+                        else:
+                            safety['OpenTheDoor'] = True
+                        self['safety']['OpenTheDoor'] = not safety['OpenTheDoorAck']
+
                 #Pneumatics GUI binding
                     pneumatics['TroleyPusherFront'] = self['pistoncontrol']['pusher']['Right']['coil']
                     pneumatics['TroleyPusherBack'] = self['pistoncontrol']['pusher']['Left']['coil']
@@ -291,8 +292,8 @@ class Variables(dict):
                 #Laser GUI binding
                     laser['SetChannel'] |= self['laser']['GetChannel'] #Here are the issues
                     multiplexer['acquire'] |= self['laser']['GetChannel']
-                    laser['ReleaseChannel'] |= self['laser']['GetChannel'] #Here are the issues
-                    multiplexer['release'] |= self['laser']['GetChannel']
+                    laser['ReleaseChannel'] |= self['laser']['ReleaseChannel'] #Here are the issues
+                    multiplexer['release'] |= self['laser']['ReleaseChannel']
                     laser['LaserTurnOn'] |= self['laser']['LaserTurnOn']
                     laser['LaserTurnOff'] |= self['laser']['LaserTurnOff']
                     laser['LaserReset'] |= self['laser']['ResetErrors']

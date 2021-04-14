@@ -399,6 +399,4 @@ class SCOUT():
             if wobbler: self.connection.SetWobble(lockerinstance)
             if mweld: self.connection.ManualWeld(lockerinstance)
             if malign: self.connection.ManualAlign(lockerinstance)
-            self.connection.getState(lockerinstance)
-
-
+            self.connection.GetStatus(lockerinstance)

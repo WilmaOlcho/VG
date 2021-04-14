@@ -7,9 +7,118 @@ from xml.etree.ElementTree import ElementTree as ET
 from pymodbus.version import version
 from pymodbus.server.sync import ModbusTcpServer, StartTcpServer
 from pymodbus.device import ModbusDeviceIdentification
-from pymodbus.datastore import ModbusSparseDataBlock, ModbusSlaveContext, ModbusServerContext
-from threading import Thread, _active
+from pymodbus.datastore import ModbusSlaveContext, ModbusServerContext
+from threading import Thread, _active, Lock, Condition
 from pymodbus.transaction import ModbusSocketFramer
+
+##class copied from https://pymodbus.readthedocs.io/en/v1.3.2/examples/thread-safe-datastore.html and modified for my needs
+
+from contextlib import contextmanager
+
+class ReadWriteLock:
+    def __init__(self):
+        self.queue = []
+        self.lock = Lock()
+        self.read_condition = Condition(self.lock)
+        self.readers = 0
+        self.writer = False
+
+    def __is_pending_writer(self):
+        return (self.writer or (self.queue and (self.queue[0] != self.read_condition)))
+
+    def acquire_reader(self):
+        with self.lock:
+            if self.__is_pending_writer():
+                if self.read_condition not in self.queue:
+                    self.queue.append(self.read_condition)
+                while self.__is_pending_writer():
+                    self.read_condition.wait(0.01)
+                if self.queue and self.read_condition == self.queue[0]:
+                    self.queue.pop(0)
+            self.readers += 1
+
+    def acquire_writer(self):
+        with self.lock:
+            if self.writer or self.readers:
+                condition = Condition(self.lock)
+                self.queue.append(condition)
+                while self.writer or self.readers:
+                    condition.wait(0.01)
+                self.queue.pop(0)
+            self.writer = True
+
+    def release_reader(self):
+        with self.lock:
+            self.readers = max(0, self.readers - 1)
+            if not self.readers and self.queue:
+                self.queue[0].notify_all()
+
+    def release_writer(self):
+        with self.lock:
+            self.writer = False
+            if self.queue:
+                self.queue[0].notify_all()
+            else: self.read_condition.notify_all()
+
+    @contextmanager
+    def get_reader_lock(self):
+        try:
+            self.acquire_reader()
+            yield self
+        finally: self.release_reader()
+
+    @contextmanager
+    def get_writer_lock(self):
+        try:
+            self.acquire_writer()
+            yield self
+        finally: self.release_writer()
+
+#class copied form pymodbus.datastore.store and modified for using as thread safe datablock
+
+from pymodbus.exceptions import NotImplementedException, ParameterException
+from pymodbus.compat import iteritems, iterkeys, itervalues, get_next
+from pymodbus.datastore.store import BaseModbusDataBlock
+
+class ModbusSparseThreadSafeDataBlock(BaseModbusDataBlock):
+    def __init__(self, values):
+        if isinstance(values, dict):
+            self.values = values
+        elif hasattr(values, '__iter__'):
+            self.values = dict(enumerate(values))
+        else: raise ParameterException()
+        self.default_value = get_next(itervalues(self.values)).__class__()
+        self.address = get_next(iterkeys(self.values))
+        self.rwlock = ReadWriteLock()
+
+    @classmethod
+    def create(klass):
+        return klass([0x00] * 65536)
+
+    def validate(self, address, count=1):
+        with self.rwlock.get_reader_lock():
+            if count == 0:
+                return False
+            handle = set(range(address, address + count))
+            return handle.issubset(set(iterkeys(self.values)))
+
+    def getValues(self, address, count=1):
+        with self.rwlock.get_reader_lock():
+            return [self.values[i] for i in range(address, address + count)]
+
+    def setValues(self, address, values):
+        with self.rwlock.get_writer_lock():
+            if isinstance(values, dict):
+                for idx, val in iteritems(values):
+                    self.values[idx] = val
+            else:
+                if not isinstance(values, list):
+                    values = [values]
+                for idx, val in enumerate(values):
+                    self.values[address + idx] = val
+
+#My own code below
+
 DEBUG = False
 #DEBUG = True
 if DEBUG:
@@ -73,7 +182,7 @@ class SICKGmod(FX0GMOD):
         self.datablock.setValues(word, self.Bits(writeword))
 
 class ModbusTcpServerExternallyTerminated(ModbusTcpServer):
-    def __init__(self, context, framer=None, identity=None,
+    def __init__(self, context, framer, identity=None,
                  address=None, handler=None, allow_reuse_address=False,
                  **kwargs):
         if 'lockerinstance' in kwargs.keys():
@@ -97,13 +206,13 @@ class ModbusServerForGMOD():
         identity.VendorName = self.config['vendorname']#"AIC MW"
         identity.ProductCode = self.config['productcode']#'HMI'
         identity.ProductName = self.config['productname']#'Cela spawania lsterkowego'
-        self.datablock = ModbusSparseDataBlock({addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
+        self.datablock = ModbusSparseThreadSafeDataBlock({addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
         store = ModbusSlaveContext(hr = self.datablock)
         context = ModbusServerContext(slaves = {0x01:store}, single=False)
-        TCPServerargs= { 'lockerinstance':lockerinstance,
-                         'context':context,
+        TCPServerargs= { 'context':context,
                          'identity':identity,
-                         'address':('',self.config['port'])}
+                         'address':('',self.config['port']),
+                         'lockerinstance':lockerinstance}
         self.thread = Thread(target = StartTcpServerExternallyTerminated, kwargs = TCPServerargs)
         self.thread.start()
 
@@ -158,7 +267,7 @@ class GMOD(SICKGmod):
                         ErrorEventWrite(lockerinstance, errstring)
                     else:
                         try:
-                            self.server =  ModbusServerForGMOD(lockerinstance, configFile)
+                            self.server = ModbusServerForGMOD(lockerinstance, configFile)
                             SICKGmod.__init__(self, lockerinstance, self.server.datablock)
                             self.Alive = True
                             with lockerinstance[0].lock:

@@ -25,6 +25,15 @@ def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255, noerror = 
 
 class EventManager():
     def __init__(self, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
+        self.backwardsrunning = False
+        if not input:
+            input = 'events.'
+            if event and event[0] == '-':
+                self.sign = True
+                input += event[1:]
+            else:
+                input += event
+            self.backwardsrunning = True
         if input and input[0] == '-':
             self.sign = True
             input = input[1:]
@@ -51,42 +60,60 @@ class EventManager():
             lockerinstance[0].ect.append(self.name)
         self.loop(lockerinstance)
 
+    def noedge(self, lockerinstance, currentstate):
+        if not self.edge: 
+            if (currentstate ^ self.sign):
+                if self.event:
+                    if not self.backwardsrunning:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
+                    return True
+        return False
+    
+    def rising(self, lockerinstance, currentstate):
+        if self.edge == 'rising':
+            if self.state:
+                with lockerinstance[0].lock:
+                    self.state = self.inputpath[self.input]
+            elif currentstate:
+                if self.event:
+                    if not self.backwardsrunning:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
+                    return True
+        return False
+
+    def falling(self, lockerinstance, currentstate):
+        if self.edge == 'falling':
+            if not self.state:
+                with lockerinstance[0].lock:
+                    self.state = self.inputpath[self.input]
+            elif not currentstate:
+                if self.event:
+                    if not self.backwardsrunning:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
+                    return True
+        return False
+
+    def toggle(self, lockerinstance, currentstate):
+        if self.edge == 'toggle':
+            if self.state != currentstate:
+                if self.event:
+                    if not self.backwardsrunning:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].events[self.event] = True
+                    return True
+        return False
+
     def loop(self, lockerinstance):
         while True:
             with lockerinstance[0].lock:
                 self.Alive = self.name in lockerinstance[0].ect and not lockerinstance[0].events['closeApplication']
                 currentstate = self.inputpath[self.input]
             if not self.Alive: break
-            if not self.edge:
-                if (currentstate ^ self.sign):
-                    if self.event:
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].events[self.event] = True
-                    break
-            elif self.edge == 'rising':
-                if self.state:
-                    with lockerinstance[0].lock:
-                        self.state = self.inputpath[self.input]
-                elif currentstate:
-                    if self.event:
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].events[self.event] = True
-                    break
-            elif self.edge == 'falling':
-                if not self.state:
-                    with lockerinstance[0].lock:
-                        self.state = self.inputpath[self.input]
-                elif not currentstate:
-                    if self.event:
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].events[self.event] = True
-                    break
-            elif self.edge == 'toggle':
-                if self.state != currentstate:
-                    if self.event:
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].events[self.event] = True
-                    break
+            args = (lockerinstance, currentstate)
+            if any([self.noedge(*args), self.rising(*args), self.falling(*args), self.toggle(*args)]): break
         self.callback(*self.callbackargs)
         with lockerinstance[0].lock:
             if self.name in lockerinstance[0].ect: lockerinstance[0].ect.remove(self.name)
