@@ -7,6 +7,9 @@ from ..UI import SettingsScreen
 from ..UI import HomeScreen
 from ..UI import TableScreen
 from ..UI import Variables
+from PIL import Image, ImageTk
+PhotoImage = ImageTk.PhotoImage
+
 
 class Notebook(GeneralWidget, ttk.Notebook):
     def __init__(self, master = None, branch = "Notebook"):
@@ -41,16 +44,19 @@ class Frame(GeneralWidget):
         self.root.variables.internalEvents['ack'] = True
 
 class Window(dict):
-    def __init__(self, lockerinstance, settingsfile):
+    def __init__(self, lockerinstance, settingsfile, programs):
         super().__init__()
         self.window = tk.Tk()
         root = self.window
-        settingsfile = str(Path(__file__).parent.absolute())+'//widgetsettings.json'
         with open(settingsfile) as jsonfile:
             widgetsettings = json.load(jsonfile)
         root.__setattr__('variables', Variables(lockerinstance, **widgetsettings))
         root.__setattr__('settings', root.variables['widgetsettings'])
+        root.variables.jsonpath = programs
         self.settings = root.settings
+        self.icon = PhotoImage(file = self.settings['icon'])
+        root.__setattr__('icon', self.icon)
+        root.iconphoto(False, self.icon)
         root.__setattr__('font',Font(root = self.window, **self.settings['MainFont']))
         rootstyle = ttk.Style()
         rootstyle.configure('.',font = root.font())
@@ -69,6 +75,7 @@ class Window(dict):
             self.Alive = self.window.variables.Alive
 
 if __name__ == '__main__':
-    filepath = str(Path(__file__).parent.absolute())+'//widgetsettings.json'
-    Window(object, filepath)
+    settings = str(Path(__file__).parent.absolute())+'//widgetsettings.json'
+    programs = str(Path(__file__).parent.absolute())+'//Programs.json'
+    Window(object, settings, programs)
     

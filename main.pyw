@@ -15,6 +15,7 @@ from Sources.programController import programController
 class ApplicationManager(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        __file__ = ''
         self.locker = SharedLocker()
         self.lock = {0:self.locker}
         path = str(Path(__file__).parent.absolute())+'\\'
@@ -27,17 +28,18 @@ class ApplicationManager(object):
         self.SICKGMOD0ConfigurationFile = path + 'SICKGMODconfiguration.json'
         self.ScoutConfigurationFile = path + 'Scoutconfiguration.json'
         self.programs = path + 'Programs.json'
+        self.widgets = path + 'widgetsettings.json'
         self.processes = [
-            Process(name = 'Window', target = Window, daemon=False, args=(self.lock,"")),
-            Process(name = 'MyMultiplexer', target = MyMultiplexer, daemon=False, args=(self.lock, self.AmuxConfigurationFile,)),
-            Process(name = 'Servo', target = Servo, daemon=False, args=(self.lock, self.ServoConfigurationFile,)),
-            Process(name = 'MyLaserControl', target = MyLaserControl, daemon=False, args=(self.lock, self.LconConfigurationFile,)),
-            Process(name = 'RobotVG', target = RobotVG, daemon=False, args=(self.lock, self.RobotConfigurationFile, *args,)),
-            Process(name = 'PneumaticsVG', target = PneumaticsVG, daemon=False, args=(self.lock, self.PneumaticsConfigurationFile,)),
-            Process(name = 'GMOD', target = GMOD, daemon=False, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
-            Process(name = 'Troley', target = Troley, daemon=False, args=(self.lock, self.TroleyConfigurationFile,)),
-            Process(name = 'Program', target = programController, daemon=False, args=(self.lock, self.programs,)),
-            Process(name = 'SCOUT', target = SCOUT, daemon=False, args = (self.lock, self.ScoutConfigurationFile,))
+            Process(name = 'Window', target = Window, args=(self.lock,self.widgets, self.programs)),
+            Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
+            Process(name = 'Servo', target = Servo,  args=(self.lock, self.ServoConfigurationFile,)),
+            Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
+            Process(name = 'RobotVG', target = RobotVG,  args=(self.lock, self.RobotConfigurationFile, *args,)),
+            Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
+            Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
+            Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,)),
+            Process(name = 'Program', target = programController, args=(self.lock, self.programs,)),
+            Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
         ]    
         for process in self.processes: 
             process.start()

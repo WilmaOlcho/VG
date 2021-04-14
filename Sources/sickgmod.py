@@ -172,7 +172,10 @@ class GMOD(SICKGmod):
             with lockerinstance[0].lock:
                 letdie = not lockerinstance[0].SICKGMOD0['Alive']
                 letdie |= lockerinstance[0].events['closeApplication']
-            if letdie: break
+            if letdie:
+                if hasattr(self, 'server'):
+                    self.server.thread.join()
+                break
     
     def loop(self, lockerinstance):
         while self.Alive:

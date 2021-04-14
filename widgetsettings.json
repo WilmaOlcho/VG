@@ -93,6 +93,7 @@
         "size":15,
         "weight":"bold"
     },
+    "icon":"icon.ico",
     "MainWindow":{
         "ackbutton":{
             "constructor":{

@@ -89,7 +89,6 @@ class ProgramSelect(LabelFrame):
     def createmenu(self):
         if isinstance(self.menu, tk.Menu):
             self.menu.destroy()
-        self.root.variables.jsonpath = str(Path(__file__).parent.absolute())+'\\Programs.json'
         with open(self.root.variables.jsonpath) as jsonfile:
             self.programs = json.load(jsonfile)
         self.menu = tk.Menu(master = self.menubutton, tearoff = 0)

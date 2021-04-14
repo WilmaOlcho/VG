@@ -28,16 +28,16 @@ class ApplicationManager(object):
         self.ScoutConfigurationFile = path + 'Scoutconfiguration.json'
         self.programs = path + 'Programs.json'
         self.processes = [
-            Process(name = 'Window', target = Window, daemon=True, args=(self.lock,"")),
-            Process(name = 'MyMultiplexer', target = MyMultiplexer, daemon=True, args=(self.lock, self.AmuxConfigurationFile,)),
-            Process(name = 'Servo', target = Servo, daemon=True, args=(self.lock, self.ServoConfigurationFile,)),
-            Process(name = 'MyLaserControl', target = MyLaserControl, daemon=True, args=(self.lock, self.LconConfigurationFile,)),
-            Process(name = 'RobotVG', target = RobotVG, daemon=True, args=(self.lock, self.RobotConfigurationFile, *args,)),
-            Process(name = 'PneumaticsVG', target = PneumaticsVG, daemon=True, args=(self.lock, self.PneumaticsConfigurationFile,)),
-            Process(name = 'GMOD', target = GMOD, daemon=True, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
-            Process(name = 'Troley', target = Troley, daemon=True, args=(self.lock, self.TroleyConfigurationFile,)),
-            Process(name = 'Program', target = programController, daemon=True, args=(self.lock, self.programs,)),
-            Process(name = 'SCOUT', target = SCOUT, daemon=True, args = (self.lock, self.ScoutConfigurationFile,))
+            Process(name = 'Window', target = Window, daemon=False, args=(self.lock,"")),
+            Process(name = 'MyMultiplexer', target = MyMultiplexer, daemon=False, args=(self.lock, self.AmuxConfigurationFile,)),
+            Process(name = 'Servo', target = Servo, daemon=False, args=(self.lock, self.ServoConfigurationFile,)),
+            Process(name = 'MyLaserControl', target = MyLaserControl, daemon=False, args=(self.lock, self.LconConfigurationFile,)),
+            Process(name = 'RobotVG', target = RobotVG, daemon=False, args=(self.lock, self.RobotConfigurationFile, *args,)),
+            Process(name = 'PneumaticsVG', target = PneumaticsVG, daemon=False, args=(self.lock, self.PneumaticsConfigurationFile,)),
+            Process(name = 'GMOD', target = GMOD, daemon=False, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
+            Process(name = 'Troley', target = Troley, daemon=False, args=(self.lock, self.TroleyConfigurationFile,)),
+            Process(name = 'Program', target = programController, daemon=False, args=(self.lock, self.programs,)),
+            Process(name = 'SCOUT', target = SCOUT, daemon=False, args = (self.lock, self.ScoutConfigurationFile,))
         ]    
         for process in self.processes: 
             process.start()
@@ -46,6 +46,7 @@ class ApplicationManager(object):
     def EventLoop(self, *args, **kwargs):
         ps = []
         psb = []
+        sstr = ''
         while True:
             with self.lock[0].lock:
                 self.ApplicationAlive = not self.lock[0].events['closeApplication']
@@ -68,8 +69,10 @@ class ApplicationManager(object):
                         psb[i] = True
                     else:
                         psb[i] = False
-                        
-                print(str(list(zip(ps, psb))), "App is still alive" if stillalive else "Done")
+                nstr = str(list(zip(ps, psb))) + "App is still alive" if stillalive else "Done"                        
+                if not sstr == nstr:
+                    print(nstr)
+                    sstr = nstr
                 if not stillalive: break
             self.errorcatching()
 

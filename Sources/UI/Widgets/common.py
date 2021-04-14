@@ -126,6 +126,8 @@ class Window(GeneralWidget, tk.Toplevel):
         GeneralWidget.__init__(self, master = parent, branch = branch)
         tk.Toplevel.__init__(self, master = parent)
         self.destroyed = False
+        if hasattr(self.root, 'icon'):
+            self.iconphoto(False, self.root.icon)
         if 'title' in self.settings:
             self.title(self.settings['title'])
         else:

@@ -13,7 +13,10 @@ class Troley(object):
                 self.Alive = True
                 with lockerinstance[0].lock:
                     lockerinstance[0].troley['Alive'] = self.Alive
-                self.loop(lockerinstance)
+                try:
+                    self.loop(lockerinstance)
+                except Exception as e:
+                    ErrorEventWrite(lockerinstance, "Troley loop raised exception: "+ str(e))
             finally:
                 with lockerinstance[0].lock:
                     self.Alive = lockerinstance[0].troley['Alive']
