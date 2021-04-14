@@ -86,8 +86,7 @@ class VariablesMenu(Frame):
             if self.settings['notforlabel'] in name:
                 name = self.removefromstring(name,self.settings['notforlabel'])
             self.menu.add_command(label = name, command = lambda obj = self, choice = name: obj.setvariable(choice))
-        self.bind('<Return>',self.popupmenu)
-        self.menubutton.pack
+        self.menubutton.pack()
 
     def update(self):
         #print(self.focus_get())
@@ -95,7 +94,7 @@ class VariablesMenu(Frame):
         text = self.removefromstring(text,self.settings['notforlabel'])
         items = self.root.variables[self.itemsmasterkey][self.itemskey]
         itemschanged = False
-        if not items == self.items:
+        if items != self.items:
             itemschanged = True
             self.items = items
         if self.menubutton.cget('text') != text or itemschanged:

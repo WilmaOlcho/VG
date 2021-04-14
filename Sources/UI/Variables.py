@@ -123,10 +123,14 @@ class Variables(dict):
             'receipt':"",
             'setpage':False,
             "page":0,
+            "pagecheck":0,
             'AlignInfoA':0.0,
             'AlignInfoX':0.0,
             'AlignInfoY':0.0,
-            'recipes':[]      
+            'recipes':[],
+            "bAtstart":False,
+            "bAtstop":False,
+            "bLaserCTRL":False
         }
         self['pistoncontrol'] = {
             'seal':{
@@ -174,6 +178,11 @@ class Variables(dict):
     def update(self):
         lockerinstance = self.lockerinstance
         if True:
+            if isinstance(self['scout']['page'], str):
+                if self['scout']['page'].isnumeric():
+                    self['scout']['page'] = int(self['scout']['page'])
+                else:
+                    self['scout']['page'] = 0
             with lockerinstance[0].lock:
                 pneumatics = lockerinstance[0].pistons
                 robot = lockerinstance[0].robot
@@ -245,6 +254,10 @@ class Variables(dict):
                         self['scout']['versionvariable'] = scout['version']
                     else:
                         scout['GetVersion'] |= True
+                    
+                    if self['scout']['page'] != self['scout']['pagecheck']:
+                        self['scout']['setpage'] = True
+                        self['scout']['pagecheck'] = self['scout']['page']
                     if self['scout']['setpage']:
                         scout['ManualAlignPage'] = self['scout']['page']
                     else:
@@ -258,8 +271,10 @@ class Variables(dict):
                     scout['ManualAlign'] |= self['scout']['align']
                     scout['ManualWeld'] |= self['scout']['weld']
                     scout['AlarmReset'] |= self['scout']['alarmreset']
-                    scout['ManualWeld'] |= self['scout']['weld']
                     scout['GetAlignInfo'] |= self['scout']['getaligninfo']
+                    scout['AutostartOn'] |= self['scout']['bAtstart']
+                    scout['AutostartOff'] |= self['scout']['bAtstop']
+                    scout['LaserCTRL'] = not scout['LaserCTRL'] if self['scout']["bLaserCTRL"] else scout['LaserCTRL']
                     if scout['AlignInfoReceived']:
                         self['scout']['AlignInfoA'] = float('{}.{}'.format(scout['AlignInfo']['A'],scout['AlignInfo']['dotA']))
                         self['scout']['AlignInfoX'] = float('{}.{}'.format(scout['AlignInfo']['X'],scout['AlignInfo']['dotX']))
@@ -315,9 +330,14 @@ class Variables(dict):
                     self['troley']['servoHOMING'] = False
                     self['troley']['servoSTEP'] = False
                     self['troley']['servoRESET'] = False
+                    self['scout']['align'] = False
+                    self['scout']['weld'] = False
+                    self['scout']['alarmreset'] = False
+                    self['scout']['getaligninfo'] = False
+                    self['scout']['bAtstart'] = False
+                    self['scout']['bAtstop'] = False
+                    self['scout']["bLaserCTRL"] = False
 
-
-                
                 else:
                     print(program['recipes'])
                     self['currentposition'] = 'wiersz {}, krok {}'.format(program['cycle'], program['stepnumber'])

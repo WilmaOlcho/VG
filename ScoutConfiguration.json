@@ -1,6 +1,6 @@
 {
     "connection":{
-        "IP":"127.0.0.1",
+        "IP":"192.168.4.200",
         "port":900
     },
     "ProgramPath":"C:\\K-Draw\\",

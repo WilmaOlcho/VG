@@ -209,6 +209,10 @@ class ModbusServerForGMOD():
         self.datablock = ModbusSparseThreadSafeDataBlock({addr:0 for addr in range(self.config['startaddress'],self.config['endaddress'],1)}) 
         store = ModbusSlaveContext(hr = self.datablock)
         context = ModbusServerContext(slaves = {0x01:store}, single=False)
+        if not hasattr(context, '__call__'):
+            def __call__(*args, **kwargs):
+                pass
+            context.__setattr__('__call__',__call__)
         TCPServerargs= { 'context':context,
                          'identity':identity,
                          'address':('',self.config['port']),

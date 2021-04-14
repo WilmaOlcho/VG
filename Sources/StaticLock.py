@@ -78,7 +78,8 @@ class SharedLocker(object):
                 'Wobble':False,
                 'GetAlignInfo':False,
                 'AlignInfoReceived':False,
-                'Recipechangedsuccesfully':False
+                'Recipechangedsuccesfully':False,
+                'LaserCTRL':False
 
             }),
             'Errors':'',
@@ -103,6 +104,7 @@ class SharedLocker(object):
                 'LaserAssigned':False
                 }),
             'events':manager.dict({
+                'ScoutManagerReadyToSend':False,
                 'KDrawMessageReceived':False,
                 'KDrawWaitingForMessage':False,
                 'startprogram':False,

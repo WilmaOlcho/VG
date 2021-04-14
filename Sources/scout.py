@@ -6,7 +6,8 @@ WDT = TactWatchdog.WDT
 
 class KDrawTCPInterface(socket.socket):
     def __init__(self, lockerinstance, configfile, *args, **kwargs):
-        super().__init__(socket.AF_INET, socket.SOCK_STREAM)
+        super().__init__(socket.AF_INET, socket.SOCK_STREAM,)
+        self.sendingqueue = []
         try:
             with open(configfile) as jsonfile:
                 self.config = json.load(jsonfile)
@@ -17,50 +18,106 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
 
-    def connect(self):
+    def connect(self, lockerinstance):
         address = self.config['connection']['IP']
         port = self.config['connection']['port']
         super().connect((address,port))
+        with lockerinstance[0].lock:
+            lockerinstance[0].events['ScoutManagerReadyToSend'] = True
+    
+    def retrievequeue(self, lockerinstance):
+        if self.sendingqueue:
+            with lockerinstance[0].lock:
+                event = lockerinstance[0].events['ScoutManagerReadyToSend']
+            if event:
+                with lockerinstance[0].lock:
+                    lockerinstance[0].events['ScoutManagerReadyToSend'] = False
+                self.sendall(self.sendingqueue.pop(0))
+                self.receive(lockerinstance)
+
+    def send_message(self, lockerinstance, bytes_message):
+        if bytes_message in self.sendingqueue:
+            return None
+        else:
+            self.sendingqueue.append(bytes_message)
 
     def receive(self, lockerinstance):
         def start(lockerinstance = lockerinstance):
             with lockerinstance[0].lock:
-                lockerinstance[0].scout['connectionbuffer'] = 0
-                lockerinstance[0].events['KDrawWaitingForMessage'] = True
+                lockerinstance[0].scout['connectionbuffer'] = b''
         def loop(obj = self, lockerinstance = lockerinstance):
-            data = obj.recv(1024)
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['connectionbuffer'] += data
-                if b'\r\n' in lockerinstance[0].scout['connectionbuffer']:
-                    lockerinstance[0].events['KDrawMessageReceived'] = True
-        def exceed(obj = self, lockerinstance = lockerinstance):
-            with lockerinstance[0].lock:
-                lockerinstance[0].events['KDrawWaitingForMessage'] = False
+            try:
+                data = obj.recv(1024)
+            except:
+                data = b''
+            finally:
+                print(data.decode())
+                with lockerinstance[0].lock:
+                    lockerinstance[0].scout['connectionbuffer'] += data
+                    if b'\r\n' in lockerinstance[0].scout['connectionbuffer']:
+                        lockerinstance[0].events['KDrawMessageReceived'] = True
         def catch(obj = self, lockerinstance = lockerinstance):
-            with lockerinstance[0].lock:
-                lockerinstance[0].events['KDrawWaitingForMessage'] = False
             obj.decode_messsage(lockerinstance)
-        WDT(lockerinstance, additionalFuncOnExceed = exceed, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", timeout = 20, eventtocatch = "KDrawMessageReceived")
-        
+        WDT(lockerinstance, additionalFuncOnExceed = catch, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", limitval = 10, scale = 's', eventToCatch = "KDrawMessageReceived")
+
+    def encode_message(self, lockerinstance, message):
+        string = ''
+        for element in message: #message is an list of parameters
+            string += str(element) + ',' #parameters are splitted by coma
+        if string[-1] == ',': string = string[:-1] #removing last coma from string
+        _bytes = string.encode() #convert to utf-8
+        _bytes += b'\r\n' #end of message
+        return _bytes
+
+    def decode_messsage(self, lockerinstance):
+        with lockerinstance[0].lock:
+            rawmessage = lockerinstance[0].scout['connectionbuffer']
+        lines = rawmessage.decode().splitlines()
+        contents = []
+        for line in lines:
+            contents.extend(line.split(','))
+        #mesage is in one bytes() line ended with \r\n
+        #it contains values splitted by ','
+        if contents:
+            with lockerinstance[0].lock:
+                lockerinstance[0].scout['LastMessageType'] = contents[0]
+            if contents[0] == 'STATUS': self.rec_write_status(lockerinstance, contents[1:])
+            elif contents[0] == 'AL_REPORT': self.rec_AlarmReport(lockerinstance, contents[1:])
+            elif contents[0] == 'AL_RESET': self.rec_AlarmReset(lockerinstance, contents[1:])
+            elif contents[0] == 'VER': self.rec_Version(lockerinstance, contents[1:])
+            elif contents[0] == 'AT_START': self.rec_AtStart(lockerinstance, contents[1:])
+            elif contents[0] == 'RECIPE_CHANGE': self.rec_RecipeChange(lockerinstance, contents[1:])
+            elif contents[0] == 'WELD_RUN': self.rec_WeldRun(lockerinstance, contents[1:])
+            elif contents[0] == 'AT_STOP': self.rec_AtStop(lockerinstance, contents[1:])
+            elif contents[0] == 'LASER_CTRL': self.rec_LaserCTRL(lockerinstance, contents[1:])
+            elif contents[0] == 'SCAN_WOBBLE': self.rec_ScanWobble(lockerinstance, contents[1:])
+            elif contents[0] == 'MANUAL_ALIGN': self.rec_ManualAlign(lockerinstance, contents[1:])
+            elif contents[0] == 'MANUAL_WELD': self.rec_ManualWeld(lockerinstance, contents[1:])
+            elif contents[0] == 'GET_ALIGN_INFO': self.rec_GetAlignInfo(lockerinstance, contents[1:])
+            elif contents[0] == 'FIELD_ALIGN': self.rec_FieldAlign(lockerinstance, contents[1:])
+            else:
+                ErrorEventWrite(lockerinstance, 'SCOUT responded unusable data: ' + str(contents))
+        else:
+            ErrorEventWrite(lockerinstance, 'SCOUT responded empty message: ' + str(contents))
+        with lockerinstance[0].lock:
+            lockerinstance[0].events['ScoutManagerReadyToSend'] = True
+
     def rec_write_status(self, lockerinstance, statusdata):
         with lockerinstance[0].lock:
             statusreceived = lockerinstance[0].scout['LastMessageType'] == 'STATUS'
         if statusreceived:
-            if len(statusdata) == 8 and statusdata[0] != '0':
+            if len(statusdata[1]) == 7 and statusdata[0] != '0':
                 scout = lockerinstance[0].scout
+                scout['StatusCheckCode'] = bool(int(statusdata[0]))
                 with lockerinstance[0].lock:
-                    for i, status in enumerate(['ReadyOn','AutoStart','Alarm','rsv','WeldingProgress','LaserIsOn','Wobble']):
-                        if i == 0: 
-                            with lockerinstance[0].lock:
-                                lockerinstance[0].scout['StatusCheckCode'] = statusdata[i]
-                            continue
-                        scout['status'][status] = bool(statusdata[i])
+                    for i, status in enumerate(['ReadyOn','AutoStart','Alarm', 'rsv','WeldingProgress','LaserIsOn','Wobble']):
+                        scout['status'][status] = bool(statusdata[1][i])
                     scout['MessageAck'] = True
             else:
                 ErrorEventWrite(lockerinstance, 'SCOUT status data was not fully received: ' + str(statusdata))
 
     def rec_AlarmReport(self, lockerinstance, data):
-        if len(data)==2:
+        if len(data)==3:
             ErrorEventWrite(lockerinstance, 'SCOUT reported alarm message with code: {}\n{}'.format(data[1],data[2]))
             with lockerinstance[0].lock:
                 lockerinstance[0].scout['MessageAck'] = True
@@ -133,7 +190,7 @@ class KDrawTCPInterface(socket.socket):
     def rec_LaserCTRL(self, lockerinstance, data):
         if len(data) == 2:
             with lockerinstance[0].lock:
-                laserack = bool(data[1]) == lockerinstance[0].scout['LaserOn']
+                laserack = bool(int(data[1])) == lockerinstance[0].scout['LaserOn']
                 if laserack: lockerinstance[0].scout['MessageAck'] = True
             if not laserack:
                 ErrorEventWrite(lockerinstance, "SCOUT returned wrong LaserCTRL ack message:\n{}".format(data))
@@ -208,54 +265,6 @@ class KDrawTCPInterface(socket.socket):
                 ErrorEventWrite(lockerinstance, "SCOUT returned wrong FieldAlign ack message:\n{}".format(data))
         else:
             ErrorEventWrite(lockerinstance, "SCOUT returned incomplete GetAlignInfo message:\n{}".format(data))
-
-    def decode_messsage(self, lockerinstance):
-        with lockerinstance[0].lock:
-            rawmessage = lockerinstance[0].scout['connectionbuffer']
-        lines = rawmessage.decode().splitlines()
-        contents = []
-        for line in lines:
-            contents.extend(line.split(','))
-        #mesage is in one bytes() line ended with \r\n
-        #it contains values splitted by ','
-        if contents:
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['LastMessageType'] = contents[0]
-            if contents[0] == 'STATUS': self.rec_write_status(lockerinstance, contents[1:])
-            elif contents[0] == 'AL_REPORT': self.rec_AlarmReport(lockerinstance, contents[1:])
-            elif contents[0] == 'AL_RESET': self.rec_AlarmReset(lockerinstance, contents[1:])
-            elif contents[0] == 'VER': self.rec_Version(lockerinstance, contents[1:])
-            elif contents[0] == 'AT_START': self.rec_AtStart(lockerinstance, contents[1:])
-            elif contents[0] == 'RECIPE_CHANGE': self.rec_RecipeChange(lockerinstance, contents[1:])
-            elif contents[0] == 'WELD_RUN': self.rec_WeldRun(lockerinstance, contents[1:])
-            elif contents[0] == 'AT_STOP': self.rec_AtStop(lockerinstance, contents[1:])
-            elif contents[0] == 'LASER_CTRL': self.rec_LaserCTRL(lockerinstance, contents[1:])
-            elif contents[0] == 'SCAN_WOBBLE': self.rec_ScanWobble(lockerinstance, contents[1:])
-            elif contents[0] == 'MANUAL_ALIGN': self.rec_ManualAlign(lockerinstance, contents[1:])
-            elif contents[0] == 'MANUAL_WELD': self.rec_ManualWeld(lockerinstance, contents[1:])
-            elif contents[0] == 'GET_ALIGN_INFO': self.rec_GetAlignInfo(lockerinstance, contents[1:])
-            elif contents[0] == 'FIELD_ALIGN': self.rec_FieldAlign(lockerinstance, contents[1:])
-            else:
-                ErrorEventWrite(lockerinstance, 'SCOUT responded unusable data: ' + str(contents))
-        else:
-            ErrorEventWrite(lockerinstance, 'SCOUT responded empty message: ' + str(contents))
-
-    def encode_message(self, lockerinstance, message):
-        string = ''
-        for element in message: #message is an list of parameters
-            string += str(element) + ',' #parameters are splitted by coma
-        if string[-1] == ',': string = string[:-1] #removing last coma from string
-        _bytes = string.encode() #convert to utf-8
-        _bytes += b'\r\n' #end of message
-        return _bytes
-    
-    def send_message(self, lockerinstance, bytes_message):
-        def callback(obj = self, lockerinstance = lockerinstance):
-            with lockerinstance[0].lock:
-                lockerinstance[0].events['KDrawWaitingForMessage'] = True
-            self.sendall(bytes_message)
-            obj.receive(lockerinstance)
-        EventManager.AdaptEvent(lockerinstance, name = bytes_message.decode(), event = '-KDrawWaitingForMessage', callback = callback)
 
     def GetStatus(self, lockerinstance):
         message = self.encode_message(lockerinstance, ['STATUS'])
@@ -345,7 +354,9 @@ class SCOUT():
                 self.Alive = True
                 self.connection = KDrawTCPInterface(lockerinstance, configfile)
                 try:
-                    self.connection.connect()
+                    pass
+                    self.connection.connect(lockerinstance)
+                    self.connection.setblocking(False)
                 except Exception as e:
                     ErrorEventWrite(lockerinstance, 'SCOUT manager cant connect with k-draw:\n{}'.format(str(e)))
                 else:
@@ -386,7 +397,7 @@ class SCOUT():
                 malign = lockerinstance[0].scout['ManualAlign']
                 if malign: lockerinstance[0].scout['ManualAlign'] = False
                 mweld = lockerinstance[0].scout['ManualWeld']
-                if mweld: lockerinstance[0].scout['ManualWeld'] = False
+                if mweld: lockerinstance[0].scout['ManualWeld'] = False #TODO laserctrl
             if alarm and lastrecv != 'AL_REPORT': self.connection.GetAlarmReport(lockerinstance)
             if tlaseron: self.connection.TurnOnLaser(lockerinstance)
             if tlaseroff: self.connection.TurnOffLaser(lockerinstance)
@@ -400,3 +411,4 @@ class SCOUT():
             if mweld: self.connection.ManualWeld(lockerinstance)
             if malign: self.connection.ManualAlign(lockerinstance)
             self.connection.GetStatus(lockerinstance)
+            self.connection.retrievequeue(lockerinstance)

@@ -60,7 +60,10 @@ class TactWatchdog(object):
                     event = lockerinstance[0].events[eventToCatch]
             if event:
                 with lockerinstance[0].lock:
-                    lockerinstance[0].events[eventToCatch] = False
+                    if eventToCatch[0] == '-':
+                        lockerinstance[0].events[eventToCatch[1:]] = True
+                    else:
+                        lockerinstance[0].events[eventToCatch] = False
                 additionalFuncOnCatch()
                 break
             if self.elapsed() >= limitval:
@@ -92,6 +95,8 @@ class TactWatchdog(object):
             additionalFuncOnExceed = BlankFunc,
             noerror = False,
             *args, **kwargs):
+        if 'timeout' in kwargs.keys(): limitval = kwargs.pop('timeout')
+
         lockerinstance[0].lock.acquire()
         timerActive = 'WDT: '+errToRaise in lockerinstance[0].wdt
         lockerinstance[0].lock.release()

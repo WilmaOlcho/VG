@@ -722,14 +722,17 @@
                     "Label":"G\u0142owica skanuj\u0105ca",
                     "Button":{
                         "masterkey":"scout",
-                        "width":15,
+                        "width":18,
                         "height":2
                     },
                     "buttons":{
-                        "Ustaw trajektori\u0119":"align",
+                        "Start":"bAtstart",
+                        "Stop":"bAtstop",
+                        "Kontroluj Laser":"bLaserCTRL",
+                        "Ustaw align":"align",
                         "Spawaj":"weld",
                         "Potwierd\u017A Alarmy":"alarmreset",
-                        "Pobierz dane trajektorii":"getaligninfo"
+                        "Pobierz dane align":"getaligninfo"
                     },
                     "StatusIndicators":{
                         "Label":"Status",

@@ -27,12 +27,10 @@ class EventManager():
     def __init__(self, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
         self.backwardsrunning = False
         if not input:
-            input = 'events.'
-            if event and event[0] == '-':
-                self.sign = True
-                input += event[1:]
-            else:
-                input += event
+            if event[0] == '-':
+                event = event[1:]
+                input = 'events.' + event
+                input = '-' + input
             self.backwardsrunning = True
         if input and input[0] == '-':
             self.sign = True
@@ -64,8 +62,10 @@ class EventManager():
         if not self.edge: 
             if (currentstate ^ self.sign):
                 if self.event:
-                    if not self.backwardsrunning:
-                        with lockerinstance[0].lock:
+                    with lockerinstance[0].lock:
+                        if self.backwardsrunning:
+                            lockerinstance[0].events[self.event] = currentstate
+                        else:
                             lockerinstance[0].events[self.event] = True
                     return True
         return False
@@ -77,8 +77,10 @@ class EventManager():
                     self.state = self.inputpath[self.input]
             elif currentstate:
                 if self.event:
-                    if not self.backwardsrunning:
-                        with lockerinstance[0].lock:
+                    with lockerinstance[0].lock:
+                        if self.backwardsrunning:
+                            lockerinstance[0].events[self.event] = False
+                        else:
                             lockerinstance[0].events[self.event] = True
                     return True
         return False
@@ -90,9 +92,8 @@ class EventManager():
                     self.state = self.inputpath[self.input]
             elif not currentstate:
                 if self.event:
-                    if not self.backwardsrunning:
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].events[self.event] = True
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].events[self.event] = True
                     return True
         return False
 
@@ -100,8 +101,10 @@ class EventManager():
         if self.edge == 'toggle':
             if self.state != currentstate:
                 if self.event:
-                    if not self.backwardsrunning:
-                        with lockerinstance[0].lock:
+                    with lockerinstance[0].lock:
+                        if self.backwardsrunning:
+                            lockerinstance[0].events[self.event] = self.state
+                        else:
                             lockerinstance[0].events[self.event] = True
                     return True
         return False

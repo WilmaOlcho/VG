@@ -31,14 +31,14 @@ class ApplicationManager(object):
         self.widgets = path + 'widgetsettings.json'
         self.processes = [
             Process(name = 'Window', target = Window, args=(self.lock,self.widgets, self.programs)),
-            Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
-            Process(name = 'Servo', target = Servo,  args=(self.lock, self.ServoConfigurationFile,)),
-            Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
-            Process(name = 'RobotVG', target = RobotVG,  args=(self.lock, self.RobotConfigurationFile, *args,)),
-            Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
-            Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
-            Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,)),
-            Process(name = 'Program', target = programController, args=(self.lock, self.programs,)),
+            #Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
+            #Process(name = 'Servo', target = Servo,  args=(self.lock, self.ServoConfigurationFile,)),
+            #Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
+            #Process(name = 'RobotVG', target = RobotVG,  args=(self.lock, self.RobotConfigurationFile, *args,)),
+            #Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
+            #Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
+            #Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,)),
+            #Process(name = 'Program', target = programController, args=(self.lock, self.programs,)),
             Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
         ]    
         for process in self.processes: 
