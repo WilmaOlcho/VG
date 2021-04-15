@@ -254,17 +254,15 @@ class Variables(dict):
                         self['scout']['versionvariable'] = scout['version']
                     else:
                         scout['GetVersion'] |= True
-                    
-                    if self['scout']['page'] != self['scout']['pagecheck']:
-                        self['scout']['setpage'] = True
-                        self['scout']['pagecheck'] = self['scout']['page']
                     if self['scout']['setpage']:
                         scout['ManualAlignPage'] = self['scout']['page']
+                        scout['ManualWeldPage'] = self['scout']['page']
                     else:
                         self['scout']['page'] = scout['ManualAlignPage']
                     if self['scout']['setreceipt']:
                         scout['recipe'] = self['scout']['receipt']
                         scout['SetRecipe'] |= True
+                        self['scout']['setreceipt'] = False
                     else:
                         self['scout']['receipt'] = scout['recipe']
                         self['receipt'] = scout['recipe']

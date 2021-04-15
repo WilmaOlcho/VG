@@ -48,14 +48,14 @@ class ApplicationManager(object):
             Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
             Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
             Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,)),
-            Process(name = 'Program', target = programController, args=(self.lock, self.programs,))
-            #Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
+            Process(name = 'Program', target = programController, args=(self.lock, self.programs,)),
+            Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
         ]    
         for process in self.processes: 
             process.start()
-        self.EventLoop(*args, **kwargs)
+        self.EventLoop(self.lock, *args, **kwargs)
 
-    def EventLoop(self, *args, **kwargs):
+    def EventLoop(self, lockerinstance, *args, **kwargs):
         ps = []
         psb = []
         sstr = ''
@@ -86,13 +86,23 @@ class ApplicationManager(object):
                     print(nstr)
                     sstr = nstr
                 if not stillalive: break
-            self.errorcatching()
+            self.errorcatching(lockerinstance)
 
-    def errorcatching(self):
+    def errorcatching(self, lockerinstance):
         for proces in self.processes:
             if not proces.is_alive():
                 with self.lock[0].lock:
                     self.lock[0].events['closeApplication'] = True
+        with lockerinstance[0].lock:
+            if lockerinstance[0].events['ack']:
+                lockerinstance[0].events['Error'] = False
+                lockerinstance[0].events['erroracknowledge'] = True
+                lockerinstance[0]['Errors'] = ''
+                for i in range(256):
+                    lockerinstance[0].errorlevel[i] = False
+                lockerinstance[0].events['ack'] = False
+                
+
 
 if __name__=="__main__":
     freeze_support()

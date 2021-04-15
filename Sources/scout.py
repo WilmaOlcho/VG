@@ -59,7 +59,7 @@ class KDrawTCPInterface(socket.socket):
                         lockerinstance[0].events['KDrawMessageReceived'] = True
         def catch(obj = self, lockerinstance = lockerinstance):
             obj.decode_messsage(lockerinstance)
-        WDT(lockerinstance, additionalFuncOnExceed = catch, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", limitval = 10, scale = 's', eventToCatch = "KDrawMessageReceived")
+        WDT(lockerinstance, additionalFuncOnExceed = catch, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", limitval = 60, scale = 's', eventToCatch = "KDrawMessageReceived")
 
     def encode_message(self, lockerinstance, message):
         string = ''

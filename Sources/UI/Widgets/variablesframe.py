@@ -29,6 +29,8 @@ class VariablesFrame(Frame):
     def valueUpdate(self, event):
         entry = event.widget
         self.root.variables[entry.master.key] = entry.get()
+        if 'set'+entry.master.key in self.root.variables.keys():
+            self.root.variables['set'+entry.master.key] = True
 
     def update(self):
         if isinstance(self.entry, tk.Entry):
