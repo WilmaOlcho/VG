@@ -903,6 +903,7 @@
                         "format":"versionvariable"
                     },
                     "VariablesFrames":{
+                        "masterkey":"scout",
                         "!receipt":{
                             "Label":"Receptura: ",
                             "width":25,

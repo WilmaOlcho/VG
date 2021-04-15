@@ -18,6 +18,10 @@ class VariablesFrame(Frame):
     def __init__(self, master = None, entryclass = tk.Entry, branch = 'VariablesFrame', side = tk.TOP):
         super().__init__(master = master, branch = branch)
         self.key = branch
+        if 'masterkey' in master.settings.keys():
+            self.masterkey = master.settings['masterkey']
+        else:
+            self.masterkey = None
         self.label = ttk.Label(master = self, text = self.settings['Label'])
         self.entry = entryclass(master = self)
         if isinstance(self.entry, tk.Entry):
@@ -28,10 +32,15 @@ class VariablesFrame(Frame):
 
     def valueUpdate(self, event):
         entry = event.widget
-        print("{} -> {}".format(self.root.variables[entry.master.key], entry.get()))
-        self.root.variables[entry.master.key] = entry.get()
-        if 'set'+entry.master.key in self.root.variables.keys():
-            self.root.variables['set'+entry.master.key] = True
+        print("{}\n{} -> {}".format(entry.master.key,self.root.variables[entry.master.key], entry.get()))
+        if self.masterkey:
+            self.root.variables[self.masterkey][entry.master.key] = entry.get()
+            if 'set'+entry.master.key in self.root.variables[self.masterkey].keys():
+                self.root.variables[self.masterkey]['set'+entry.master.key] = True
+        else:
+            self.root.variables[entry.master.key] = entry.get()
+            if 'set'+entry.master.key in self.root.variables.keys():
+                self.root.variables['set'+entry.master.key] = True
 
     def update(self):
         if isinstance(self.entry, tk.Entry):

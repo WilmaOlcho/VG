@@ -340,7 +340,7 @@ class KDrawTCPInterface(socket.socket):
     def ManualAlign(self, lockerinstance):
         with lockerinstance[0].lock:
             page = lockerinstance[0].scout['ManualAlignPage']
-        message = self.encode_message(lockerinstance, ['MANUAL_ALIGN', page])
+        message = self.encode_message(lockerinstance, ['MANUAL_ALIGN', str(page)])
         self.send_message(lockerinstance, message)
 
     def ManualWeld(self, lockerinstance):

@@ -82,7 +82,7 @@ class Variables(dict):
             'LaserTurnOff':False,
             'LaserIsOn':False,
             'GetChannel':False,
-            "ReleaseChannel":False,
+            'ReleaseChannel':False,
             'ResetErrors':False,
             'LaserReady':False,
             'LaserAssigned':False,
@@ -257,6 +257,8 @@ class Variables(dict):
                     if self['scout']['setpage']:
                         scout['ManualAlignPage'] = self['scout']['page']
                         scout['ManualWeldPage'] = self['scout']['page']
+                        print('Manualpage {}'.format(scout['ManualAlignPage']))
+                        self['scout']['setpage'] = False
                     else:
                         self['scout']['page'] = scout['ManualAlignPage']
                     if self['scout']['setreceipt']:

@@ -326,6 +326,7 @@ class MyMultiplexer(AnalogMultiplexer):
             if not self.currentState[self.myOutput]:
                 if self.currentState[2]:
                     self.releasePath(lockerinstance)
+                    print('releasing')
                 else:
                     with lockerinstance[0].lock:
                         lockerinstance[0].mux['release'] = False
@@ -392,19 +393,10 @@ class MyLaserControl(LaserControl):
                 self.Alive = lockerinstance[0].lcon['Alive']
             if not self.Alive: break
             WDT(lockerinstance, errToRaise = 'LconGetStateTimer',noerror=True, limit=10, scale = 's', additionalFuncOnStart=lambda obj = self, lck = lockerinstance: obj.getState(lck))
-            if setchannel:
-                self.getState(lockerinstance)
-                self.SetChannel(lockerinstance)
-            if releasechannel:
-                self.getState(lockerinstance)
-                self.SetChannel(lockerinstance)
-            if startlaser:
-                self.getState(lockerinstance)
-                self.laserOn(lockerinstance)
-            if stoplaser:
-                self.getState(lockerinstance)
-                self.StopLaser(lockerinstance)
-            if resetlaser:
-                self.getState(lockerinstance)
-                self.resetError(lockerinstance)
+            self.getState(lockerinstance)
+            if setchannel: self.SetChannel(lockerinstance)
+            if releasechannel: self.ReleaseChannel(lockerinstance)
+            if startlaser: self.laserOn(lockerinstance)
+            if stoplaser: self.StopLaser(lockerinstance)
+            if resetlaser: self.resetError(lockerinstance)
 
