@@ -18,8 +18,8 @@ class VariablesFrame(Frame):
     def __init__(self, master = None, entryclass = tk.Entry, branch = 'VariablesFrame', side = tk.TOP):
         super().__init__(master = master, branch = branch)
         self.key = branch
-        if 'masterkey' in master.settings.keys():
-            self.masterkey = master.settings['masterkey']
+        if 'masterkey' in self.settings.keys():
+            self.masterkey = self.settings['masterkey']
         else:
             self.masterkey = None
         self.label = ttk.Label(master = self, text = self.settings['Label'])
@@ -46,7 +46,10 @@ class VariablesFrame(Frame):
         if isinstance(self.entry, tk.Entry):
             if not self.focus_get() == self.entry:
                 value = self.entry.get()
-                expected = self.root.variables[self.key]
+                if self.masterkey:
+                    expected = self.root.variables[self.masterkey][self.key]
+                else:
+                    expected = self.root.variables[self.key]
                 if value != expected:
                     if value:
                         self.entry.delete(0,tk.END)
