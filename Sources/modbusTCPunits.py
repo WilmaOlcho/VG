@@ -8,8 +8,6 @@ from Sources import Bits, ErrorEventWrite
 import re
 import struct
 from pymodbus.framer import SOCKET_FRAME_HEADER
-from pyModbusTCP.client import ModbusClient
-
 
 class ADAMModule(object):
     def __init__(self, *args, **kwargs):

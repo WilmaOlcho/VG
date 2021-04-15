@@ -111,7 +111,7 @@ class KDrawTCPInterface(socket.socket):
                 scout['StatusCheckCode'] = bool(int(statusdata[0]))
                 with lockerinstance[0].lock:
                     for i, status in enumerate(['ReadyOn','AutoStart','Alarm', 'rsv','WeldingProgress','LaserIsOn','Wobble']):
-                        scout['status'][status] = bool(statusdata[1][i])
+                        scout['status'][status] = bool(int(statusdata[1][i]))
                     scout['MessageAck'] = True
             else:
                 ErrorEventWrite(lockerinstance, 'SCOUT status data was not fully received: ' + str(statusdata))

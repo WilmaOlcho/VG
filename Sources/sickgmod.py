@@ -182,18 +182,18 @@ class SICKGmod(FX0GMOD):
         self.datablock.setValues(word, self.Bits(writeword))
 
 class ModbusTcpServerExternallyTerminated(ModbusTcpServer):
-    def __init__(self, context, framer, identity=None,
+    def __init__(self, context, framer = None, identity=None,
                  address=None, handler=None, allow_reuse_address=False,
                  **kwargs):
         if 'lockerinstance' in kwargs.keys():
             self.lockerinstance = kwargs.pop('lockerinstance')
             EventManager.AdaptEvent(self.lockerinstance, input = 'events.closeApplication', callback = super().shutdown)
-        super().__init__(self, context, **kwargs)
+        super().__init__(context, **kwargs)
 
 def StartTcpServerExternallyTerminated(context=None, identity=None, address=None,
-                   custom_functions=[], **kwargs):
+                    custom_functions=[], **kwargs):
     framer = kwargs.pop("framer", ModbusSocketFramer)
-    server = ModbusTcpServerExternallyTerminated(context, framer, identity, address, **kwargs)
+    server = ModbusTcpServerExternallyTerminated(context, framer = framer, identity = identity, address = address, **kwargs)
     for f in custom_functions:
         server.decoder.register(f)
     server.serve_forever()
