@@ -1,5 +1,6 @@
 import socket
 import json
+import re
 from .common import ErrorEventWrite, EventManager
 from .TactWatchdog import TactWatchdog
 WDT = TactWatchdog.WDT
@@ -149,8 +150,11 @@ class KDrawTCPInterface(socket.socket):
     def rec_RecipeChange(self, lockerinstance, data):
         if len(data) == 2:
             with lockerinstance[0].lock:
-                recipechanged = data[1] == lockerinstance[0].scout['recipe']
-                if recipechanged:
+                savedrecipe = lockerinstance[0].scout['recipe']
+            savedrecipe = self.__removefromstring(savedrecipe, '.dsg')
+            recipechanged = data[1] == savedrecipe
+            if recipechanged:
+                with lockerinstance[0].lock:
                     lockerinstance[0].scout['MessageAck'] = True
                     lockerinstance[0].scout['Recipechangedsuccesfully'] = True
             if not recipechanged:
@@ -302,12 +306,26 @@ class KDrawTCPInterface(socket.socket):
         message = self.encode_message(lockerinstance, ['LASER_CTRL','0'])
         self.send_message(lockerinstance, message)
 
+    def __removefromstring(self, string, substring):
+        while True:
+            searchresult = re.search(substring, string)
+            if searchresult:
+                newstring = ''
+                for i, character in enumerate(string):
+                    if i in range(*searchresult.regs[0]): continue
+                    newstring += character
+            if string != newstring:
+                string = newstring
+            else: break
+        return string
+
     def ChangeRecipe(self, lockerinstance, recipe = ''):
         with lockerinstance[0].lock:
             if not recipe:
                 recipe = lockerinstance[0].scout['recipe']
             else:
                 lockerinstance[0].scout['recipe'] = recipe
+        recipe = self.__removefromstring(recipe, '.dsg')
         message = self.encode_message(lockerinstance, ['RECIPE_CHANGE',recipe])
         self.send_message(lockerinstance, message)
 
@@ -348,13 +366,12 @@ class SCOUT():
             except Exception as e:
                 ErrorEventWrite(lockerinstance, 'SCOUT manager cant load json file:\n{}'.format(str(e)))
             else:
+                self.Alive = True
                 with lockerinstance[0].lock:
                     lockerinstance[0].scout['Alive'] = True
                     lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
-                self.Alive = True
                 self.connection = KDrawTCPInterface(lockerinstance, configfile)
                 try:
-                    pass
                     self.connection.connect(lockerinstance)
                     self.connection.setblocking(False)
                 except Exception as e:

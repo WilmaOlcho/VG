@@ -288,7 +288,9 @@ class Variables(dict):
                             laser['ReleaseChannel'] = True
                         else:
                             safety['OpenTheDoor'] = True
-                        self['safety']['OpenTheDoor'] = not safety['OpenTheDoorAck']
+                        if safety['OpenTheDoorAck']:
+                            self['safety']['OpenTheDoor'] = False
+                            safety['OpenTheDoor'] = False
 
                 #Pneumatics GUI binding
                     pneumatics['TroleyPusherFront'] = self['pistoncontrol']['pusher']['Right']['coil']

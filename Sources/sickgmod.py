@@ -270,10 +270,10 @@ class GMOD(SICKGmod):
                         errstring = '\nGMOD init error - extending DictProxy failed ' + str(e)
                         ErrorEventWrite(lockerinstance, errstring)
                     else:
+                        self.Alive = True
                         try:
                             self.server = ModbusServerForGMOD(lockerinstance, configFile)
                             SICKGmod.__init__(self, lockerinstance, self.server.datablock)
-                            self.Alive = True
                             with lockerinstance[0].lock:
                                 lockerinstance[0].SICKGMOD0['Alive'] = True
                         except Exception as e:
