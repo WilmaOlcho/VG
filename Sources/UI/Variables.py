@@ -238,7 +238,7 @@ class Variables(dict):
                 program['running'] = self['ProgramActive']
                 self['scout']['recipes'] = list(program['recipes'])
                 if self.internalEvents['ack']:
-                    events['erroracknowledge'] = True
+                    events['ack'] = True
                     self.internalEvents['ack'] = False
                 if not self['ProgramActive']:
                 #SCOUT gui binding

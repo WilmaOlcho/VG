@@ -52,7 +52,6 @@ class KDrawTCPInterface(socket.socket):
             except:
                 data = b''
             finally:
-                print(data.decode())
                 with lockerinstance[0].lock:
                     lockerinstance[0].scout['connectionbuffer'] += data
                     if b'\r\n' in lockerinstance[0].scout['connectionbuffer']:

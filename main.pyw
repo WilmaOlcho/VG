@@ -97,7 +97,7 @@ class ApplicationManager(object):
             if lockerinstance[0].events['ack']:
                 lockerinstance[0].events['Error'] = False
                 lockerinstance[0].events['erroracknowledge'] = True
-                lockerinstance[0]['Errors'] = ''
+                lockerinstance[0].shared['Errors'] = ''
                 for i in range(256):
                     lockerinstance[0].errorlevel[i] = False
                 lockerinstance[0].events['ack'] = False
