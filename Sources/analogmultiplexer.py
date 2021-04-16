@@ -52,6 +52,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
     def getState(self, lockerinstance):
         try:
             self.currentState = self.read_coils(lockerinstance, input = 'DO0', NumberOfCoils = 3)
+            print('currentstate {}'.format(self.currentState))
         except Exception as e:
             errmsg = "Amux can't get state:\n" + str(e)
             ErrorEventWrite(lockerinstance, errmsg)
@@ -323,10 +324,10 @@ class MyMultiplexer(AnalogMultiplexer):
 
     def __release(self, lockerinstance):
         if self.currentState[self.myOutput] or not any(self.currentState[:2]):
+            print('releasing')
             if not self.currentState[self.myOutput]:
                 if self.currentState[2]:
                     self.releasePath(lockerinstance)
-                    print('releasing')
                 else:
                     with lockerinstance[0].lock:
                         lockerinstance[0].mux['release'] = False

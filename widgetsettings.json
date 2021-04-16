@@ -737,6 +737,26 @@
                     "StatusIndicators":{
                         "Label":"Status",
                         "masterkey":"scout",
+                        "WaitingForData":{
+                            "Label":"K-Draw przyjal ramke",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "height":45,
+                                "width":250,
+                                "borderwidth":2,
+                                "relief":"ridge"
+                            },
+                            "caption":{
+                                "width":15
+                            },
+                            "Color":{
+                                "active":"lightblue",
+                                "normal":"black",
+                                "error":"red",
+                                "highlighted":"blue"
+                            }
+                        },
                         "ready":{
                             "Label":"Gotowo\u015B\u0107",
                             "width":40,

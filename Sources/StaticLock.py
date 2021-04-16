@@ -25,6 +25,7 @@ class SharedLocker(object):
         self.shared = manager.dict({
             'SCOUT':manager.dict({
                 'Alive':False,
+                'WaitingForData':False,
                 'connectionbuffer':b'',
                 'LastMessageType':"",
                 'MessageAck':False,
@@ -79,7 +80,8 @@ class SharedLocker(object):
                 'GetAlignInfo':False,
                 'AlignInfoReceived':False,
                 'Recipechangedsuccesfully':False,
-                'LaserCTRL':False
+                'LaserCTRL':False,
+                'LaserCTRVal':False
 
             }),
             'Errors':'',
