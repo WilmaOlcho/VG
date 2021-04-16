@@ -817,26 +817,6 @@
                                 "highlighted":"blue"
                             }
                         },
-                        "NA":{
-                            "Label":"Parametr nieznany",
-                            "width":40,
-                            "height":40,
-                            "frame":{
-                                "height":45,
-                                "width":250,
-                                "borderwidth":2,
-                                "relief":"ridge"
-                            },
-                            "caption":{
-                                "width":15
-                            },
-                            "Color":{
-                                "active":"green",
-                                "normal":"black",
-                                "error":"red",
-                                "highlighted":"blue"
-                            }
-                        },
                         "progress":{
                             "Label":"W toku",
                             "width":40,

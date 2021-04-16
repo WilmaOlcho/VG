@@ -105,6 +105,7 @@ class Variables(dict):
             'OpenTheDoor':False
         }
         self['scout'] = {
+            'WaitingForData':False,
             'ready':False,
             'atstart':False,
             'alarm':False,
@@ -269,6 +270,7 @@ class Variables(dict):
                         self['scout']['receipt'] = scout['recipe']
                         self['receipt'] = scout['recipe']
                     scout['ManualAlign'] |= self['scout']['align']
+                    self['scout']['WaitingForData'] = scout['WaitingForData']
                     scout['ManualWeld'] |= self['scout']['weld']
                     scout['AlarmReset'] |= self['scout']['alarmreset']
                     scout['GetAlignInfo'] |= self['scout']['getaligninfo']
