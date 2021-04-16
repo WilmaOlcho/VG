@@ -1,0 +1,9 @@
+{
+    "connection":{
+        "IP":"192.168.4.200",
+        "port":900
+    },
+    "ProgramPath":"C:\\K-Draw\\",
+    "Receptures":"C:\\K-Draw\\Design"
+
+}

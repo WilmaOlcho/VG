@@ -23,6 +23,67 @@ class SharedLocker(object):
 #            'O25': self.outputs[24], 'O26': self.outputs[25], 'O27': self.outputs[26], 'O28': self.outputs[27],
 #            'O29': self.outputs[28], 'O30': self.outputs[29], 'O31': self.outputs[30], 'O32': self.outputs[31]}
         self.shared = manager.dict({
+            'SCOUT':manager.dict({
+                'Alive':False,
+                'WaitingForData':False,
+                'connectionbuffer':b'',
+                'LastMessageType':"",
+                'MessageAck':False,
+                'version':'',
+                'recipe':'',
+                'recipesdir':'',
+                'pagesToWeld':manager.list([]),
+                'weldrunpagescount':0,
+                'LaserOn':False,
+                'ManualAlignPage':0,
+                'ManualAlignCheck':False,
+                'ManualWeldPage':0,
+                'ManualWeldCheck':False,
+                'StatusCheckCode':False,
+                'AlignInfo':manager.dict({
+                    '0':0,
+                    '1':0,
+                    '2':0,
+                    "A":0,
+                    "dotA":0,
+                    "X":0,
+                    "dotX":0,
+                    "Y":0,
+                    "dotY":0,
+                }),
+                'status':manager.dict({
+                    'ReadyOn':False,
+                    "AutoStart":False,
+                    "Alarm":False,
+                    "rsv":False,
+                    "WeldingProgress":False,
+                    "LaserIsOn":False,
+                    "Wobble":False
+                }),
+                'scanwobble':manager.dict({
+                    'mode':0,
+                    "frequency":1,
+                    "amplitude":0,
+                    "power":0
+                }),
+                'SetRecipe':False,
+                'TurnLaserOn':False,
+                'TurnLaserOff':False,
+                'GetVersion':False,
+                'AlarmReset':False,
+                'AutostartOn':False,
+                'AutostartOff':False,
+                'ManualAlign':False,
+                'ManualWeld':False,
+                'WeldStart':False, #requires pages to weld list
+                'Wobble':False,
+                'GetAlignInfo':False,
+                'AlignInfoReceived':False,
+                'Recipechangedsuccesfully':False,
+                'LaserCTRL':False,
+                'LaserCTRVal':False
+
+            }),
             'Errors':'',
             'servoModuleFirstAccess':True,
             'configurationError':False,
@@ -31,10 +92,27 @@ class SharedLocker(object):
             'ect':manager.list(),
             'lcon':manager.dict({
                 'Alive':False,
-                'SetChannel':False}),
+                'LaserTurnOn':False,
+                'LaserTurnOff':False,
+                "LaserReset":False,
+                'SetChannel':False,
+                'ReleaseChannel':False,
+                'LaserError':False,
+                'LaserWarning':False,
+                'ChillerError':False,
+                'ChillerWarning':False,
+                'LaserReady':False,
+                'LaserOn':False,
+                'LaserAssigned':False
+                }),
             'events':manager.dict({
+                'ScoutManagerReadyToSend':False,
+                'KDrawMessageReceived':False,
+                'KDrawWaitingForMessage':False,
+                'startprogram':False,
                 'somethingchanged':False,
                 'ack':False,
+                'erroracknowledge':False,
                 'Error':False,
                 'stepComplete':False,
                 'RobotHomingComplete':False,
@@ -49,6 +127,7 @@ class SharedLocker(object):
                 'ServoStepComplete':False,
                 'closeApplication':False,
                 'OutputChangedByRobot':False,
+                'requestlconresettimer':False,
                 'OutputsChangedByRobot':''}),
             'pistons':manager.dict({
                 'Alive':False,
@@ -70,29 +149,29 @@ class SharedLocker(object):
                 'CrossJet':False}),
             'safety':manager.dict({
                 'EstopArmed':False,
-                'EstopReleased':False,
                 'DoorOpen':False,
+                "OpenTheDoorAck":False,
+                'OpenTheDoor':False,
                 'DoorClosed':False,
                 'DoorLocked':False,
                 'TroleyInside':False,
-                'TroleySafe':False,
                 'THCPushed':False,
-                'ReleaseTroley':False,
                 'RobotError':False,
+                'RobotTeachMode':False,
+                'DeadMan':False,
                 'LaserError':False,
                 'ServoError':False,
                 'sValve1Error':False,
-                'sValve2Error':False,
                 'ServoEDM':False,
                 'sValve1EDM':False,
-                'sValve2EDM':False,
                 'RobotEDM':False,
                 'LaserEDM':False,
                 'ZoneArmed':False,
                 'ZoneError':False,
-                'SafetyArmed':False,
-                'SafetyError':False,
-                'LockingJig':False}),
+                'TroleyReady':False,
+                "resetbutton":False,
+                "Estopresetrecquired":False,
+                "Zoneresetrecquired":False}),
             'mux':manager.dict({
                 'busy':False,
                 'ready':False,
@@ -110,16 +189,37 @@ class SharedLocker(object):
                 'stop':False,
                 'positionNumber':-1,
                 'moving':False,
-                'active':False}),
+                'active':False,
+                'iocoin':False,
+                'ioready':False,
+                'iotgon':False
+                }),
+            'troley':manager.dict({
+                'Alive':False,
+                'docked':False,
+                'number':0,
+                'dockreleaseswitch':False,
+                'error':False,
+                'push':False,
+                'dock':False,
+                'undock':False,
+                'rotate':False
+                }),
             'robot':manager.dict({
-                'CommandControl':False,
+                'CommandControl':True,
                 'PositionControl':False,
                 'Alive':False,
+                'error':False,
                 'homepos':False,
                 'homing':False,
                 'go':False,
                 'setoffset':False,
                 'goonce':False,
+                'handmode':False,
+                'motors':False,
+                'cycle':False,
+                'connection':False,
+                'settable':0,
                 'setpos':0,
                 'currentpos':0,
                 'activecommand':False,
@@ -155,8 +255,39 @@ class SharedLocker(object):
                 'O25':False, 'O26':False, 'O27':False, 'O28':False,
                 'O29':False, 'O30':False, 'O31':False, 'O32':False}),
             'SICKGMOD0':manager.dict({
-                'Alive':False})})
+                'Alive':False,
+                'inputs':manager.dict({}), 
+                'outputs':manager.dict({}),
+                'inputmap':manager.dict({}),
+                'outputmap':manager.dict({})
+                }),
+            'program':manager.dict({
+                'recipes':manager.list(),
+                'ProgramsFilePath':'',
+                'ProgramName':'',
+                'Alive':False,
+                'stepmode':False,
+                'stepcomplete':False,
+                'initialising':False,
+                'initialised':False,
+                'automode':False,
+                'running':False,
+                '/running':True,
+                'stepnumber':0,
+                'cycle':0, 
+                'starttime':0.0,
+                'currenttime':0.0,
+                'time':0.0,
+                'startpos':0,
+                'endpos':0,
+                'programline':manager.list([]),
+                'cycleended':False
+                })
+                })
+        self.scout = self.shared['SCOUT']
+        self.program = self.shared['program']
         self.wdt = self.shared['wdt']
+        self.troley = self.shared['troley']
         self.ect = self.shared['ect']
         self.lcon = self.shared['lcon'] 
         self.lock = Lock()
@@ -171,3 +302,12 @@ class SharedLocker(object):
         self.console = self.shared['console']
         self.GPIO = self.shared['GPIO']
         self.SICKGMOD0 = self.shared['SICKGMOD0']
+
+if __name__=='__main__':
+    lck = SharedLocker()
+    with lck.lock:
+        print(lck.events['Error'])
+    with lck.lock:
+        lck.events['Error'] = True
+    with lck.lock:
+        print(lck.events['Error'])

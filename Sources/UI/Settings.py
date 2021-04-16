@@ -1,173 +1,187 @@
 import tkinter as tk
 from tkinter import ttk
-from Variables import Variables
-from Widgets.callableFont import Font
+from .Variables import Variables
+from .Widgets.callableFont import Font
+from .Widgets import GeneralWidget, LabelFrame, Button 
+from .Widgets import Entry, Lamp, Frame, KEYWORDS
+from .Widgets import StatusIndicators, VariablesFrames
+from .Widgets import Window
 
-class SettingsScreen(tk.Frame):
-    def __init__(self, master = None, variables = Variables()):
-        super().__init__(master = master)
-        self.variables = variables
-        self.master = master
-        self.name = 'Ustawienia i tryb ręczny'
-        self.miscpneumaticsframe = tk.LabelFrame(master = self, text = 'Osłony pneumatyczne')
+class SettingsScreen(GeneralWidget):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'SettingsScreen')
+        self.name = self.settings['Name']
+        self.miscpneumaticsframe = LabelFrame(master = self, branch = "Pneumatics")
         self.widgets = [
-            Troley(self, variables = self.variables, text = 'Wózek'),
-            PistonControl(master = self.miscpneumaticsframe, variables = self.variables, buttontext = 'Gaz osłonowy', masterkey = 'pistoncontrol', key = 'shieldinggas'),
-            PistonControl(master = self.miscpneumaticsframe, variables = self.variables, buttontext = 'Nóż powietrzny', masterkey = 'pistoncontrol', key = 'crossjet'),
-            PistonControl(master = self.miscpneumaticsframe, variables = self.variables, buttontext = 'Chłodzenie głowicy', masterkey = 'pistoncontrol', key = 'headcooling'),
+            Troley(self),
+            Laser(self),
+            Robot(self),
+            Scout(self),
+            Safety(self),
+            PistonControl(master = self.miscpneumaticsframe, button = 'ShieldingGas'),
+            PistonControl(master = self.miscpneumaticsframe, button = 'CrossJet'),
+            PistonControl(master = self.miscpneumaticsframe, button = 'HeadCooling'),
             self.miscpneumaticsframe
-                    ]
-        for widget in self.widgets:
-            if isinstance(widget, tk.LabelFrame):
-                widget.pack(side = tk.LEFT, anchor = tk.NW)
+        ]
+        self.buttonsframe = tk.Frame(master = self)
+        for number, widget in enumerate(self.widgets):
+            if isinstance(widget, LabelFrame):
+                button = tk.Button(master = self.buttonsframe, font = self.font(), text = widget.settings['Label'], command = lambda obj = self, key = number: obj.show(key), **self.settings['Button'])
+                button.pack(side = tk.TOP, anchor = tk.NW)
             else:
                 widget.pack(anchor = tk.NW)
+        self.buttonsframe.pack(side = tk.LEFT, anchor = tk.NW)
         self.pack(expand = tk.YES, fill=tk.BOTH)
-    
-    def update(self):
-        super().update()
-        for widget in self.widgets:
-            widget.update()
 
-class Troley(tk.LabelFrame):
-    def __init__(self, master = None, variables = Variables(), text = 'text'):
-        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
-        font = Font(root = master, **fontsettings)
-        super().__init__(master = master, text = text, font = font)
-        self.variables = variables
-        self.master = master
-        self.pistonlabeledFrame = tk.LabelFrame(self, text = 'Siłowniki')
-        self.widgets = [
-            ServoControl(master = self, text = 'Serwo', variables = self.variables, buttons = self.variables['servocontrol']['buttons'], lamps = self.variables['servocontrol']['lamps']),
-            PistonControl(master = self.pistonlabeledFrame, variables = self.variables, buttontext = 'Siłowniki wózka', masterkey = 'pistoncontrol', key = 'pusher'),
-            PistonControl(master = self.pistonlabeledFrame, variables = self.variables, buttontext = 'Siłownik uszczelnienia', masterkey = 'pistoncontrol', key = 'seal'),
-            self.pistonlabeledFrame
-                    ]
-        for widget in self.widgets:
-            widget.pack(anchor = tk.NW)
-        self.pack()
-    
-    def update(self):
-        super().update()
-        for widget in self.widgets:
-            widget.update()
-
-class ServoControl(tk.LabelFrame):
-    def __init__(self, master = None, text = '', variables = Variables(),  buttons = {}, lamps = {}):
-        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
-        font = Font(root = master, **fontsettings)
-        super().__init__(master = master, text = text, font = font)
-        self.variables = variables
-        self.master = master
-        self.buttonsframe = tk.Frame(self)
-        self.lampsframe = tk.Frame(self)
-        self.widgets = [self.buttonsframe, self.lampsframe]
-        for key, value in buttons.items():
-            self.widgets.append(TroleyButton(self.buttonsframe, text = key, variables = self.variables, masterkey = 'troley', key = value, width = 25, height = 2))
-        for key, value in lamps.items():
-            self.widgets.append(TroleyLamp(self.lampsframe, text = key, variables = self.variables, masterkey = 'troley', key = value, width = 40, height = 40))
-        
-        for widget in self.widgets:
-            if widget.master == self:
-                widget.pack(side = tk.LEFT, anchor = tk.W)
+    def show(self, key):
+        for number, widget in enumerate(self.widgets):
+            if number == key:
+                widget.pack(side = tk.LEFT, anchor = tk.NW)
             else:
-                widget.pack(anchor = tk.N)
-        self.pack()
-    
+                if isinstance(widget, LabelFrame):
+                    widget.pack_forget()
+
+class Troley(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Troley')
+        self.pistonlabeledFrame = LabelFrame(self, branch = 'Pneumatics')
+        ServoControl(master = self)
+        for piston in self.settings['Pneumatics']:
+            if piston in KEYWORDS: continue
+            PistonControl(master = self.pistonlabeledFrame, button=piston).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(anchor = tk.NW)
+
+class Laser(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Laser')
+        self.buttonsframe = Frame(self)
+        StatusIndicators(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
+
+class Safety(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Safety')
+        self.buttonsframe = Frame(self)
+        StatusIndicators(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
+
+class Scout(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Scout')
+        self.buttonsframe = Frame(self)
+        StatusIndicators(self)
+        VariablesFrames(self)
+        self.versionlabel = tk.Label(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
+
     def update(self):
         super().update()
-        for widget in self.widgets:
-            widget.update()
+        if self.root.variables['scout']['showaligninfo']:
+            window = AlignInfoWindow(self)
+            window.grab_set()
+            self.root.variables['scout']['showaligninfo'] = False
 
-class TroleyButton(tk.Button):
-    def __init__(self, master = None, variables = Variables(), masterkey = '', text = '', key = '', width = 25, height = 3):
-        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
-        font = Font(root = master, **fontsettings)
-        super().__init__(master = master, font = font(), text = text, command = self.click, width = width, height = height)
-        self.key = key
-        self.variables = variables
-        self.master = master
-        self.masterkey = masterkey
-
-    def click(self):
-        if self.key[0] == '-':
-            self.variables[self.masterkey][self.key[1:]] = False
-        else:
-            self.variables[self.masterkey][self.key] = True
-
-    def update(self):
-        super().update()
-
-class TroleyLamp(tk.Frame):
-    def __init__(self, master = None, text = '', variables = Variables(), masterkey = '', key = '', width = 25, height = 3):
-        super().__init__(master = master, relief = 'ridge', borderwidth = 2)
-        self.lamp = tk.Canvas(master = self, width = width, height = height)
-        fontsettings = variables['widgetsettings']['SettingsScreen']['font']
-        font = Font(root = master, **fontsettings)
-        self.caption = tk.Label(master = self, font = font(), text = text, width = 19)
-        self.caption.pack(side = tk.LEFT)
-        self.lamp.pack(side = tk.LEFT)
-        self.key = key
-        self.variables = variables
-        self.master = master
-        self.masterkey = masterkey
-        self.lit = False
+class AlignInfoWindow(Window):
+    def __init__(self, master = None, cls = None, args = ()):
+        super().__init__(master, branch = "")
+        ttk.Label(self, text = "Różnica trajektorii").grid(column = 0, columnspan = 2, row = 0)
+        ttk.Label(self, text = 'Kąt').grid(column = 0, row = 1)
+        self.A = tk.Entry(self, width = 15)
+        self.A.grid(column = 1, row = 1)
+        ttk.Label(self, text = 'X').grid(column = 0, row = 2)
+        self.X = tk.Entry(self, width = 15)
+        self.X.grid(column = 1, row = 2)
+        ttk.Label(self, text = 'Y').grid(column = 0, row = 3)
+        self.Y = tk.Entry(self, width = 15)
+        self.Y.grid(column = 1, row = 3)
+        self.center()
+        Button(master = self, text = "Ok", callback = self.destroy).grid(column = 0, row = 4, columnspan = 2)
 
     def update(self):
-        super().update()
-        if self.key[0] == '-':
-            self.lit = not self.variables[self.masterkey][self.key[1:]]
-        else:
-            self.lit = self.variables[self.masterkey][self.key]
-        self.lamp.config(bg = 'green' if self.lit else 'black')
+        if not self.destroyed:
+            super().update()
+            A = self.A.get()
+            X = self.X.get()
+            Y = self.Y.get()
+            if float(A if A else 'inf') != self.root.variables['scout']['AlignInfoA']:
+                self.A.delete(0,tk.END)
+                self.A.insert(0,self.root.variables['scout']['AlignInfoA'])
+            if float(X if X else 'inf') != self.root.variables['scout']['AlignInfoX']:
+                self.X.delete(0,tk.END)
+                self.X.insert(0,self.root.variables['scout']['AlignInfoX'])
+            if float(Y if Y else 'inf') != self.root.variables['scout']['AlignInfoY']:
+                self.Y.delete(0,tk.END)
+                self.Y.insert(0,self.root.variables['scout']['AlignInfoY'])
 
-class PistonControl(tk.Frame):
-    def __init__(self, master = None, masterkey = 'pistoncontrol', key = '', variables = Variables(), buttontext = '', width = 25, height = 3):
-        super().__init__(master = master)
-        self.variables = variables
-        self.elements = self.variables[masterkey][key]
-        self.master = master
-        self.masterkey = masterkey,
-        self.key = key
-        fontsettings = self.variables['widgetsettings']['SettingsScreen']['font']
-        font = Font(root = master, **fontsettings)
+class Robot(LabelFrame):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'Robot')
+        self.buttonsframe = Frame(self)
+        StatusIndicators(self)
+        self.entriesframe = Frame(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for key, value in self.settings['entries'].items():
+            Entry(self.entriesframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
+
+class ServoControl(LabelFrame):
+    def __init__(self, master = None, buttons = {}, lamps = {}):
+        super().__init__(master = master, branch = 'Servo')
+        self.buttonsframe = Frame(self)
+        StatusIndicators(self)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for widget in self.winfo_children():
+            widget.pack(side = tk.LEFT, anchor = tk.N)
+
+class PistonControl(GeneralWidget):
+    def __init__(self, master = None, button = "", **kwargs):
+        super().__init__(master = master, branch = button)
+        config = self.root.settings['widget']['pistonbutton']
+        self.config(**config['frame'])
+        self.elements = self.root.variables[self.settings['masterkey']][self.settings['key']]
         if 'Left' in self.elements.keys():
-            self.buttonLeft = tk.Button(self, font = font())
-            self.buttonLeft.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', justify='center', text='<--')
-            self.buttonLeft.place(anchor='nw', height='90', width='90', x='0', y='0')
+            self.buttonLeft = tk.Button(self, font = self.font(), **config['Left']['Button'])
             self.buttonLeft.configure(command=self.Left)
         else:
-            self.buttonLeft = tk.Canvas(self, bg='#74ad9c', borderwidth=1, relief = 'ridge', width = '90', height = '90')
-            self.buttonLeft.place(anchor='nw', x='0', y='0')
+            self.buttonLeft = tk.Canvas(self, **config['Left']['Canvas'])
+        self.buttonLeft.place(**config['Left']['place'])
         if 'Right' in self.elements.keys():
-            self.buttonRight = tk.Button(self, font = font())
-            self.buttonRight.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', justify='left', text='-->')
-            self.buttonRight.place(anchor='nw', height='90', width='90', x='270', y='0')
+            self.buttonRight = tk.Button(self, font = self.font(), **config['Right']['Button'])
             self.buttonRight.configure(command=self.Right)
         else:
-            self.buttonRight = tk.Canvas(self, bg='#74ad9c', borderwidth=4, relief = 'ridge', width = '90', height = '90')
-            self.buttonRight.place(anchor='nw', x='270', y='0')
+            self.buttonRight = tk.Canvas(self, **config['Right']['Canvas'])
+        self.buttonRight.place(**config['Right']['place'])
         if 'Center' in self.elements.keys():
-            self.buttonCenter = tk.Button(self, font = font())
-            self.buttonCenter.config(highlightbackground= '#84bdac', borderwidth = 1, relief = 'ridge', activebackground='#f96348', background='#84bdac', text=buttontext)
-            self.buttonCenter.place(anchor='nw', height='90', width='180', x='90', y='0')
+            self.buttonCenter = tk.Button(self, font = self.font(), **config['Center']['Button'])
+            self.buttonCenter.config(text=self.settings['Label'])
             self.buttonCenter.configure(command=self.Center)
         else:
-            self.buttonCenter = tk.Canvas(self, bg='#74ad9c', borderwidth=1, relief = 'ridge', width = '180', height = '90')
-            self.buttonCenter.place(anchor='nw', x='90', y='0')
-        self.config(height='90', width='360')
-        self.pack()
+            self.buttonCenter = tk.Canvas(self, **config['Center']['Canvas'])
+        self.buttonCenter.place(**config['Center']['place'])
 
     def Left(self):
         self.elements['Left']['coil'] = not self.elements['Left']['coil']
         if 'Right' in self.elements:
-            if 'sensor' in self.elements['Right']: 
+            if 'coil' in self.elements['Right']: 
                self.elements['Right']['coil'] = False
 
     def Right(self):
         self.elements['Right']['coil'] = not self.elements['Right']['coil']
         if 'Left' in self.elements:
-            if 'sensor' in self.elements['Left']: 
+            if 'coil' in self.elements['Left']: 
                 self.elements['Left']['coil'] = False
         
     def Center(self):
@@ -177,30 +191,62 @@ class PistonControl(tk.Frame):
             self.elements['Left']['coil'] = False
         
     def update(self):
-        super().update()
+        config = self.root.settings['widget']['pistonbutton']
         if 'Left' in self.elements.keys():
-            color = '#84bdac'
             bd = 1
+            color = []
             if 'coil' in self.elements['Left']:
-                if self.elements['Left']['coil']: color = '#f2fc45'
+                if self.elements['Left']['coil']:
+                    color.append('coil')
             if 'sensor' in self.elements['Left']:
                 if self.elements['Left']['sensor']: 
-                    color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
-                    bd = 8
-                else: bd = 1
+                    color.append('sensor')
+                    bd = 4
+            if 'coil' in color and 'sensor' in color:
+                color = config['Color']['empowered']
+            elif 'coil' in color:
+                color = config['Color']['active']
+            elif 'sensor' in color:
+                color = config['Color']['highlighted']
+            else:
+                color = config['Color']['normal']
             self.buttonLeft.configure(background = color, borderwidth = bd)
         if 'Right' in self.elements.keys():
-            color = '#84bdac'
+            color = []
             bd = 1
             if 'coil' in self.elements['Right']:
-                if self.elements['Right']['coil']: color = '#f2fc45'
+                if self.elements['Right']['coil']:
+                    color.append('coil')
             if 'sensor' in self.elements['Right']:
-                if self.elements['Right']['sensor']: 
-                    color = '#ffdc45' if color == '#f2fc45' or color == '#ffdc45' else '#80ffaa'
-                    bd = 8
-                else: bd = 1
+                if self.elements['Left']['sensor']: 
+                    color.append('sensor')
+                    bd = 4
+            if 'coil' in color and 'sensor' in color:
+                color = config['Color']['empowered']
+            elif 'coil' in color:
+                color = config['Color']['active']
+            elif 'sensor' in color:
+                color = config['Color']['highlighted']
+            else:
+                color = config['Color']['normal']
             self.buttonRight.configure(background = color, borderwidth = bd)
         if 'Center' in self.elements.keys():
+            color = []
+            bd = 1
+            if 'coil' in self.elements['Center']:
+                if self.elements['Center']['coil']:
+                    color.append('coil')
             if 'sensor' in self.elements['Center']:
-                self.buttonCenter.configure(background = '#84ffac' if self.elements['Center']['sensor'] else '#84bdac')
-        
+                if self.elements['Center']['sensor']: 
+                    color.append('sensor')
+                    bd = 4
+            if 'coil' in color and 'sensor' in color:
+                color = config['Color']['empowered']
+            elif 'coil' in color:
+                color = config['Color']['active']
+            elif 'sensor' in color:
+                color = config['Color']['highlighted']
+            else:
+                color = config['Color']['normal']
+            self.buttonCenter.configure(background = color, borderwidth = bd)
+        super().update()

@@ -1,6 +1,6 @@
 from Sources.modbusTCPunits import KawasakiVG
 from Sources.TactWatchdog import TactWatchdog as WDT
-from Sources import EventManager, ErrorEventWrite, Bits
+from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
 from functools import lru_cache
 from threading import Thread, currentThread
 import json
@@ -11,48 +11,47 @@ class RobotVG(KawasakiVG):
         self.Alive = True
         while self.Alive:
             try:
-                self.parameters = json.load(open(configFile))
+                with open(configFile) as Hfile:
+                    self.parameters = json.load(Hfile)
             except:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events['Error'] = True
-                lockerinstance[0].errorlevel[10] = True
-                lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Config file not found'
-                lockerinstance[0].lock.release()
-            try:
-                self.IPAddress = self.parameters['RobotParameters']['IPAddress']
-                self.Port = self.parameters['RobotParameters']['Port']
-            except:
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].events['Error'] = True
-                lockerinstance[0].errorlevel[10] = True
-                lockerinstance[0].shared['Errors'] += '/nRobotVG init error - Error while reading config file'
-                lockerinstance[0].lock.release()
+                ErrorEventWrite(lockerinstance, 'RobotVG init error - Config file not found')
             else:
-                super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].robot['Alive'] = self.Alive
-                lockerinstance[0].lock.release()
-                self.IOtab = [32*[False],32*[False]]
-                self.Robotloop(lockerinstance)
-            finally:
-                lockerinstance[0].lock.acquire()
-                self.Alive = lockerinstance[0].robot['Alive']
-                closeapp = lockerinstance[0].events['closeApplication']
-                lockerinstance[0].lock.release()
-                if closeapp: break
+                try:
+                    self.IPAddress = self.parameters['RobotParameters']['IPAddress']
+                    self.Port = self.parameters['RobotParameters']['Port']
+                except:
+                    ErrorEventWrite(lockerinstance, 'RobotVG init error - Error while reading config file')
+                else:
+                    super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].robot['Alive'] = self.Alive
+                    self.IOtab = [32*[False],32*[False]]
+                    self.Robotloop(lockerinstance)
+                finally:
+                    with lockerinstance[0].lock:
+                        self.Alive = lockerinstance[0].robot['Alive']
+                        closeapp = lockerinstance[0].events['closeApplication']
+                    if closeapp: break
 
     def Robotloop(self, lockerinstance):
         while self.Alive:
             self.IOControl(lockerinstance)
-            lockerinstance[0].lock.acquire()
-            positioncontrol, commandcontrol = lockerinstance[0].robot['PositionControl'], lockerinstance[0].robot['CommandControl']
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                self.Alive = lockerinstance[0].robot['Alive']
+                positioncontrol, commandcontrol = lockerinstance[0].robot['PositionControl'], lockerinstance[0].robot['CommandControl']
+            if not self.Alive: break
             if positioncontrol: self.misc(lockerinstance)
             if commandcontrol: self.CommandControl(lockerinstance)
+            self.StatusUpdate(lockerinstance)
             self.ErrorCatching(lockerinstance)
-            lockerinstance[0].lock.acquire()
-            self.Alive = lockerinstance[0].robot['Alive']
-            lockerinstance[0].lock.release()
+
+    def StatusUpdate(self, lockerinstance):
+        with lockerinstance[0].lock:
+            lockerinstance[0].robot['handmode'] = lockerinstance[0].safety['RobotTeachMode']
+            lockerinstance[0].robot['motors'] = lockerinstance[0].safety['DeadMan'] #deadman is true when motors are true becouse in hand mode motors are true only when deadman is pressed
+            lockerinstance[0].robot['cycle'] = lockerinstance[0].GPIO[dictKeyByVal(self.parameters['systemIO'], "Cycle")]
+            lockerinstance[0].robot['connection'] = self.is_socket_open()
+            lockerinstance[0].robot['homepos'] = lockerinstance[0].robot['currentpos'] == 0
 
     def ErrorCatching(self, lockerinstance):
         ##TODO There are statusRegisters for forbidden operation
@@ -74,14 +73,13 @@ class RobotVG(KawasakiVG):
             RobotRegister.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = reg))
         if len(RobotRegister) == 16:
             axisValues = {'A':[0,0], 'X':[0,0], 'Y':[0,0], 'Z':[0,0]}
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].robot['currentpos'] = RobotRegister[0]
-            for axis in axisValues.keys():
-                axisValues[axis] = self.__splitdecimals(lockerinstance[0].robot[axis])
-            for i, status in enumerate(RobotRegister[9:][:7]):
-                lockerinstance[0].robot['StatusRegister' + str(i)] = status
-            lockerinstance[0].lock.release()
-            for i, register, axis in enumerate([[RobotRegister[1:][:8][x], [2*['A'],2*['X'],2*['Y'],2*['Z']][x]] for x in range(len(RobotRegister[1:][:8]))]):
+            with lockerinstance[0].lock:
+                lockerinstance[0].robot['currentpos'] = RobotRegister[0]
+                for axis in axisValues.keys():
+                    axisValues[axis] = self.__splitdecimals(lockerinstance[0].robot[axis])
+                for i, status in enumerate(RobotRegister[9:][:7]):
+                    lockerinstance[0].robot['StatusRegister' + str(i)] = status
+            for i, register, axis in [[x,RobotRegister[1:][:8][x], ['A','A','X','X','Y','Y','Z','Z'][x]] for x in range(len(RobotRegister[1:][:8]))]:
                 if i%2:
                     if axisValues[axis][0] != register:
                         self.write_register(lockerinstance, register = axis, value = register)
@@ -93,9 +91,8 @@ class RobotVG(KawasakiVG):
         commandevent = 'Robot'+command_u+'Complete'
         def funconstart(object = self, lockerinstance = lockerinstance):
             self.write_register(lockerinstance, register = 'command', value = object.addresses['command_values'][command])
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].robot['activecommand'] = True
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].robot['activecommand'] = True
             EventManager.AdaptEvent(lockerinstance, input = '-robot.activecommand', event = commandevent)
         def funconexceed(lockerinstance = lockerinstance):
             EventManager.DestroyEvent(lockerinstance, event = commandevent)
@@ -103,18 +100,19 @@ class RobotVG(KawasakiVG):
 
     def CommandControl(self, lockerinstance):
         activecommand = self.read_holding_registers(lockerinstance, registerToStartFrom = 'command')
-        if not activecommand:
-            lockerinstance[0].lock.acquire()
-            homing, go, setoffset, goonce = [lockerinstance[0].robot[x] for x in ['homing', 'go', 'setoffset', 'goonce']]
-            for x in ['homing', 'go', 'setoffset', 'goonce']: lockerinstance[0].robot[x] = False
-            lockerinstance[0].lock.release()
+        if not activecommand: activecommand.append(0)
+        if not activecommand[0]:
+            with lockerinstance[0].lock:
+                homing, go, setoffset, goonce = [lockerinstance[0].robot[x] for x in ['homing', 'go', 'setoffset', 'goonce']]
+                for x in ['homing', 'go', 'setoffset', 'goonce']: lockerinstance[0].robot[x] = False
             if homing:
                 self.__Command(lockerinstance, command = 'homing')
             if go:
-                lockerinstance[0].lock.acquire()
-                spos = lockerinstance[0].robot['setpos']
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    spos = int(lockerinstance[0].robot['setpos'])
+                    stable = int(lockerinstance[0].robot['settable'])
                 self.write_register(lockerinstance, register = 'DestinationPositionNumber', value = spos)
+                self.write_register(lockerinstance, register = 'table', value = stable)
                 self.__Command(lockerinstance, command = 'go')
             if setoffset:
                 self.__Command(lockerinstance, command = 'setoffset')
@@ -129,9 +127,8 @@ class RobotVG(KawasakiVG):
         output = ''
         direction = ('I' if input else 'O')
         IOtabdirection = (0 if input else 1)
-        lockerinstance[0].lock.acquire()
-        WDTActive = 'WDT: somethingchanged' in lockerinstance[0].wdt
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            WDTActive = 'WDT: somethingchanged' in lockerinstance[0].wdt
         if not WDTActive and not input:
             def startcatchfunction(object = self, lockerinstance = lockerinstance):
                 object.__changedstate(lockerinstance)
@@ -142,18 +139,16 @@ class RobotVG(KawasakiVG):
             for j in range(16):
                 signalnumber = i*16+j+1
                 signal = direction + str(signalnumber)
-                lockerinstance[0].lock.acquire()
-                lockerinstance[0].GPIO[signal] = bits[j]
-                lockerinstance[0].lock.release()
+                with lockerinstance[0].lock:
+                    lockerinstance[0].GPIO[signal] = bits[j]
                 if self.IOtab[IOtabdirection][signalnumber-1] != bits[j]:
                     self.IOtab[IOtabdirection][signalnumber-1] = bits[j]
                     somethingchanged = True
                     output += signal + ' '
         if not input and somethingchanged:
-            lockerinstance[0].lock.acquire()
-            lockerinstance[0].events['OutputChangedByRobot'] = True
-            lockerinstance[0].events['OutputsChangedByRobot'] += output + ' '
-            lockerinstance[0].lock.release()
+            with lockerinstance[0].lock:
+                lockerinstance[0].events['OutputChangedByRobot'] = True
+                lockerinstance[0].events['OutputsChangedByRobot'] += output + ' '
 
     def __GPIO(self, lockerinstance, input = False):
         output = []
@@ -171,9 +166,8 @@ class RobotVG(KawasakiVG):
                 continue
             if output[i] != self.IOtab[1][i]: #single coil writing instead of 32
                 self.write_coil(lockerinstance, Coil = 'DO' + str(i+1), value = output[i])
-        lockerinstance[0].lock.acquire()
-        lockerinstance[0].GPIO['somethingChanged'] = False
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            lockerinstance[0].GPIO['somethingChanged'] = False
 
     def IOControl(self, lockerinstance):    
             self.__readcoils(lockerinstance)

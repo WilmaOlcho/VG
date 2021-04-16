@@ -1,82 +1,81 @@
 import tkinter as tk
 from tkinter import ttk
-from Widgets.callableFont import Font
-from Home import HomeScreen
-from Settings import SettingsScreen
-from Table import TableScreen
-from Variables import Variables
+from .Widgets import Font, LabelledScrolledText, getroot, GeneralWidget
 import json
-from Widgets.ScrolledText import LabelledScrolledText
 from pathlib import Path
+from ..UI import SettingsScreen
+from ..UI import HomeScreen
+from ..UI import TableScreen
+from ..UI import Variables
+from PIL import Image, ImageTk
+PhotoImage = ImageTk.PhotoImage
 
-class Frame(tk.Frame):
-    def __init__(self, master = None, variables = Variables()):
-        super().__init__(master = master)
-        self.variables = variables
-        notebookconstructor = self.variables['widgetsettings']['MainWindowNotebook']['constructor']
-        notebookgrid = self.variables['widgetsettings']['MainWindowNotebook']['grid']
-        font = Font(root = self, **self.variables['widgetsettings']['MainWindowNotebook']['font'])
-        style = ttk.Style()
-        style.configure('.',font = font())
-        self.OverallNotebook = ttk.Notebook(self, **notebookconstructor)
-        self.widgets = [
-            LabelledScrolledText(master = self, variables = self.variables, InternalVariable= 'ImportantMessages', scrolltype='vertical', height=5, width = 200, text = 'Błędy i powiadomienia'),
-            tk.Button(master = self, text = 'Potwierdź\nstatus', command = self.ack, bg = 'yellow', width = 14, height = 6),
-            HomeScreen(master = self.OverallNotebook, variables = self.variables),
-            SettingsScreen(master = self.OverallNotebook, variables = self.variables),
-            TableScreen(master = self.OverallNotebook, variables = self.variables) ]
-        col = 0
-        for widget in self.widgets:
-            if hasattr(widget, 'name'):
-                self.OverallNotebook.add(widget, text=widget.name)
-            else:
-                widget.grid(column = col, row=0, sticky = tk.NSEW)
-                col +=1
-        self.OverallNotebook.grid(**notebookgrid)
+
+class Notebook(GeneralWidget, ttk.Notebook):
+    def __init__(self, master = None, branch = "Notebook"):
+        GeneralWidget.__init__(self, master, branch = branch)
+        ttk.Notebook.__init__(self, master, **self.settings['constructor'])
+
+class Frame(GeneralWidget):
+    def __init__(self, master = None):
+        super().__init__(master = master, branch = 'MainWindow')
+        self.OverallNotebook = Notebook(self)
+        self.notificationsarea = LabelledScrolledText(self, **self.settings['ErrorTextArea']['constructor'])
+        self.ackbutton = tk.Button(self, font = self.root.font(), command = self.ack, **self.settings['ackbutton']['constructor'])
+        screens = [
+            HomeScreen(master = self.OverallNotebook),
+            SettingsScreen(master = self.OverallNotebook),
+            TableScreen(master = self.OverallNotebook) ]
+        for screen in screens:
+            self.OverallNotebook.add(screen, text=screen.settings['Name'])
+        self.notificationsarea.grid(column = 0, row=0, sticky = tk.NSEW)
+        self.ackbutton.grid(column = 1, row =0, sticky = tk.NSEW)
+        self.OverallNotebook.grid(**self.settings['Notebook']['grid'])
 
     def update(self):
+        start = self.root.variables.internalEvents['start']
+        stop = self.root.variables.internalEvents['stop']
         super().update()
-        for widget in self.widgets:
-            if isinstance(widget, tk.Button):
-                widget.config(bg = 'red' if self.variables.internalEvents['error'] else 'yellow')
-            widget.update()
+        self.ackbutton.config(bg = 'red' if self.root.variables.internalEvents['error'] else 'yellow')
+        if start: self.root.variables.internalEvents['start'] = False
+        if stop: self.root.variables.internalEvents['stop'] = False
 
     def ack(self):
-        self.variables.internalEvents['ack'] = True
+        self.root.variables.internalEvents['ack'] = True
 
-class Window():
-    def __init__(self, lockerinstance):
+class Window(dict):
+    def __init__(self, lockerinstance, settingsfile, programs):
+        super().__init__()
         self.window = tk.Tk()
-        widgetsettings = json.load(open(str(Path(__file__).parent.absolute())+'//widgetsettings.json','r'))
-        self.variables = Variables(**widgetsettings)
-        self.window.title('Spawanie Lusterkowe VG')
-        self.window.attributes('-fullscreen', True)
-        self.master = tk.Frame(self.window)
-        self.interfaceControl = InterfaceControl(lockerinstance, self.variables)
-        self.widgets = [
-            Frame(master = self.master, variables = self.variables) ]
-        for widget in self.widgets:
-            widget.pack(side = tk.LEFT, expand = tk.Y, fill='both')
-        self.master.pack(side = tk.LEFT, expand = tk.Y, fill='both')
+        root = self.window
+        with open(settingsfile) as jsonfile:
+            widgetsettings = json.load(jsonfile)
+        root.__setattr__('variables', Variables(lockerinstance, **widgetsettings))
+        root.__setattr__('settings', root.variables['widgetsettings'])
+        root.variables.jsonpath = programs
+        self.settings = root.settings
+        self.icon = PhotoImage(file = self.settings['icon'])
+        root.__setattr__('icon', self.icon)
+        root.iconphoto(False, self.icon)
+        root.__setattr__('font',Font(root = self.window, **self.settings['MainFont']))
+        rootstyle = ttk.Style()
+        rootstyle.configure('.',font = root.font())
+        root.title(self.settings['title'])
+        root.attributes('-fullscreen', True)
+        self.frame = Frame(master = root)
+        self.frame.pack()
         self.Alive = True
         self.loop()
 
     def loop(self):
         while self.Alive:
             self.window.update()
-            for widget in self.widgets:
-                widget.update()
-            self.interfaceControl.update()
-
-class InterfaceControl(object):
-    def __init__(self, lockerinstance, variables = Variables()):
-        self.variables = variables
-        pass
-
-    def update(self):
-        if self.variables.internalEvents['ack']:
-            self.variables.internalEvents['error'] = False
-            self.variables.internalEvents['ack'] = False
+            self.frame.update()
+            self.window.variables.update()
+            self.Alive = self.window.variables.Alive
 
 if __name__ == '__main__':
-    Window(object)
+    settings = str(Path(__file__).parent.absolute())+'//widgetsettings.json'
+    programs = str(Path(__file__).parent.absolute())+'//Programs.json'
+    Window(object, settings, programs)
+    

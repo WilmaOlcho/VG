@@ -1,8 +1,58 @@
 {
-    "csv":"../FlexiSoftVG.csv",
-    "xml":"../FlexiSoftVG.xml",
+    "inputscsv":"FlexiSoftVG_in.csv",
+    "outputscsv":"FlexiSoftVG_out.csv",
     "basics":{
-        "address":"192.168.255.255",
+        "address":"192.168.4.201",
         "port":9100
-    }
+    },
+    "server":{
+        "vendorname":"AIC",
+        "productcode":"HMI",
+        "productname":"Cela spawania lusterkowego VG",
+        "startaddress":0,
+        "endaddress":1500,
+        "port":502
+
+    },
+    "datablocksOffset":{
+        "InputDataset1":1,
+        "InputDataset2":100,
+        "InputDataset3":200,
+        "InputDataset4":300,
+        "OutputDataset1":1000,
+        "OutputDataset2":1100,
+        "OutputDataset3":1200,
+        "OutputDataset4":1300,
+        "OutputDataset5":1400
+    },
+    "inputbinding":{
+        "sourcemasterkey":"SICKGMOD0",
+        "destinymasterkey":"safety",
+        "E-Stop_OK":"EstopArmed",
+        "DrzwiSerwisoweOT":"DoorClosed",
+        "DrzwiSerwisoweOD":"DoorOpen",
+        "OtwarcieDrzwiSygnalDotarl":"OpenTheDoorAck",
+        "DrzwiZaryglowane.XTIO[1].I5I6":"DoorLocked",
+        "WozekZadokowany.XTIO[1].I3I4":"TroleyInside",
+        "THCPushed":"THCPushed",
+        "EDMErrorRobotEStop":"RobotError",
+        "EDMErrorLaserDrzwiowe":"LaserError",
+        "EDMErrorServoOn":"ServoError",
+        "EDMErrorZaworPowGlowny":"sValve1Error",
+        "ServoPowerONEDM.XTIO[2].I3":"ServoEDM",
+        "RobotEStopEDM.XTIO[2].I1":"RobotEDM",
+        "LaserDrzwioweEDM.XTIO[2].I4":"LaserEDM",
+        "StrefaWewn_OK":"ZoneArmed",
+        "RobotTeachMode.XTIO[1].I7":"RobotTeachMode",
+        "TrybReczny_OK":"DeadMan",
+        "Reset.XTIO[2].I5":"resetbutton",
+        "E-StopWymagaResetu":"Estopresetrecquired",
+        "StrefaWewnWymagaResetu":"Zoneresetrecquired"
+    },
+    "outputbinding":{
+        "sourcemasterkey":"safety",
+        "destinymasterkey":"SICKGMOD0",
+        "OpenTheDoor":"OtworzDrzwi",
+        "TroleyReady":"WozekGotowy"
+    }    
 }

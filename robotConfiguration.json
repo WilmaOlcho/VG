@@ -2,5 +2,15 @@
     "RobotParameters":{
         "IPAddress":"192.168.4.101",
         "Port":9200
+    },
+    "systemIO":{
+        "O1":"Error",
+        "O2":"Cycle",
+        "O19":"Warning",
+        "O20":"Buzzer",
+        "I1":"Start",
+        "I2":"Stop",
+        "I3":"Reset",
+        "I5":"MotorsOn"
     }
 }
