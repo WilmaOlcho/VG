@@ -177,8 +177,8 @@ class Variables(dict):
         self.Alive = True
 
     def robotupdate(self):
-        lock = self.lockerinstance.lock
-        robot = self.lockerinstance.robot
+        lock = self.lockerinstance[0].lock
+        robot = self.lockerinstance[0].robot
         with lock:
             if not self['ProgramActive']:
                 robot['go'] |= self['robot']['RobotGo']
@@ -203,9 +203,9 @@ class Variables(dict):
         self['robot']['RobotHoming'] = False
 
     def troleyupdate(self):
-        lock = self.lockerinstance.lock
-        servo = self.lockerinstance.servo
-        troley = self.lockerinstance.troley
+        lock = self.lockerinstance[0].lock
+        servo = self.lockerinstance[0].servo
+        troley = self.lockerinstance[0].troley
         with lock:
             if not self['ProgramActive']:
                 servo['homing'] |= self['troley']['servoHOMING']
@@ -231,11 +231,11 @@ class Variables(dict):
         self['troley']['servoRESET'] = False
 
     def scoutupdate(self):
-        lock = self.lockerinstance.lock
-        scout = self.lockerinstance.servo
-        laser = self.lockerinstance.lcon
-        safety = self.lockerinstance.safety
-        multiplexer = self.lockerinstance.mux
+        lock = self.lockerinstance[0].lock
+        scout = self.lockerinstance[0].servo
+        laser = self.lockerinstance[0].lcon
+        safety = self.lockerinstance[0].safety
+        multiplexer = self.lockerinstance[0].mux
         if isinstance(self['scout']['page'], str):
             if self['scout']['page'].isnumeric():
                 self['scout']['page'] = int(self['scout']['page'])
@@ -320,8 +320,8 @@ class Variables(dict):
         self['scout']["bLaserCTRL"] = False
 
     def safetyupdate(self):
-        lock = self.lockerinstance.lock
-        safety = self.lockerinstance.safety
+        lock = self.lockerinstance[0].lock
+        safety = self.lockerinstance[0].safety
         with lock:
             if safety['EstopArmed'] and safety['ZoneArmed']:
                 self['statusindicators']['Safety'] = 1
@@ -342,8 +342,8 @@ class Variables(dict):
             self['safety']['Zoneresetrecquired'] = safety['Zoneresetrecquired']
 
     def pneumaticsupdate(self):
-        lock = self.lockerinstance.lock
-        pneumatics = self.lockerinstance.pistons
+        lock = self.lockerinstance[0].lock
+        pneumatics = self.lockerinstance[0].pistons
         with lock:
             if not self['ProgramActive']:
                 pneumatics['TroleyPusherFront'] = self['pistoncontrol']['pusher']['Right']['coil']
@@ -382,8 +382,8 @@ class Variables(dict):
             self['statusindicators']['Light'] = 1
 
     def programupdate(self):
-        lock = self.lockerinstance.lock
-        program = self.lockerinstance.program
+        lock = self.lockerinstance[0].lock
+        program = self.lockerinstance[0].program
         with lock:
             if self['ProgramActive']:
                 self['currentposition'] = 'wiersz {}, krok {}'.format(program['cycle'], program['stepnumber'])
