@@ -226,7 +226,7 @@ def checkrecipes(lockerinstance, program):
         if recipe:
             with lockerinstance[0].lock:
                 path = lockerinstance[0].scout['recipesdir']
-            if Path(path + recipe).is_file() and path and recipe:
+            if Path(path + "/" + recipe).is_file() and path and recipe:
                 continue
             else:
                 return False
@@ -235,6 +235,7 @@ def checkrecipes(lockerinstance, program):
 def loadprogramline(lockerinstance, program, number):
     #program dict with key table, where is list of lists of 9 elements each
     while True:
+        print(program['Table'])
         result = list(filter(lambda x: x[STEP] == number, program['Table']))
         if result:
             with lockerinstance[0].lock:

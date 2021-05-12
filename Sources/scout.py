@@ -273,6 +273,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda obsługująca ramkę zwrotną LASER_CTRL
         '''
         if len(data) == 2:
+            laserack = False
             with lockerinstance[0].lock:
                 laserack = bool(int(data[1])) == lockerinstance[0].scout['LaserOn']
                 if laserack: lockerinstance[0].scout['MessageAck'] = True

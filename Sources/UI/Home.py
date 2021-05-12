@@ -157,7 +157,7 @@ class Positions(LabelFrame):
         attemptlist = attempts.copy()
         attemptlist.sort(key = lambda element, v = int(value): abs(v - int(element)))
         import tkinter.messagebox as messagebox #simplicity for a while
-        messagebox.showwarning('Co ty wyprawiasz?','Podana wartość nie występuje w tablicy,\n    automatycznie poprawiono na:\n              {}'.format(attemptlist[0]))
+        messagebox.showwarning('Co ty wyprawiasz!?','Podana wartość nie występuje w tablicy,\n    automatycznie poprawiono na:\n              {}'.format(attemptlist[0]))
         return attemptlist[0]
 
     def setvalue(self, widget):

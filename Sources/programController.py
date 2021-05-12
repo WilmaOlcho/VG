@@ -90,6 +90,7 @@ class programController(object):
                         step += 1
             #setting servo position
             if step == 3:
+                step += 1
                 with lockerinstance[0].lock:
                     if lockerinstance[0].servo['positionNumber'] == -1:
                         ErrorEventWrite(lockerinstance, 'servo is not ready')
@@ -100,6 +101,7 @@ class programController(object):
                             lockerinstance[0].servo['stepnumber'] = True
             #setting robot position
             if step == 4:
+                step += 1
                 with lockerinstance[0].lock:
                     if (lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS] or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]):
                         lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
@@ -107,6 +109,7 @@ class programController(object):
                     else:
                         step += 1
             if step == 5:
+                step += 1
                 with lockerinstance[0].lock:
                     if lockerinstance[0].robot['currentpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]:
                         if not lockerinstance[0].robot['activecommand']:
