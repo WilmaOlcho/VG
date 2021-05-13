@@ -71,6 +71,7 @@ class programController(object):
             cycle = lockerinstance[0].program['cycle']
             cycleended = lockerinstance[0].program['cycleended']
             step = lockerinstance[0].program['stepnumber']
+            automode = lockerinstance[0].program['automode']
         if running and cycle and not cycleended:
             with lockerinstance[0].lock: #locking whole method for event-compatibility
                 #setting recipe for scout
@@ -80,27 +81,31 @@ class programController(object):
                         lockerinstance[0].scout['recipe'] = lockerinstance[0].program['programline'][control.RECIPE]
                         lockerinstance[0].scout['Recipechangedsuccesfully'] = False
                     else:
-                        step +=1
+                        if automode: step +=1
+                        else: lockerinstance[0].program['stepcomplete'] = True
                 if step == 1:
                     if not lockerinstance[0].scout['Recipechangedsuccesfully']:
                         if not lockerinstance[0].events['KDrawWaitingForMessage']:
                             lockerinstance[0].scout['SetRecipe'] = True
                     else:
                         lockerinstance[0].scout['Recipechangedsuccesfully'] = False
-                        step += 1
+                        if automode: step +=1
+                        else: lockerinstance[0].program['stepcomplete'] = True                        
                 #Setting seal down
                 if step == 2:
                     if not lockerinstance[0].pistons['sensorSealDown']:
                         lockerinstance[0].scout['SealDown'] = True
                     else:
-                        step +=1
+                        if automode: step +=1
+                        else: lockerinstance[0].program['stepcomplete'] = True                        
                 #setting servo position
                 if step == 3:
                     step += 1
 #                    if lockerinstance[0].servo['positionNumber'] == -1:
 #                        ErrorEventWrite(lockerinstance, 'servo is not ready')
 #                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]:
-#                       step += 1
+#                       if automode: step +=1
+#                       else: lockerinstance[0].program['stepcomplete'] = True
 #                   else:
 #                        if not lockerinstance[0].servo['moving']:
 #                            lockerinstance[0].servo['stepnumber'] = True
@@ -111,33 +116,39 @@ class programController(object):
 #                        lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
 #                        lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
 #                    else:
-#                        step +=1
+#                       if automode: step +=1
+#                       else: lockerinstance[0].program['stepcomplete'] = True
                 if step == 5:
                    step += 1
 #                    if lockerinstance[0].robot['currentpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]:
 #                        if not lockerinstance[0].robot['activecommand']:
 #                            lockerinstance[0].robot['go'] = True
 #                    else:
-#                        step +=1
+#                       if automode: step +=1
+#                       else: lockerinstance[0].program['stepcomplete'] = True
                 #Setting seal up
                 if step == 6:
                     if lockerinstance[0].pistons['sensorSealDown']:
-                        lockerinstance[0].scout['SealUp'] = True
+                        lockerinstance[0].pistons['SealUp'] = True
                     else:
-                        step +=1
+                        if automode: step +=1
+                        else: lockerinstance[0].program['stepcomplete'] = True                        
             #Wait 3s until sealing were perfect
             if step == 7:
-                def exceed(lockerinstance = lockerinstance):
-                    with lockerinstance[0].lock:
-                        lockerinstance[0].program['stepnumber'] +=1
-                WDT(lockerinstance, additionalFuncOnExceed = exceed, noerror = True, limit = 3, scale = 's')
+                if automode: step +=1
+                else:
+                    def exceed(lockerinstance = lockerinstance):
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].program['stepnumber'] +=1
+                    WDT(lockerinstance, additionalFuncOnExceed = exceed, noerror = True, limit = 3, scale = 's')
             with lockerinstance[0].lock:
                 #scout atstart
                 if step == 8:
                     if not lockerinstance[0].events['KDrawWaitingForMessage']:
                         lockerinstance[0].scout['AutostartOn'] = True
                     if lockerinstance[0].scout['status']['AutoStart']:
-                        step +=1
+                        if automode: step +=1
+                        else: lockerinstance[0].program['stepcomplete'] = True                          
                 #align scout
                 if step == 9:
                     lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
@@ -145,7 +156,8 @@ class programController(object):
                         lockerinstance[0].scout['ManualAlign'] = True
                     if lockerinstance[0].scout['ManualAlignCheck']:
                         lockerinstance[0].scout['ManualAlignCheck'] = False
-                        step +=1
+                        if automode: step +=1
+                        else: lockerinstance[0].program['stepcomplete'] = True                          
                 #SCOUT weld
                 if step == 10:
                     lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
@@ -153,6 +165,9 @@ class programController(object):
                         lockerinstance[0].scout['ManualWeld'] = True
                     if lockerinstance[0].scout['ManualWeldCheck']:
                         lockerinstance[0].scout['ManualWeldCheck'] = False
-                        step +=1
+                        if automode: step +=1
+                        else: lockerinstance[0].program['stepcomplete'] = True                          
                 if step == 11:
                     lockerinstance[0].program['cycleended'] = True
+                if step > lockerinstance[0].program['stepnumber'] and automode:
+                    lockerinstance[0].program['stepnumber'] = step
