@@ -66,6 +66,12 @@ class SharedLocker(object):
                     "amplitude":0,
                     "power":0
                 }),
+                'times':manager.dict({
+                    'setrecipe':0,
+                    'limitsetrecipe':30,
+                    'autostart':0,
+                    'status':0
+                }),
                 'SetRecipe':False,
                 'TurnLaserOn':False,
                 'TurnLaserOff':False,

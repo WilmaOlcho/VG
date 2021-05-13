@@ -1,4 +1,4 @@
-
+import re
 INT = type(1)
 STRING = type('')
 MENU = "MENU"
@@ -387,7 +387,7 @@ class Variables(dict):
         with lock:
             if self['ProgramActive']:
                 self['currentposition'] = 'wiersz {}, krok {}'.format(program['cycle'], program['stepnumber'])
-                self['processtime'] = str(program['time'])
+                self['processtime'] = (str(round(program['time'],2)))
                 self['progress'] = str(program['cycle'])
                 self['step'] = str(program['stepnumber'])
             self['scout']['recipes'] = list(program['recipes'])

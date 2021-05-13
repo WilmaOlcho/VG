@@ -68,7 +68,7 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
 
     def isBusy(self, lockerinstance):
         self.getState(lockerinstance)
-        if self.currentState[self.myOutput] or not any(self.currentState[:2]):
+        if self.currentState[self.myOutput] or (not any(self.currentState[:2])):
             return False
         else:
             return True

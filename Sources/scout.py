@@ -1,6 +1,7 @@
 import socket
 import json
 import re
+import time
 from .common import ErrorEventWrite, EventManager
 from .TactWatchdog import TactWatchdog
 WDT = TactWatchdog.WDT
@@ -223,12 +224,11 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 savedrecipe = lockerinstance[0].scout['recipe']
             savedrecipe = self.__removefromstring(savedrecipe, '.dsg')
-            recipechanged = data[1] == savedrecipe
-            if recipechanged:
+            if data[1] == savedrecipe:
                 with lockerinstance[0].lock:
                     lockerinstance[0].scout['MessageAck'] = True
                     lockerinstance[0].scout['Recipechangedsuccesfully'] = True
-            if not recipechanged:
+            else:
                 ErrorEventWrite(lockerinstance, "SCOUT returned wrong Recipe Change ack message:\n{}".format(data))
         else:
             ErrorEventWrite(lockerinstance, "SCOUT returned incomplete Recipe Change ack message:\n{}".format(data))
@@ -454,6 +454,7 @@ class KDrawTCPInterface(socket.socket):
                 for i, character in enumerate(string):
                     if i in range(*searchresult.regs[0]): continue
                     newstring += character
+            else: newstring = string
             if string != newstring:
                 string = newstring
             else: break
@@ -464,12 +465,18 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę RECIPE_CHANGE
         '''
         with lockerinstance[0].lock:
+            currenttime = time.time()
+            lasttime = lockerinstance[0].scout['times']['setrecipe']
+            if currenttime - lasttime < lockerinstance[0].scout['times']['limitsetrecipe']:
+                return
             if not recipe:
                 recipe = lockerinstance[0].scout['recipe']
             else:
                 lockerinstance[0].scout['recipe'] = recipe
+            recipe
         recipe = self.__removefromstring(recipe, '.dsg')
         message = self.encode_message(lockerinstance, ['RECIPE_CHANGE',recipe])
+        print( '{}'.format(message))
         self.add_to_queue(lockerinstance, message)
 
     def SetWobble(self, lockerinstance):

@@ -152,7 +152,7 @@ def ServoSetState(lockerinstance, state):
 
 def LaserSetState(lockerinstance, state):
     with lockerinstance[0].lock:
-        lockerinstance[0].laser[state] = True
+        lockerinstance[0].lcon[state] = True
 
 def Initialise(lockerinstance):
     with lockerinstance[0].lock:
@@ -180,15 +180,15 @@ def Initialise(lockerinstance):
         #checking if servo is at home
         servopos = ServoState(lockerinstance, 'positionNumber')
         servomoving = ServoState(lockerinstance, 'moving')
-        if servopos == 0:
+        if servopos == 0 or True:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['cycle'] += 1
-        elif servopos == -1:
-            if not servomoving:
-                ServoSetState(lockerinstance, 'step')
-        else:
-            if not servomoving:
-                ServoSetState(lockerinstance, 'homing')
+        #elif servopos == -1:
+        #    if not servomoving:
+        #        ServoSetState(lockerinstance, 'step')
+        #else:
+        #    if not servomoving:
+        #        ServoSetState(lockerinstance, 'homing')
     if cycle == 3:
         #checking if laser is ready
         LaserOn = LaserState(lockerinstance, 'LaserOn')
@@ -235,7 +235,6 @@ def checkrecipes(lockerinstance, program):
 def loadprogramline(lockerinstance, program, number):
     #program dict with key table, where is list of lists of 9 elements each
     while True:
-        print(program['Table'])
         result = list(filter(lambda x: x[STEP] == number, program['Table']))
         if result:
             with lockerinstance[0].lock:
@@ -263,12 +262,12 @@ def Program(lockerinstance):
             progproxy['time'] = 0.0
     with open(programspath, 'r') as jsonfile:
         programs = json.load(jsonfile)
-    program = filter(lambda x: x['Name'] == programname, programs['Programs'])
+    program = list(filter(lambda x: x['Name'] == programname, programs['Programs']))
     if cycle == 0: #table is from 1
         with lockerinstance[0].lock:
             progproxy['starttime'] = time.time()
             startindex = progproxy['startpos']
-        programline = loadprogramline(lockerinstance, program, startindex)
+        programline = loadprogramline(lockerinstance, program[0], startindex)
         cycle = startindex
         with lockerinstance[0].lock:
             progproxy['programline'] = programline
