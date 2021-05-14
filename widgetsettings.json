@@ -1407,5 +1407,33 @@
         "202":""
 
 
+    },
+    "StatusCodes":{
+        "I":"Inicjalizacja",
+        "I.":"Inicjalizacja.",
+        "I..":"Inicjalizacja..",
+        "I...":"Inicjalizacja...",
+        "I0":"Kontrola pneumatyki",
+        "I1":"Kontrola robota",
+        "I2":"Kontrola serwo",
+        "I3":"Kontrola lasera",
+        "I4":"Kontrola g\u0142owicy laserowej",
+        "I5":"Inicjalizacja zako\u0144czona powodzeniem",
+        "C0":"\u0141adowanie tabeli",
+        "CD":"Proces zako\u0144czony",
+        "SD":"Krok zako\u0144czony",
+        "S0":"Ustawienie receptury do nadania",
+        "S1":"Zmiana receptury",
+        "S2":"Opuszczenie uszczelniacza",
+        "S3":"Obr\u01F3t wymiennika",
+        "S4":"Przygotowanie robota do zmiany pozycji",
+        "S5":"Zmiana pozycji robota",
+        "S6":"Podniesienie uszczelniacza",
+        "S7":"Oczekiwanie na doci\u015Bni\u0119cie uszczelki",
+        "S8":"Start K-Draw",
+        "S9":"Pstrykci\u0119cie foty wymiennikowi",
+        "S10":"Spawanie",
+        "S11":"Posz\u0142o"        
+
     }
 }

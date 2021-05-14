@@ -19,7 +19,6 @@ def startauto(lockerinstance):
         if not running:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].program['running'] = True
-            lockerinstance[0].program['stepcomplete'] = False
             lockerinstance[0].program['stepnumber'] = 0
             lockerinstance[0].program['cycle'] = 0
 
@@ -39,8 +38,7 @@ def nextstep(lockerinstance):
         if stepcomplete:
             lockerinstance[0].lock.acquire()
             lockerinstance[0].program['stepcomplete'] = False
-            lockerinstance[0].program['stepnumber'] =0
-            lockerinstance[0].program['cycle'] += 1
+            lockerinstance[0].program['stepnumber'] +=1
 
 def startprocedure(lockerinstance):
     with lockerinstance[0].lock:
@@ -106,7 +104,7 @@ def CheckPositions(lockerinstance):
     if currentstep == 0 and currentcycle == 0:
         result = CheckPiston(lockerinstance, 'Seal', 'Down')
     else:
-        result = initialised
+        result = True
     return result
 
 def CheckPiston(lockerinstance, pistonname, action):
@@ -156,40 +154,57 @@ def LaserSetState(lockerinstance, state):
 
 def Initialise(lockerinstance):
     with lockerinstance[0].lock:
-        cycle = lockerinstance[0].program['cycle']
+        step = lockerinstance[0].program['stepnumber']
         lockerinstance[0].program['initialising'] = True
-    if cycle == 0:
+        currenttime = time.time()
+        if (currenttime - lockerinstance[0].shared['Steptime'])%3 < 1:
+            symbol = 'I.'
+        elif (currenttime - lockerinstance[0].shared['Steptime'])%3 < 2:
+            symbol = 'I..'
+        elif (currenttime - lockerinstance[0].shared['Steptime'])%3 < 3:
+            symbol = 'I...'
+        else:
+            symbol = 'I'
+    if step == 0:
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I0']
         #checking if seal piston is down
         sealdown = CheckPiston(lockerinstance, 'Seal', 'Down')
         if sealdown:
             with lockerinstance[0].lock:
-                lockerinstance[0].program['cycle'] += 1
+                lockerinstance[0].program['stepnumber'] += 1
         else:
             SetPiston(lockerinstance, 'Seal', 'Down')
-    if cycle == 1:
+    if step == 1:
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I1']
         #checking if robot is at home
         robothome = RobotState(lockerinstance, 'homepos')
         robotmoving = RobotState(lockerinstance, 'activecommand')
         if robothome:
             with lockerinstance[0].lock:
-                lockerinstance[0].program['cycle'] += 1
+                lockerinstance[0].program['stepnumber'] += 1
         else:
             if not robotmoving:
                 RobotGopos(lockerinstance, 0)
-    if cycle == 2:
+    if step == 2:
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
         #checking if servo is at home
         servopos = ServoState(lockerinstance, 'positionNumber')
         servomoving = ServoState(lockerinstance, 'moving')
         if servopos == 0 or True:
             with lockerinstance[0].lock:
-                lockerinstance[0].program['cycle'] += 1
+                lockerinstance[0].program['stepnumber'] += 1
         #elif servopos == -1:
         #    if not servomoving:
         #        ServoSetState(lockerinstance, 'step')
         #else:
         #    if not servomoving:
         #        ServoSetState(lockerinstance, 'homing')
-    if cycle == 3:
+    if step == 3:
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']
         #checking if laser is ready
         LaserOn = LaserState(lockerinstance, 'LaserOn')
         LaserReady = LaserState(lockerinstance, 'LaserReady')
@@ -198,7 +213,7 @@ def Initialise(lockerinstance):
         ChillerError = LaserState(lockerinstance, 'ChillerError')
         if LaserReady and not LaserBusy:
             with lockerinstance[0].lock:
-                lockerinstance[0].program['cycle'] += 1
+                lockerinstance[0].program['stepnumber'] += 1
         elif not LaserOn:
             LaserSetState(lockerinstance, 'LaserTurnOn')
         elif LaserBusy:
@@ -207,17 +222,21 @@ def Initialise(lockerinstance):
             ErrorEventWrite(lockerinstance, "Initialisation step 3: Laser or Chiller Error")
         else:
             LaserSetState(lockerinstance, 'SetChannel')
-    if cycle == 4:
+    if step == 4:
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I4']
         #checking scout
         StatusCheckCode = SCOUTState(lockerinstance, 'StatusCheckCode')
         if StatusCheckCode:
             with lockerinstance[0].lock:
-                lockerinstance[0].program['cycle'] += 1
+                lockerinstance[0].program['stepnumber'] += 1
         else:
             ErrorEventWrite(lockerinstance, 'Błąd inicjalizacji SCOUT nie odpowiada')
-    if cycle == 5:
+    if step == 5:
         with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I5']
             lockerinstance[0].program['cycle'] = 0
+            lockerinstance[0].program['stepnumber'] = 0            
             lockerinstance[0].program['initialising'] = False
             lockerinstance[0].program['initialised'] = True
 
@@ -262,20 +281,24 @@ def Program(lockerinstance):
             progproxy['time'] = 0.0
     with open(programspath, 'r') as jsonfile:
         programs = json.load(jsonfile)
-    program = list(filter(lambda x: x['Name'] == programname, programs['Programs']))
+    program = list(filter(lambda x: x['Name'] == programname, programs['Programs']))[0]
     if cycle == 0: #table is from 1
         with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = ['C0']
             progproxy['starttime'] = time.time()
             startindex = progproxy['startpos']
-        programline = loadprogramline(lockerinstance, program[0], startindex)
+        programline = loadprogramline(lockerinstance, program, startindex)
         cycle = startindex
         with lockerinstance[0].lock:
             progproxy['programline'] = programline
     if cycleended:
         cycle += 1
+        print('cycleended')
         with lockerinstance[0].lock:
             end = lockerinstance[0].program['endpos']
-        if cycle > end+1:
+        if cycle > end:
+            with lockerinstance[0].lock:
+                lockerinstance[0].shared['Statuscodes'] = ['CD']
             endprogram(lockerinstance)
         else:
             programline = loadprogramline(lockerinstance, program, cycle)

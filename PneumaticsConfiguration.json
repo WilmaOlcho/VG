@@ -21,6 +21,7 @@
                             "model":"",
                             "vendor":"MetalWork",
                             "action":"SealDown",
+                            "oppositeaction":"SealUp",
                             "address":"O7",
                             "voltage":24,
                             "current":0.2,
@@ -34,10 +35,11 @@
                             "model":"",
                             "vendor":"MetalWork",
                             "action":"SealUp",
+                            "oppositeaction":"SealDown",
                             "address":"O6",
                             "voltage":24,
                             "current":0.2,
-                            "nosensor":false,
+                            "nosensor":true,
                             "timeout":10
                         }
                     ]
@@ -49,6 +51,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"SealUp",
+                    "oppositeaction":"",
                     "address":"I31",
                     "voltage":24,
                     "current":0.1
@@ -60,6 +63,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"SealDown",
+                    "oppositeaction":"",
                     "address":"I32",
                     "voltage":24,
                     "current":0.1
@@ -87,6 +91,7 @@
                             "model":"",
                             "vendor":"MetalWork",
                             "action":"TroleyPusherFront",
+                            "oppositeaction":"TroleyPusherBack",
                             "address":"O17",
                             "voltage":24,
                             "current":0.2,
@@ -100,6 +105,7 @@
                             "model":"",
                             "vendor":"MetalWork",
                             "action":"TroleyPusherBack",
+                            "oppositeaction":"TroleyPusherFront",
                             "address":"O18",
                             "voltage":24,
                             "current":0.2,
@@ -115,6 +121,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"TroleyPusherFront",
+                    "oppositeaction":"",
                     "address":"I24",
                     "voltage":24,
                     "current":0.1
@@ -127,6 +134,7 @@
                     "vendor":"MetalWork",
                     "action":"TroleyPusherBack",
                     "tandem":"TroleyPusher2Back",
+                    "oppositeaction":"",
                     "address":"I23",
                     "voltage":24,
                     "current":0.1
@@ -139,6 +147,7 @@
                     "vendor":"MetalWork",
                     "action":"TroleyPusher2Front",
                     "tandem":"TroleyPusher2Front",
+                    "oppositeaction":"",
                     "address":"I26",
                     "voltage":24,
                     "current":0.1
@@ -150,6 +159,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"TroleyPusher2Back",
+                    "oppositeaction":"",
                     "address":"I25",
                     "voltage":24,
                     "current":0.1
@@ -163,6 +173,7 @@
             "model":"",
             "vendor":"MetalWork",
             "action":"ShieldingGasOk",
+            "oppositeaction":"",
             "address":"I16",
             "voltage":24,
             "current":0.1
@@ -174,6 +185,7 @@
             "model":"",
             "vendor":"MetalWork",
             "action":"AirOk",
+            "oppositeaction":"",
             "address":"I8",
             "voltage":24,
             "current":0.1
@@ -184,6 +196,7 @@
             "type":"PressureSwitch",
             "model":"",
             "vendor":"MetalWork",
+            "oppositeaction":"",
             "action":"VacuumOk",
             "address":"I15",
             "voltage":24,
@@ -203,6 +216,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"ShieldingGas",
+                    "oppositeaction":"",
                     "address":"O5",
                     "voltage":24,
                     "current":0.2,
@@ -225,6 +239,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"HeadCooling",
+                    "oppositeaction":"",
                     "address":"O4",
                     "voltage":24,
                     "current":0.2,
@@ -247,6 +262,7 @@
                     "model":"",
                     "vendor":"MetalWork",
                     "action":"CrossJet",
+                    "oppositeaction":"",
                     "address":"O3",
                     "voltage":24,
                     "current":0.2,

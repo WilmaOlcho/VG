@@ -62,9 +62,11 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 event = lockerinstance[0].events['ScoutManagerReadyToSend']
             if event:
+                message = self.sendingqueue.pop(0)
                 with lockerinstance[0].lock:
                     lockerinstance[0].events['ScoutManagerReadyToSend'] = False
-                self.sendall(self.sendingqueue.pop(0))
+                    lockerinstance[0].scout['actualmessage'] = message
+                self.sendall(message)
                 self.receive(lockerinstance)
 
     def add_to_queue(self, lockerinstance, bytes_message):
@@ -72,6 +74,9 @@ class KDrawTCPInterface(socket.socket):
         Metoda dodająca do kolejki pełne polecenie
         SCOUT w przypadku gdy takie nie oczekuje na wykonanie.
         '''
+        with lockerinstance[0].lock:
+            if bytes_message in lockerinstance[0].scout['actualmessage']:
+                return None
         if bytes_message in self.sendingqueue:
             return None
         else:
@@ -112,6 +117,9 @@ class KDrawTCPInterface(socket.socket):
         gdzie COMMAND oznacza polecenie, ',' jest separatorem, a każde polecenie
         zakończone jest znakami zakończenia linii \r\n
         '''
+        with lockerinstance[0].lock:
+            if message[0] == lockerinstance[0].scout['LastMessageType']:
+                message[0] = 'STATUS'
         string = ''
         for element in message: #message is an list of parameters
             string += str(element) + ',' #parameters are splitted by coma
@@ -475,6 +483,8 @@ class KDrawTCPInterface(socket.socket):
                 lockerinstance[0].scout['recipe'] = recipe
             recipe
         recipe = self.__removefromstring(recipe, '.dsg')
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['lastrecipe'] = recipe
         message = self.encode_message(lockerinstance, ['RECIPE_CHANGE',recipe])
         print( '{}'.format(message))
         self.add_to_queue(lockerinstance, message)
@@ -539,6 +549,8 @@ class SCOUT():
                 except Exception as e:
                     ErrorEventWrite(lockerinstance, 'SCOUT manager cant connect with k-draw:\n{}'.format(str(e)))
                 else:
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].scout['lastrecipe'] = ''
                     self.loop(lockerinstance)
             finally:
                 with lockerinstance[0].lock:

@@ -58,8 +58,6 @@ class programController(object):
             control.Program(lockerinstance)
 
     def automode(self, lockerinstance):
-        with lockerinstance[0].lock:
-            lockerinstance[0].program['stepcomplete'] = False
         self._cycle(lockerinstance)
 
     def stepmode(self, lockerinstance):
@@ -72,102 +70,117 @@ class programController(object):
             cycleended = lockerinstance[0].program['cycleended']
             step = lockerinstance[0].program['stepnumber']
             automode = lockerinstance[0].program['automode']
+            lastrecipe = lockerinstance[0].scout['lastrecipe']
+            scoutrecipe = lockerinstance[0].scout['recipe']
+            if lockerinstance[0].program['programline']:
+                programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
+            else:
+                programrecipe = ''
         if running and cycle and not cycleended:
             with lockerinstance[0].lock: #locking whole method for event-compatibility
+                if lockerinstance[0].program['stepcomplete'] and automode:
+                    print(lockerinstance[0].program['stepcomplete'])
+                    lockerinstance[0].program['stepcomplete'] = False
+                    step += 1
+                elif lockerinstance[0].program['stepcomplete']:
+                    lockerinstance[0].shared['Statuscodes'] = ['SD']
                 #setting recipe for scout
-                print(step)
                 if step == 0:
-                    if lockerinstance[0].scout['recipe'] != lockerinstance[0].program['programline'][control.RECIPE]:
-                        lockerinstance[0].scout['recipe'] = lockerinstance[0].program['programline'][control.RECIPE]
+                    lockerinstance[0].shared['Statuscodes'] = ['S0']
+                    if scoutrecipe != programrecipe:
+                        lockerinstance[0].scout['recipe'] = programrecipe
                         lockerinstance[0].scout['Recipechangedsuccesfully'] = False
                     else:
-                        if automode: step +=1
-                        else: lockerinstance[0].program['stepcomplete'] = True
+                        lockerinstance[0].program['stepcomplete'] = True
                 if step == 1:
-                    if not lockerinstance[0].scout['Recipechangedsuccesfully']:
+                    lockerinstance[0].shared['Statuscodes'] = ['S1']
+                    if scoutrecipe != lastrecipe and not lockerinstance[0].scout['Recipechangedsuccesfully']:
                         if not lockerinstance[0].events['KDrawWaitingForMessage']:
-                            lockerinstance[0].scout['SetRecipe'] = True
+                            lockerinstance[0].scout['SetRecipe'] |= True
                     else:
                         lockerinstance[0].scout['Recipechangedsuccesfully'] = False
-                        if automode: step +=1
-                        else: lockerinstance[0].program['stepcomplete'] = True                        
+                        lockerinstance[0].program['stepcomplete'] = True                        
                 #Setting seal down
                 if step == 2:
-                    if not lockerinstance[0].pistons['sensorSealDown']:
-                        lockerinstance[0].scout['SealDown'] = True
+                    lockerinstance[0].shared['Statuscodes'] = ['S2']
+                    if lockerinstance[0].servo['positionNumber'] != lockerinstance[0].program['programline'][control.SERVOPOS] and not lockerinstance[0].pistons['sensorSealDown']:
+                        lockerinstance[0].pistons['SealDown'] = True
                     else:
-                        if automode: step +=1
-                        else: lockerinstance[0].program['stepcomplete'] = True                        
+                        lockerinstance[0].program['stepcomplete'] = True                        
                 #setting servo position
                 if step == 3:
-                    step += 1
+                    lockerinstance[0].program['stepcomplete'] = True                        
+                    lockerinstance[0].shared['Statuscodes'] = ['S3']
 #                    if lockerinstance[0].servo['positionNumber'] == -1:
 #                        ErrorEventWrite(lockerinstance, 'servo is not ready')
 #                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]:
-#                       if automode: step +=1
-#                       else: lockerinstance[0].program['stepcomplete'] = True
+#                       lockerinstance[0].program['stepcomplete'] = True
 #                   else:
 #                        if not lockerinstance[0].servo['moving']:
 #                            lockerinstance[0].servo['stepnumber'] = True
                 #setting robot position
                 if step == 4:
-                    step += 1
+                    lockerinstance[0].program['stepcomplete'] = True                        
+                    lockerinstance[0].shared['Statuscodes'] = ['S4']
 #                    if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS] or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
 #                        lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
 #                        lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
 #                    else:
-#                       if automode: step +=1
-#                       else: lockerinstance[0].program['stepcomplete'] = True
+#                       lockerinstance[0].program['stepcomplete'] = True
                 if step == 5:
-                   step += 1
+                    lockerinstance[0].program['stepcomplete'] = True                        
+                    lockerinstance[0].shared['Statuscodes'] = ['S5']
 #                    if lockerinstance[0].robot['currentpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]:
 #                        if not lockerinstance[0].robot['activecommand']:
 #                            lockerinstance[0].robot['go'] = True
 #                    else:
-#                       if automode: step +=1
-#                       else: lockerinstance[0].program['stepcomplete'] = True
+#                       lockerinstance[0].program['stepcomplete'] = True
                 #Setting seal up
                 if step == 6:
+                    lockerinstance[0].shared['Statuscodes'] = ['S6']
                     if lockerinstance[0].pistons['sensorSealDown']:
                         lockerinstance[0].pistons['SealUp'] = True
                     else:
-                        if automode: step +=1
-                        else: lockerinstance[0].program['stepcomplete'] = True                        
+                        lockerinstance[0].program['stepcomplete'] = True                        
             #Wait 3s until sealing were perfect
             if step == 7:
-                if automode: step +=1
-                else:
-                    def exceed(lockerinstance = lockerinstance):
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].program['stepnumber'] +=1
-                    WDT(lockerinstance, additionalFuncOnExceed = exceed, noerror = True, limit = 3, scale = 's')
+                with lockerinstance[0].lock:
+                    lockerinstance[0].shared['Statuscodes'] = ['S7']
+                def exceed(lockerinstance = lockerinstance):
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].program['stepcomplete'] = True
+                WDT(lockerinstance,additionalFuncOnCatch = exceed, additionalFuncOnExceed = exceed, noerror = True, limitval = 3, scale = 's')
             with lockerinstance[0].lock:
                 #scout atstart
                 if step == 8:
+                    lockerinstance[0].shared['Statuscodes'] = ['S8']
                     if not lockerinstance[0].events['KDrawWaitingForMessage']:
                         lockerinstance[0].scout['AutostartOn'] = True
                     if lockerinstance[0].scout['status']['AutoStart']:
-                        if automode: step +=1
-                        else: lockerinstance[0].program['stepcomplete'] = True                          
+                        lockerinstance[0].program['stepcomplete'] = True                          
                 #align scout
                 if step == 9:
+                    lockerinstance[0].shared['Statuscodes'] = ['S9']
                     lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
                     if not lockerinstance[0].events['KDrawWaitingForMessage']:
                         lockerinstance[0].scout['ManualAlign'] = True
                     if lockerinstance[0].scout['ManualAlignCheck']:
                         lockerinstance[0].scout['ManualAlignCheck'] = False
-                        if automode: step +=1
-                        else: lockerinstance[0].program['stepcomplete'] = True                          
+                        lockerinstance[0].program['stepcomplete'] = True                          
                 #SCOUT weld
                 if step == 10:
+                    lockerinstance[0].shared['Statuscodes'] = ['S10']
                     lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
                     if not lockerinstance[0].events['KDrawWaitingForMessage']:
                         lockerinstance[0].scout['ManualWeld'] = True
                     if lockerinstance[0].scout['ManualWeldCheck']:
                         lockerinstance[0].scout['ManualWeldCheck'] = False
-                        if automode: step +=1
-                        else: lockerinstance[0].program['stepcomplete'] = True                          
+                        lockerinstance[0].program['stepcomplete'] = True                          
                 if step == 11:
+                    lockerinstance[0].shared['Statuscodes'] = ['S11']
                     lockerinstance[0].program['cycleended'] = True
-                if step > lockerinstance[0].program['stepnumber'] and automode:
+                    lockerinstance[0].program['stepnumber'] = 0
+                    step = 0
+                    print('poszło')
+                if step > lockerinstance[0].program['stepnumber']:
                     lockerinstance[0].program['stepnumber'] = step
