@@ -170,11 +170,20 @@ def Initialise(lockerinstance):
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I0']
         #checking if seal piston is down
         sealdown = CheckPiston(lockerinstance, 'Seal', 'Down')
-        if sealdown:
+        #checking if compressed air is present
+        air = CheckPiston(lockerinstance, 'Air', 'Ok')
+        #checking if argon air is present
+        gas = CheckPiston(lockerinstance, 'ShieldingGas', 'Ok')
+        if sealdown and air and gas:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
-        else:
+        elif not sealdown:
             SetPiston(lockerinstance, 'Seal', 'Down')
+        else:
+            if not gas:
+                ErrorEventWrite(lockerinstance, "Initialisation step 1: Nie ma gazu")
+            if not air:
+                ErrorEventWrite(lockerinstance, "Initialisation step 1: Nie ma powietrza")
     if step == 1:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I1']
@@ -193,15 +202,15 @@ def Initialise(lockerinstance):
         #checking if servo is at home
         servopos = ServoState(lockerinstance, 'positionNumber')
         servomoving = ServoState(lockerinstance, 'moving')
-        if servopos == 0 or True:
+        if servopos == 0:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
-        #elif servopos == -1:
-        #    if not servomoving:
-        #        ServoSetState(lockerinstance, 'step')
-        #else:
-        #    if not servomoving:
-        #        ServoSetState(lockerinstance, 'homing')
+        elif servopos == -1:
+            if not servomoving:
+                ServoSetState(lockerinstance, 'step')
+        else:
+            if not servomoving:
+                ServoSetState(lockerinstance, 'homing')
     if step == 3:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']
@@ -233,6 +242,16 @@ def Initialise(lockerinstance):
         else:
             ErrorEventWrite(lockerinstance, 'Błąd inicjalizacji SCOUT nie odpowiada')
     if step == 5:
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I5']
+        #checking vacuum
+        vac = CheckPiston(lockerinstance, 'Vacuum', 'Ok')
+        if vac:
+            with lockerinstance[0].lock:
+                lockerinstance[0].program['stepnumber'] += 1
+        else:
+            ErrorEventWrite(lockerinstance, 'Błąd inicjalizacji filtrowentylator nie włączony')
+    if step == 6:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I5']
             lockerinstance[0].program['cycle'] = 0

@@ -174,7 +174,7 @@
             "vendor":"MetalWork",
             "action":"ShieldingGasOk",
             "oppositeaction":"",
-            "address":"I16",
+            "address":"I9",
             "voltage":24,
             "current":0.1
         },
@@ -186,7 +186,7 @@
             "vendor":"MetalWork",
             "action":"AirOk",
             "oppositeaction":"",
-            "address":"I8",
+            "address":"I16",
             "voltage":24,
             "current":0.1
         },

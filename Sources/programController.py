@@ -72,6 +72,7 @@ class programController(object):
             automode = lockerinstance[0].program['automode']
             lastrecipe = lockerinstance[0].scout['lastrecipe']
             scoutrecipe = lockerinstance[0].scout['recipe']
+            robothome = lockerinstance[0].robot['homepos']
             if lockerinstance[0].program['programline']:
                 programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
             else:
@@ -103,45 +104,53 @@ class programController(object):
                 #Setting seal down
                 if step == 2:
                     lockerinstance[0].shared['Statuscodes'] = ['S2']
-                    if lockerinstance[0].servo['positionNumber'] != lockerinstance[0].program['programline'][control.SERVOPOS] and not lockerinstance[0].pistons['sensorSealDown']:
+                    if (lockerinstance[0].servo['positionNumber'] != lockerinstance[0].program['programline'][control.SERVOPOS]) and not lockerinstance[0].pistons['sensorSealDown']:
                         lockerinstance[0].pistons['SealDown'] = True
                     else:
                         lockerinstance[0].program['stepcomplete'] = True                        
                 #setting servo position
                 if step == 3:
-                    lockerinstance[0].program['stepcomplete'] = True                        
+                    step = 4
+                if False:
                     lockerinstance[0].shared['Statuscodes'] = ['S3']
-#                    if lockerinstance[0].servo['positionNumber'] == -1:
-#                        ErrorEventWrite(lockerinstance, 'servo is not ready')
-#                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]:
-#                       lockerinstance[0].program['stepcomplete'] = True
-#                   else:
-#                        if not lockerinstance[0].servo['moving']:
-#                            lockerinstance[0].servo['stepnumber'] = True
+                    if lockerinstance[0].servo['positionNumber'] == -1:
+                        ErrorEventWrite(lockerinstance, 'servo is not ready')
+                    if lockerinstance[0].servo['positionNumber'] == lockerinstance[0].program['programline'][control.SERVOPOS]:
+                        lockerinstance[0].program['stepcomplete'] = True
+                    else:
+                        if robothome:
+                            if not lockerinstance[0].servo['moving']:
+                                lockerinstance[0].servo['step'] = True
+                        else:
+                            lockerinstance[0].robot['homing'] = True
                 #setting robot position
                 if step == 4:
-                    lockerinstance[0].program['stepcomplete'] = True                        
+                    step = 5
+                if False:
                     lockerinstance[0].shared['Statuscodes'] = ['S4']
-#                    if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS] or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
-#                        lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
-#                        lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
-#                    else:
-#                       lockerinstance[0].program['stepcomplete'] = True
+                    if lockerinstance[0].robot['setpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS] or lockerinstance[0].robot['settable'] != lockerinstance[0].program['programline'][control.ROBOTTABLE]:
+                        lockerinstance[0].robot['settable'] = lockerinstance[0].program['programline'][control.ROBOTTABLE]
+                        lockerinstance[0].robot['setpos'] = lockerinstance[0].program['programline'][control.ROBOTPOS]
+                    else:
+                        lockerinstance[0].program['stepcomplete'] = True
                 if step == 5:
+                    step = 6
+                if False:
                     lockerinstance[0].program['stepcomplete'] = True                        
                     lockerinstance[0].shared['Statuscodes'] = ['S5']
-#                    if lockerinstance[0].robot['currentpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]:
-#                        if not lockerinstance[0].robot['activecommand']:
-#                            lockerinstance[0].robot['go'] = True
-#                    else:
-#                       lockerinstance[0].program['stepcomplete'] = True
+                    if lockerinstance[0].robot['currentpos'] != lockerinstance[0].program['programline'][control.ROBOTPOS]:
+                        if not lockerinstance[0].robot['activecommand']:
+                            lockerinstance[0].robot['go'] = True
+                    else:
+                       lockerinstance[0].program['stepcomplete'] = True
                 #Setting seal up
                 if step == 6:
                     lockerinstance[0].shared['Statuscodes'] = ['S6']
                     if lockerinstance[0].pistons['sensorSealDown']:
                         lockerinstance[0].pistons['SealUp'] = True
                     else:
-                        lockerinstance[0].program['stepcomplete'] = True                        
+                        lockerinstance[0].program['stepcomplete'] = True
+                        lockerinstance[0].pistons['ShieldingGas'] = True                   
             #Wait 3s until sealing were perfect
             if step == 7:
                 with lockerinstance[0].lock:
@@ -166,7 +175,9 @@ class programController(object):
                         lockerinstance[0].scout['ManualAlign'] = True
                     if lockerinstance[0].scout['ManualAlignCheck']:
                         lockerinstance[0].scout['ManualAlignCheck'] = False
-                        lockerinstance[0].program['stepcomplete'] = True                          
+                        lockerinstance[0].program['stepcomplete'] = True      
+                        lockerinstance[0].pistons['HeadCooling'] = True
+                        lockerinstance[0].pistons['CrossJet'] = True
                 #SCOUT weld
                 if step == 10:
                     lockerinstance[0].shared['Statuscodes'] = ['S10']
@@ -175,7 +186,10 @@ class programController(object):
                         lockerinstance[0].scout['ManualWeld'] = True
                     if lockerinstance[0].scout['ManualWeldCheck']:
                         lockerinstance[0].scout['ManualWeldCheck'] = False
-                        lockerinstance[0].program['stepcomplete'] = True                          
+                        lockerinstance[0].program['stepcomplete'] = True 
+                        lockerinstance[0].pistons['HeadCooling'] = False
+                        lockerinstance[0].pistons['CrossJet'] = False                         
+                        lockerinstance[0].pistons['ShieldingGas'] = False                         
                 if step == 11:
                     lockerinstance[0].shared['Statuscodes'] = ['S11']
                     lockerinstance[0].program['cycleended'] = True

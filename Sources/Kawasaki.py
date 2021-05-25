@@ -104,7 +104,7 @@ class RobotVG(KawasakiVG):
         if not activecommand[0]:
             with lockerinstance[0].lock:
                 homing, go, setoffset, goonce = [lockerinstance[0].robot[x] for x in ['homing', 'go', 'setoffset', 'goonce']]
-                for x in ['homing', 'go', 'setoffset', 'goonce']: lockerinstance[0].robot[x] = False
+                for x in ['activecommand','homing', 'go', 'setoffset', 'goonce']: lockerinstance[0].robot[x] = False
             if homing:
                 self.__Command(lockerinstance, command = 'homing')
             if go:
