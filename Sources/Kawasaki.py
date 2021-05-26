@@ -89,8 +89,8 @@ class RobotVG(KawasakiVG):
     def __Command(self, lockerinstance, command = ''):
         command_u = command[:1].upper() + command[1:]
         commandevent = 'Robot'+command_u+'Complete'
-        def funconstart(object = self, lockerinstance = lockerinstance):
-            self.write_register(lockerinstance, register = 'command', value = object.addresses['command_values'][command])
+        def funconstart(obj = self, lockerinstance = lockerinstance):
+            obj.write_register(lockerinstance, register = 'command', value = obj.addresses['command_values'][command])
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['activecommand'] = True
             EventManager.AdaptEvent(lockerinstance, input = '-robot.activecommand', event = commandevent)

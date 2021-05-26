@@ -347,7 +347,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda obsługująca ramkę zwrotną GET_ALIGN_INFO
         '''
         if len(data) == 9 or len(data) == 6:
-            if data[0] == 1 and data[2] == 1:
+            if int(data[0]) == 1 and int(data[2]) == 1:
                 with lockerinstance[0].lock:
                     if len(data) == 6:
                         axy = data[3:]

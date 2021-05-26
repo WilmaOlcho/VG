@@ -200,17 +200,20 @@ def Initialise(lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
         #checking if servo is at home
+        ServoSetState(lockerinstance, 'reset')
+        ServoSetState(lockerinstance, 'run')
         servopos = ServoState(lockerinstance, 'positionNumber')
         servomoving = ServoState(lockerinstance, 'moving')
+        print(servopos)
         if servopos == 0:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
         elif servopos == -1:
             if not servomoving:
-                ServoSetState(lockerinstance, 'step')
+                ServoSetState(lockerinstance, 'homing')
         else:
             if not servomoving:
-                ServoSetState(lockerinstance, 'homing')
+                ServoSetState(lockerinstance, 'step')
     if step == 3:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']
