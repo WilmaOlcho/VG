@@ -2,10 +2,35 @@ from multiprocessing import Manager, Lock, Array, Value
 
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
+        mainpath = kwargs.pop('mainpath','.\\')
         manager = Manager()
         self.inputs = Array('b',32*[False])
         self.outputs = Array('b',32*[False])
         self.shared = manager.dict({
+            'main':manager.dict({
+                'Window':True,
+                'MyMultiplexer':True,
+                'Servo':True,
+                'MyLaserControl':True,
+                'RobotVG':True,
+                'PneumaticsVG':True,
+                'GMOD':True,
+                'Troley':True,
+                'Program':True,
+                'SCOUT':True
+            }),
+            'paramfiles':manager.dict({
+                'Window':(mainpath + 'widgetsettings.json', mainpath + 'Programs.json',),
+                'MyMultiplexer':(mainpath + 'amuxConfiguration.json',),
+                'Servo':(mainpath + 'ServoSettings.json',),
+                'MyLaserControl':(mainpath + 'amuxConfiguration.json',),
+                'RobotVG':(mainpath + 'robotConfiguration.json',),
+                'PneumaticsVG':(mainpath + 'PneumaticsConfiguration.json',),
+                'GMOD':(mainpath + 'SICKGMODconfiguration.json',),
+                'Troley':(mainpath + 'Troleysettings.json',),
+                'Program':(mainpath + 'Programs.json',),
+                'SCOUT':(mainpath + 'Scoutconfiguration.json',)
+            }),
             'SCOUT':manager.dict({
                 'Alive':False,
                 'WaitingForData':False,

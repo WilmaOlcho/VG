@@ -62,18 +62,25 @@ class Button(GeneralWidget, tk.Button):
             self.callback()
 
 class Entry(GeneralWidget):
-    def __init__(self, master = None, text = '', key = ''):
+    def __init__(self, master = None, text = '', key = '', entrytype = 'numerical'):
         super().__init__(master = master, branch = 'Entry')
         self.Label = ttk.Label(master = self, font = self.font(), text = text)
         self.entry = tk.Entry(master = self, width = self.settings['width'])
         self.entry.bind('<FocusOut>',self.ReadEntry)
         self.key = key
+        self.type = entrytype
         self.masterkey = self.settings['masterkey']
         self.Label.pack()
         self.entry.pack()
         
     def ReadEntry(self, event):
-        self.root.variables[self.masterkey][self.key] = self.entry.get()
+        value = self.entry.get()
+        if value.isnumeric() and self.type == 'numerical': pass
+        elif value.isalpha() and self.type == 'alpha': pass
+        elif value.isalnum() and self.type == 'alphanumerical': pass
+        elif self.type == 'text': pass
+        else: return None
+        self.root.variables[self.masterkey][self.key] = value
 
     def WriteEntry(self):
         value = self.root.variables[self.masterkey][self.key]
@@ -85,6 +92,8 @@ class Entry(GeneralWidget):
         focus = self.focus_get()
         if focus != self.entry:
             self.WriteEntry()
+        else:
+            self.ReadEntry(None)
         super().update()
 
 class Lamp(GeneralWidget):

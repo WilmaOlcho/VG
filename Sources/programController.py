@@ -70,11 +70,12 @@ class programController(object):
             cycleended = lockerinstance[0].program['cycleended']
             step = lockerinstance[0].program['stepnumber']
             automode = lockerinstance[0].program['automode']
+            error = lockerinstance[0].events['Error']
             if lockerinstance[0].program['programline']:
                 programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
             else:
                 programrecipe = ''
-        if running and cycle and not cycleended:
+        if running and cycle and not cycleended and not error:
             if step == 0: self.step0(lockerinstance)
             if step == 1: self.step1(lockerinstance)
             if step == 2: self.step2(lockerinstance)
