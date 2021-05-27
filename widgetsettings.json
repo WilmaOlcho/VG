@@ -225,6 +225,12 @@
                                     "active":"green",
                                     "error":"red"
                                 }
+                            },
+                            "Entry":{
+                                "width":15,
+                                "masterkey":"servo",
+                                "key":"pos",
+                                "state":"disabled"
                             }
                         },
                         "buttons":{

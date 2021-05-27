@@ -160,7 +160,7 @@ class programController(object):
         else:
             with lockerinstance[0].lock:
                 if robothome:
-                    if not lockerinstance[0].servo['moving']:
+                    if lockerinstance[0].servo['ioready']:
                         lockerinstance[0].servo['step'] = True
                 else:
                     lockerinstance[0].robot['homing'] = True

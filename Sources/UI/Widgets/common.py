@@ -3,7 +3,7 @@ from tkinter import ttk
 from win32api import GetSystemMetrics
 import re
 
-KEYWORDS = ["Label","masterkey", "Name", "masterkey", "width", "height"]
+KEYWORDS = ["Label","masterkey", "Name", "masterkey", "width", "height", "Entry"]
 
 def Blank(*args, **kwargs):
     return None
@@ -22,7 +22,10 @@ def getroot(obj):
 class GeneralWidget(tk.Frame):
     def __init__(self, master = None, branch = ''):
         tk.Frame.__init__(self, master)
-        self.settings = master.settings[branch] if branch else master.settings
+        if branch and branch in master.settings.keys():
+            self.settings = master.settings[branch]
+        else:
+            self.settings = master.settings
         self.root = getroot(master)
         self.widgets = []
         self.font = self.root.font
@@ -62,12 +65,15 @@ class Button(GeneralWidget, tk.Button):
             self.callback()
 
 class Entry(GeneralWidget):
-    def __init__(self, master = None, text = '', key = '', entrytype = 'numerical'):
+    def __init__(self, master = None, text = '', key = '', entrytype = 'numerical', **kw):
         super().__init__(master = master, branch = 'Entry')
         self.Label = ttk.Label(master = self, font = self.font(), text = text)
-        self.entry = tk.Entry(master = self, width = self.settings['width'])
+        self.entry = tk.Entry(master = self)
+        for param in self.settings.keys():
+            if param in ['width', 'state']:
+                self.entry.config(**{param:self.settings[param]})
         self.entry.bind('<FocusOut>',self.ReadEntry)
-        self.key = key
+        self.key = self.settings['key'] if not key else key
         self.type = entrytype
         self.masterkey = self.settings['masterkey']
         self.Label.pack()

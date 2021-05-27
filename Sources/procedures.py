@@ -98,11 +98,17 @@ def CheckProgram(lockerinstance):
 
 def CheckPositions(lockerinstance):
     with lockerinstance[0].lock:
-        currentstep = lockerinstance[0].program['stepnumber']
-        currentcycle = lockerinstance[0].program['cycle']
         initialised = lockerinstance[0].program['initialised']
-    if currentstep == 0 and currentcycle == 0:
+        initialising = lockerinstance[0].program['initialising']
+    if not initialised:
         result = CheckPiston(lockerinstance, 'Seal', 'Down')
+        result &= RobotState(lockerinstance, 'homepos')
+        result &= ServoState(lockerinstance, 'positionNumber') == 0
+        result &= CheckPiston(lockerinstance, 'Air', 'Ok')
+        result &= CheckPiston(lockerinstance, 'ShieldingGas', 'Ok')
+        result &= CheckPiston(lockerinstance, 'Vacuum', 'Ok')
+    elif initialising:
+        result = False
     else:
         result = True
     return result
@@ -203,16 +209,16 @@ def Initialise(lockerinstance):
         ServoSetState(lockerinstance, 'reset')
         ServoSetState(lockerinstance, 'run')
         servopos = ServoState(lockerinstance, 'positionNumber')
-        servomoving = ServoState(lockerinstance, 'moving')
+        ready = ServoState(lockerinstance, 'ready')
         print(servopos)
         if servopos == 0:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
         elif servopos == -1:
-            if not servomoving:
+            if ready:
                 ServoSetState(lockerinstance, 'homing')
         else:
-            if not servomoving:
+            if ready:
                 ServoSetState(lockerinstance, 'step')
     if step == 3:
         with lockerinstance[0].lock:
