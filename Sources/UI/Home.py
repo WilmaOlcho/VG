@@ -27,7 +27,7 @@ class ThirdColumn(GeneralWidget):
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
 
 class ProcessVariables(LabelFrame):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'ProcessVariables')
         self.leftFrame = Frame(self)
         self.rightFrame = Frame(self)
@@ -65,14 +65,14 @@ class ProcessVariables(LabelFrame):
         super().update()
 
 class SecondColumn(GeneralWidget):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'SecondColumn')
         StatusIndicators(master = self)
         for widget in self.winfo_children():
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
 
 class FirstColumn(GeneralWidget):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'FirstColumn')
         ProgramSelect(self),
         Positions(self)
@@ -80,7 +80,7 @@ class FirstColumn(GeneralWidget):
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
 
 class ProgramSelect(LabelFrame):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'ProgramSelect')
         self.menubutton = tk.Menubutton(master = self, text = self.settings['Label'])
         self.menu = None
@@ -135,7 +135,7 @@ class ProgramSelect(LabelFrame):
         super().update()
 
 class Positions(LabelFrame):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'Positions')
         with open(self.root.variables.jsonpath, 'r') as jsonfile:
             self.programs = json.load(jsonfile)

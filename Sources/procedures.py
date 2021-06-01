@@ -147,8 +147,11 @@ def SetPiston(lockerinstance, pistonname, action):
 
 def RobotGopos(lockerinstance, posnumber):
     with lockerinstance[0].lock:
-        lockerinstance[0].robot['setpos'] = posnumber
-        lockerinstance[0].robot['go'] = True
+        if posnumber:
+            lockerinstance[0].robot['setpos'] = posnumber
+            lockerinstance[0].robot['go'] = True
+        else:
+            lockerinstance[0].robot['homing'] = True
 
 def ServoSetState(lockerinstance, state):
     with lockerinstance[0].lock:
@@ -219,7 +222,7 @@ def Initialise(lockerinstance):
                 ServoSetState(lockerinstance, 'homing')
         else:
             if ready:
-                ServoSetState(lockerinstance, 'step')
+                ServoSetState(lockerinstance, 'step')   
     if step == 3:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']

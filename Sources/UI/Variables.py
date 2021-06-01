@@ -105,7 +105,8 @@ class Variables(dict):
             'ZoneArmed':False,
             'Estopresetrecquired':False,
             'Zoneresetrecquired':False,
-            'OpenTheDoor':False
+            'OpenTheDoor':False,
+            "TroleyReady":False
         }
         self['scout'] = {
             'WaitingForData':False,
@@ -344,6 +345,8 @@ class Variables(dict):
             self['safety']['ZoneArmed'] = safety['ZoneArmed']
             self['safety']['Estopresetrecquired'] = safety['Estopresetrecquired']
             self['safety']['Zoneresetrecquired'] = safety['Zoneresetrecquired']
+            safety['TroleyReady'] = self['safety']['TroleyReady']
+
 
     def pneumaticsupdate(self):
         lock = self.lockerinstance[0].lock

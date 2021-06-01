@@ -5,8 +5,10 @@ import re
 
 KEYWORDS = ["Label","masterkey", "Name", "masterkey", "width", "height", "Entry"]
 
+
 def Blank(*args, **kwargs):
     return None
+
 
 def getroot(obj):
     while True:
@@ -31,10 +33,12 @@ class GeneralWidget(tk.Frame):
         self.font = self.root.font
         self.master = master
 
+
     def update(self):
         super().update()
         for widget in list(self.children.values()): #winfo_children() returns full list of childrens, even if some of them are destroyed
             widget.update()
+
 
 Frame = GeneralWidget
 
@@ -52,17 +56,32 @@ class Button(GeneralWidget, tk.Button):
         self.key = key
         if key:
             self.masterkey = self.settings['masterkey']
+            if '~' in key[0] or '-' in key[0]:
+                self.keyattribute = key[0]
+                self.key = self.key[1:]
+            else:
+                self.keyattribute = ''
         self.callback = callback
 
     def click(self):
         self.root.variables.internalEvents['buttonclicked'] = True
         if self.key:
-            if self.key[0] == '-':
-                self.root.variables[self.masterkey][self.key[1:]] = False
+            if self.keyattribute == '-':
+                self.root.variables[self.masterkey][self.key] = False
+            elif self.keyattribute == '~':
+                self.root.variables[self.masterkey][self.key] = not self.root.variables[self.masterkey][self.key]
             else:
                 self.root.variables[self.masterkey][self.key] = True
         else:
             self.callback()
+
+    def update(self):
+        super().update()
+        if self.key:
+            if self.root.variables[self.masterkey][self.key]:
+                self.config(bg = "#f96348")
+            else:
+                self.config(bg = "#84bdac")
 
 class Entry(GeneralWidget):
     def __init__(self, master = None, text = '', key = '', entrytype = 'numerical', **kw):
@@ -79,6 +98,7 @@ class Entry(GeneralWidget):
         self.Label.pack()
         self.entry.pack()
         
+
     def ReadEntry(self, event):
         value = self.entry.get()
         if value.isnumeric() and self.type == 'numerical': pass
@@ -88,11 +108,18 @@ class Entry(GeneralWidget):
         else: return None
         self.root.variables[self.masterkey][self.key] = value
 
+
     def WriteEntry(self):
         value = self.root.variables[self.masterkey][self.key]
-        if self.entry.get() != value:
+        state = self.entry.cget('state') == 'disabled'
+        if state:
+            self.entry.config(state = 'normal')
+        if self.entry.get() != str(value):
             self.entry.delete(0,tk.END)
             self.entry.insert(0,value)
+        if state:
+            self.entry.config(state = 'disabled')
+
 
     def update(self):
         focus = self.focus_get()
@@ -113,6 +140,7 @@ class Lamp(GeneralWidget):
         self.caption.pack(side = tk.LEFT)
         self.lamp.pack(side = tk.LEFT)
         self.lit = False
+
 
     def update(self):
         super().update()
@@ -148,9 +176,11 @@ class Window(GeneralWidget, tk.Toplevel):
         else:
             self.title(self._name)
 
+
     def destroy(self):
         self.destroyed = True
         super().destroy()
+
 
     def center(self):
         screenWidth = GetSystemMetrics(0)
@@ -175,6 +205,7 @@ class RecipesMenu(Frame):
             widget.unbind('<Button-3>')
             widget.pack(side = side, expand = 1, fill = 'both')
 
+
     def createmenu(self):
         if isinstance(self.menu, tk.Menu):
             self.menu.destroy()
@@ -184,26 +215,33 @@ class RecipesMenu(Frame):
             self.menu.add_command(label = item, command = lambda obj = self, choice = item: obj.setvariable(choice))
         self.menubutton.pack(expand = 1, fill = 'both')
 
+
     def config(self, **kwargs):
         self.menubutton.config(**kwargs)
+
 
     def update(self):
         self.menubutton.config(text = self.variable)
         super().update()
+
 
     def setvariable(self, recipe):
         self.menubutton.configure(text = recipe)
         self.variable = recipe
         self.callback(self)
 
+
     def __type__(self):
         return "MENU"
+
 
     def get(self):
         return self.variable
 
+
     def delete(self, *args, **kwargs):
         pass
+
 
     def insert(self, index, value, *args, **kwargs):
         self.variable = value

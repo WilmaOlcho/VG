@@ -30,6 +30,7 @@ class Troley(object):
                 triggered &= lockerinstance[0].shared[condition['masterkey']][condition['key']]
         with lockerinstance[0].lock:
             lockerinstance[0].troley['push'] = triggered
+        return triggered
 
     def loop(self, lockerinstance):
         while self.Alive:
@@ -50,17 +51,19 @@ class Troley(object):
             self.statecontrol(lockerinstance)
 
     def statecontrol(self, lockerinstance):
-        self.TroleyTrigger(lockerinstance)
+        push = self.TroleyTrigger(lockerinstance)
         with lockerinstance[0].lock:
-            push = lockerinstance[0].troley['push']
             lockerinstance[0].troley['dockreleaseswitch'] = lockerinstance[0].GPIO[self.config['dockreleaseswitch']]
             lockerinstance[0].troley['docked'] = lockerinstance[0].GPIO[self.config['Docksensor']]
             if push:
                 lockerinstance[0].troley['push'] = False
-                if lockerinstance[0].troley['dockreleaseswitch']:
+                if lockerinstance[0].safety['TroleyDirection']:
                     lockerinstance[0].troley['dock'] = True
                 else:
                     lockerinstance[0].troley['undock'] = True
+            else:
+                lockerinstance[0].pistons[self.config['TroleyPistons']['dock']] = False
+                lockerinstance[0].pistons[self.config['TroleyPistons']['undock']] = False
         try:
             self.getTroleynumber(lockerinstance)
         except Exception as e:

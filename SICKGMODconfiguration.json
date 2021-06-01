@@ -35,6 +35,7 @@
         "DrzwiZaryglowane.XTIO[1].I5I6":"DoorLocked",
         "WozekZadokowany.XTIO[1].I3I4":"TroleyInside",
         "THCPushed":"THCPushed",
+        "KierunekWozka":"TroleyDirection",
         "EDMErrorRobotEStop":"RobotError",
         "EDMErrorLaserDrzwiowe":"LaserError",
         "EDMErrorServoOn":"ServoError",

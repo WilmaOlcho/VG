@@ -166,20 +166,15 @@ class SICKGmod(FX0GMOD):
     def write_coil(self, address, value):
         word = address//16
         bit = address%16
-        for i in range(16):
-            if bit >> i:
-                continue
-            else:
-                bit = i
-                break
         readword = self.Bits(self.datablock.getValues(word))
         writeword = (~(0b1<<bit)&readword)|(value<<bit)
+        print(word, hex(readword), hex(writeword))
         # 0b1<<bit - binary position for bit to write
         # ~(0b1<<bit) - negated position represents bitmask for every other bits
         # ~(0b1<<bit)&readbyte - whole value except one bit to write
         # (value<<bit) - bit to write on position (0 if False) 
         # (~(0b1<<bit)&readbyte)|(value<<bit) - write bit to it's position
-        self.datablock.setValues(word, self.Bits(writeword))
+        self.datablock.setValues(word, writeword)
 
 class ModbusTcpServerExternallyTerminated(ModbusTcpServer):
     def __init__(self, context, framer = None, identity=None,
@@ -264,8 +259,9 @@ class GMOD(SICKGmod):
                             if len(entry)>1:
                                 if entry[1] and '.' in entry[0]:
                                     with lockerinstance[0].lock:
-                                        lockerinstance[0].SICKGMOD0['outputs'][entry[0]] = entry[1]
-                                        lockerinstance[0].SICKGMOD0['outputmap'][entry[0]] = False
+                                        if not entry[0] in lockerinstance[0].SICKGMOD0['outputs'].keys():
+                                            lockerinstance[0].SICKGMOD0['outputs'][entry[0]] = entry[1]
+                                            lockerinstance[0].SICKGMOD0['outputmap'][entry[0]] = False
                     except Exception as e:
                         errstring = '\nGMOD init error - extending DictProxy failed ' + str(e)
                         ErrorEventWrite(lockerinstance, errstring)
@@ -321,12 +317,14 @@ class GMOD(SICKGmod):
 
     def retrieveoutputs(self, lockerinstance):
         with lockerinstance[0].lock:
-            itemmap = lockerinstance[0].shared['SICKGMOD0']['outputmap']
-        for item in itemmap.items():
-            positionInDatablock = item[0].split('.')
-            address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0])
+            itemmap = lockerinstance[0].shared['SICKGMOD0']['outputmap'].keys()
+        for item in itemmap:
+            positionInDatablock = item.split('.')
+            address = 8*int(re.findall(r'\d+',positionInDatablock[0])[0])+int(re.findall(r'\d+',positionInDatablock[1])[0]) + self.dataoutputoffset*16
+            with lockerinstance[0].lock:
+                value = lockerinstance[0].shared['SICKGMOD0']['outputmap'][item]
             try:
-                self.write_coil(address + self.dataoutputoffset*16, item[1])
+                self.write_coil(address, value)
             except Exception as e:
                 errstring = "\nGMOD error - can't retrieve outputs " + str(e)
                 ErrorEventWrite(lockerinstance, errstring)
@@ -340,13 +338,14 @@ class GMOD(SICKGmod):
                     continue
                 if src == 'safety':
                     with lockerinstance[0].lock:
-                        outputs = lockerinstance[0].shared[dst]['outputs']
+                        outputs = dict(lockerinstance[0].shared[dst]['outputs'].items())
                     signal = dictKeyByVal(outputs,item[1])
                     with lockerinstance[0].lock:
-                        lockerinstance[0].shared[dst]['outputmap'][signal] = lockerinstance[0].shared[src][item[0]]
+                        byte = lockerinstance[0].shared[src][item[0]]
+                        lockerinstance[0].shared[dst]['outputmap'][signal] = byte
                 else:
                     with lockerinstance[0].lock:
-                        inputs = lockerinstance[0].shared[src]['inputs']
+                        inputs = dict(lockerinstance[0].shared[src]['inputs'].items())
                     signal = dictKeyByVal(inputs,item[0])
                     with lockerinstance[0].lock:
                         byte = lockerinstance[0].shared[src]['inputmap'][signal]

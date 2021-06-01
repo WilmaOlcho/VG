@@ -131,6 +131,15 @@
                             "key":"seal"
                         }
                     },
+                    "Button":{
+                        "masterkey":"safety",
+                        "width":33,
+                        "height":2,
+                        "bg":"#84bdac"
+                    },
+                    "buttons":{
+                        "Oddaj sterowanie wozkem":"~TroleyReady"
+                    },
                     "Servo":{
                         "Label":"Serwo",
                         "Button":{
@@ -227,7 +236,8 @@
                                 }
                             },
                             "Entry":{
-                                "width":15,
+                                "label":"Pozycja serwo",
+                                "width":3,
                                 "masterkey":"servo",
                                 "key":"pos",
                                 "state":"disabled"

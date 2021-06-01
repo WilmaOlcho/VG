@@ -6,8 +6,10 @@
     "TroleyTrigger":[
         {"masterkey":"safety",
         "key":"THCPushed"},
-        {"masterkey":"program",
-        "key":"/running"}
+        {"masterkey":"pistons",
+        "key":"sensorSealDown"},
+        {"masterkey":"safety",
+        "key":"TroleyReady"}
     ],
     "TroleyPistons":{
         "dock":"TroleyPusherFront",

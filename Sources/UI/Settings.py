@@ -51,10 +51,13 @@ class Troley(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Troley')
         self.pistonlabeledFrame = LabelFrame(self, branch = 'Pneumatics')
+        self.buttonsframe = Frame(self)
         ServoControl(master = self)
         for piston in self.settings['Pneumatics']:
             if piston in KEYWORDS: continue
             PistonControl(master = self.pistonlabeledFrame, button=piston).pack(anchor = tk.N)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
         for widget in self.winfo_children():
             widget.pack(anchor = tk.NW)
 
