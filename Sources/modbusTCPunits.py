@@ -1413,6 +1413,7 @@ class KawasakiVG(ModbusTcpClient):
     def write_register(self, lockerinstance, register = '', value = 0xFFFF, **kwargs):
         access = ''
         result = []
+        #print('write register',register, value)
         if isinstance(register,str):
             try:
                 ParameterTuple = self.addresses[register]

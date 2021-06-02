@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 from tkinter import ttk
 from .Widgets import Font, LabelledScrolledText, getroot, GeneralWidget
 import json
@@ -41,12 +42,13 @@ class Frame(GeneralWidget):
             def click(*args, **kwargs):
                 self.root.variables['safety']['ProgramTroleyRelease'] = False
                 self.root.variables['safety']['ProgramTroleyReleaseAcknowledged'] = True
-            tk.messagebox.showwarning("Należy skontrolować pozycję wymiennika, może być konieczny wyjazd wózkiem", command = click)
+            if messagebox.showwarning('Co z tym wymiennikiem?',"Należy skontrolować pozycję wymiennika, może być konieczny wyjazd wózkiem"): click()
 
         super().update()
         self.ackbutton.config(bg = 'red' if self.root.variables.internalEvents['error'] else 'yellow')
         if start: self.root.variables.internalEvents['start'] = False
         if stop: self.root.variables.internalEvents['stop'] = False
+
 
     def ack(self):
         self.root.variables.internalEvents['ack'] = True

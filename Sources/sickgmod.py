@@ -168,7 +168,6 @@ class SICKGmod(FX0GMOD):
         bit = address%16
         readword = self.Bits(self.datablock.getValues(word))
         writeword = (~(0b1<<bit)&readword)|(value<<bit)
-        print(word, hex(readword), hex(writeword))
         # 0b1<<bit - binary position for bit to write
         # ~(0b1<<bit) - negated position represents bitmask for every other bits
         # ~(0b1<<bit)&readbyte - whole value except one bit to write

@@ -78,15 +78,15 @@ class Button(GeneralWidget, tk.Button):
     def update(self):
         super().update()
         if self.key:
+            value = "#84bdac"
             if self.root.variables[self.masterkey][self.key]:
-                self.config(bg = "#f96348")
-            else:
-                self.config(bg = "#84bdac")
+                value = "#f96348"
             if self.key + "Highlight" in self.root.variables[self.masterkey].keys():
-                base = int(self.cget('bg')[1:],16)
+                base = int(value[1:],16)
                 if self.root.variables[self.masterkey][self.key + "Highlight"]:
-                    base |= 0x00AAAA
-                self.config(bg = '#' + hex(base)[2:])
+                    base |= 0xAADD89
+                value = '#' + hex(base)[2:]
+            self.config(bg = value)
 
 
 class Entry(GeneralWidget):

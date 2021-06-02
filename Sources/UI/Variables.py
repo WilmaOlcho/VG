@@ -280,6 +280,7 @@ class Variables(dict):
                 self['scout']["bLaserCTRLHighlight"] = scout['LaserCTRVal']
                 if self['scout']["bLaserCTRL"]:
                     scout['LaserCTRVal'] = not scout['LaserCTRVal']
+                    self['scout']["bLaserCTRL"] = False
                 if scout['AlignInfoReceived']:
                     self['scout']['AlignInfoA'] = float('{}.{}'.format(scout['AlignInfo']['A'],scout['AlignInfo']['dotA']))
                     self['scout']['AlignInfoX'] = float('{}.{}'.format(scout['AlignInfo']['X'],scout['AlignInfo']['dotX']))
@@ -328,7 +329,7 @@ class Variables(dict):
         self['scout']['getaligninfo'] = False
         self['scout']['bAtstart'] = False
         self['scout']['bAtstop'] = False
-        self['scout']["bLaserCTRL"] = False
+        
 
     def safetyupdate(self):
         lock = self.lockerinstance[0].lock

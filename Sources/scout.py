@@ -2,7 +2,7 @@ import socket
 import json
 import re
 import time
-from .common import ErrorEventWrite, EventManager
+from .common import ErrorEventWrite, EventManager, Bits
 from .TactWatchdog import TactWatchdog
 WDT = TactWatchdog.WDT
 
@@ -34,6 +34,7 @@ class KDrawTCPInterface(socket.socket):
         try:
             with open(configfile) as jsonfile:
                 self.config = json.load(jsonfile)
+            self.Bits = Bits(len=7, LE=True)
         except Exception as e:
             errstring = "KDrawTCPInterface can't load json file: " + str(e)
             ErrorEventWrite(lockerinstance, errstring)
@@ -74,9 +75,6 @@ class KDrawTCPInterface(socket.socket):
         Metoda dodająca do kolejki pełne polecenie
         SCOUT w przypadku gdy takie nie oczekuje na wykonanie.
         '''
-        with lockerinstance[0].lock:
-            if bytes_message in lockerinstance[0].scout['actualmessage']:
-                return None
         if bytes_message in self.sendingqueue:
             return None
         else:
@@ -118,7 +116,7 @@ class KDrawTCPInterface(socket.socket):
         zakończone jest znakami zakończenia linii \r\n
         '''
         with lockerinstance[0].lock:
-            if message[0] == lockerinstance[0].scout['LastMessageType']:
+            if message[0] in lockerinstance[0].scout['LastMessageType']:
                 message[0] = 'STATUS'
         string = ''
         for element in message: #message is an list of parameters
@@ -143,7 +141,8 @@ class KDrawTCPInterface(socket.socket):
         #it contains values splitted by ','
         if contents: ##Przekazywanie danych do metod dekodujących konkretne dane
             with lockerinstance[0].lock:
-                lockerinstance[0].scout['LastMessageType'] = contents[0]
+                lockerinstance[0].scout['LastMessageType'].append(contents[0])
+                lockerinstance[0].scout['LastMessageType'].pop(0)
             if contents[0] == 'STATUS': self.rec_write_status(lockerinstance, contents[1:])
             elif contents[0] == 'AL_REPORT': self.rec_AlarmReport(lockerinstance, contents[1:])
             elif contents[0] == 'AL_RESET': self.rec_AlarmReset(lockerinstance, contents[1:])
@@ -170,14 +169,16 @@ class KDrawTCPInterface(socket.socket):
         Metoda obsługująca ramkę zwrotną STATUS
         '''
         with lockerinstance[0].lock:
-            statusreceived = lockerinstance[0].scout['LastMessageType'] == 'STATUS'
+            statusreceived = 'STATUS' in lockerinstance[0].scout['LastMessageType']
         if statusreceived:
-            if len(statusdata[1]) == 7 and statusdata[0] != '0':
-                scout = lockerinstance[0].scout
-                scout['StatusCheckCode'] = bool(int(statusdata[0]))
+            if statusdata[1] and statusdata[0]:
+                binarydata = self.Bits(int(statusdata[1]))
+                print(binarydata, statusdata[0])
                 with lockerinstance[0].lock:
+                    scout = lockerinstance[0].scout
+                    scout['StatusCheckCode'] = bool(int(statusdata[0]))
                     for i, status in enumerate(['ReadyOn','AutoStart','Alarm', 'rsv','WeldingProgress','LaserIsOn','Wobble']):
-                        scout['status'][status] = bool(int(statusdata[1][i]))
+                        scout['status'][status] = bool(int(binarydata[i]))
                     scout['MessageAck'] = True
             else:
                 ErrorEventWrite(lockerinstance, 'SCOUT status data was not fully received: ' + str(statusdata))
@@ -283,7 +284,7 @@ class KDrawTCPInterface(socket.socket):
         if len(data) == 2:
             laserack = False
             with lockerinstance[0].lock:
-                laserack = bool(int(data[1])) == lockerinstance[0].scout['LaserCTRVal']
+                laserack = (bool(int(data[1])) if data[1].isnumeric() else True if data[1] =='True' else False)== lockerinstance[0].scout['LaserCTRVal']
                 if laserack:
                     lockerinstance[0].scout['MessageAck'] = True
             if not laserack:

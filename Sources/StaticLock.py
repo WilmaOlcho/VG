@@ -35,7 +35,7 @@ class SharedLocker(object):
                 'Alive':False,
                 'WaitingForData':False,
                 'connectionbuffer':b'',
-                'LastMessageType':"",
+                'LastMessageType':manager.list(['','','','']),
                 'actualmessage':b'',
                 'MessageAck':False,
                 'version':'',

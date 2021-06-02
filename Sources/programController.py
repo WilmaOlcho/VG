@@ -88,9 +88,9 @@ class programController(object):
             if step == 9: self.step9(lockerinstance)
             if step == 10: self.step10(lockerinstance)                        
             if step == 11: self.step11(lockerinstance)
+            if step == 12: self.step12(lockerinstance)
             with lockerinstance[0].lock:
                 if lockerinstance[0].program['stepcomplete'] and automode:
-                    print(lockerinstance[0].program['stepcomplete'])
                     lockerinstance[0].program['stepcomplete'] = False
                     step += 1
                 elif lockerinstance[0].program['stepcomplete']:
@@ -101,7 +101,6 @@ class programController(object):
     def stepexceed(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].program['stepcomplete'] = True
-        print('dupa')
 
     def step0(self, lockerinstance): #Scout prepare recipe
         with lockerinstance[0].lock:
@@ -234,7 +233,7 @@ class programController(object):
             lockerinstance[0].shared['Statuscodes'] = ['S9']
             lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
             kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
-            kdrawmanualaligncheck = lockerinstance[0].scout['ManualAlignCheck']
+            kdrawmanualaligncheck = b'MANUAL_ALIGN' in lockerinstance[0].scout['actualmessage']
         if not kdrawwaiting and not kdrawmanualaligncheck:
             with lockerinstance[0].lock:
                 lockerinstance[0].scout['ManualAlign'] = True
@@ -247,26 +246,46 @@ class programController(object):
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
 
     def step10(self, lockerinstance):
+        pass
+
+    def step11(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S10']
             lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
             kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
-            manualweldcheck = lockerinstance[0].scout['ManualWeldCheck']
-            if not kdrawwaiting and not manualweldcheck:
-                with lockerinstance[0].lock:
-                    lockerinstance[0].scout['ManualWeld'] = True
-            elif manualweldcheck:
-                with lockerinstance[0].lock:
-                    lockerinstance[0].scout['ManualWeldCheck'] = False
-                    lockerinstance[0].pistons['HeadCooling'] = False
-                    lockerinstance[0].pistons['CrossJet'] = False                         
-                    lockerinstance[0].pistons['ShieldingGas'] = False 
-                stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-                WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+            manualweldcheck = b'MANUAL_WELD' in lockerinstance[0].scout['actualmessage']
+        if not kdrawwaiting and not manualweldcheck:
+            with lockerinstance[0].lock:
+                lockerinstance[0].scout['ManualWeld'] = True
+        elif manualweldcheck:
+            with lockerinstance[0].lock:
+                lockerinstance[0].scout['ManualWeldCheck'] = False
+                lockerinstance[0].pistons['HeadCooling'] = False
+                lockerinstance[0].pistons['CrossJet'] = False                         
+                lockerinstance[0].pistons['ShieldingGas'] = False 
+            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
+            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+   
+    def step12(self, lockerinstance):
+        pass
 
-    def step11(self, lockerinstance):
+
+    def step13(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S11']
+            lockerinstance[0].scout['LaserCTRVal'] = False
+            kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
+            lastmess = 'LaserCTRL' in lockerinstance[0].scout['LastMessageType']
+        if not kdrawwaiting:
+            lockerinstance[0].scout['LaserCTRL'] = True
+        if lastmess:
+            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
+            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+
+
+    def step14(self, lockerinstance):
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = ['S12']
             lockerinstance[0].program['cycleended'] = True
             lockerinstance[0].program['stepnumber'] = 0
         step = 0

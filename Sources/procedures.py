@@ -233,7 +233,6 @@ def Initialise(lockerinstance):
         #ServoSetState(lockerinstance, 'run')
         #servopos = ServoState(lockerinstance, 'positionNumber')
         #ready = ServoState(lockerinstance, 'ready')
-        #print(servopos)
         #if servopos == 0:
         #    with lockerinstance[0].lock:
         #        lockerinstance[0].program['stepnumber'] += 1
@@ -346,7 +345,6 @@ def Program(lockerinstance):
             progproxy['programline'] = programline
     if cycleended:
         cycle += 1
-        print('cycleended')
         with lockerinstance[0].lock:
             end = lockerinstance[0].program['endpos']
         if cycle > end:
