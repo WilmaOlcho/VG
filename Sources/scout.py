@@ -283,8 +283,9 @@ class KDrawTCPInterface(socket.socket):
         if len(data) == 2:
             laserack = False
             with lockerinstance[0].lock:
-                laserack = bool(int(data[1])) == lockerinstance[0].scout['LaserOn']
-                if laserack: lockerinstance[0].scout['MessageAck'] = True
+                laserack = bool(int(data[1])) == lockerinstance[0].scout['LaserCTRVal']
+                if laserack:
+                    lockerinstance[0].scout['MessageAck'] = True
             if not laserack:
                 ErrorEventWrite(lockerinstance, "SCOUT returned wrong LaserCTRL ack message:\n{}".format(data))
         else:

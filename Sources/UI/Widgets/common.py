@@ -82,6 +82,12 @@ class Button(GeneralWidget, tk.Button):
                 self.config(bg = "#f96348")
             else:
                 self.config(bg = "#84bdac")
+            if self.key + "Highlight" in self.root.variables[self.masterkey].keys():
+                base = int(self.cget('bg')[1:],16)
+                if self.root.variables[self.masterkey][self.key + "Highlight"]:
+                    base |= 0x00AAAA
+                self.config(bg = '#' + hex(base)[2:])
+
 
 class Entry(GeneralWidget):
     def __init__(self, master = None, text = '', key = '', entrytype = 'numerical', **kw):

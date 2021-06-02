@@ -137,7 +137,8 @@ class Variables(dict):
             'recipes':[],
             "bAtstart":False,
             "bAtstop":False,
-            "bLaserCTRL":False
+            "bLaserCTRL":False,
+            "bLaserCTRLHighlight":False
         }
         self['pistoncontrol'] = {
             'seal':{
@@ -275,7 +276,10 @@ class Variables(dict):
                 scout['GetAlignInfo'] |= self['scout']['getaligninfo']
                 scout['AutostartOn'] |= self['scout']['bAtstart']
                 scout['AutostartOff'] |= self['scout']['bAtstop']
-                scout['LaserCTRL'] = not scout['LaserCTRL'] if self['scout']["bLaserCTRL"] else scout['LaserCTRL']
+                scout['LaserCTRL'] |= self['scout']["bLaserCTRL"]
+                self['scout']["bLaserCTRLHighlight"] = scout['LaserCTRVal']
+                if self['scout']["bLaserCTRL"]:
+                    scout['LaserCTRVal'] = not scout['LaserCTRVal']
                 if scout['AlignInfoReceived']:
                     self['scout']['AlignInfoA'] = float('{}.{}'.format(scout['AlignInfo']['A'],scout['AlignInfo']['dotA']))
                     self['scout']['AlignInfoX'] = float('{}.{}'.format(scout['AlignInfo']['X'],scout['AlignInfo']['dotX']))
