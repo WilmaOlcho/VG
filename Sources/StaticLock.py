@@ -169,6 +169,7 @@ class SharedLocker(object):
                 'CrossJet':False,
                 '':False}),
             'safety':manager.dict({
+                'TroleyReadyForcedbyProgram':False,
                 'EstopArmed':False,
                 'TroleyDirection':False,
                 'DoorOpen':False,

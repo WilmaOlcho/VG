@@ -35,6 +35,14 @@ class Frame(GeneralWidget):
     def update(self):
         start = self.root.variables.internalEvents['start']
         stop = self.root.variables.internalEvents['stop']
+        ###
+        TroleyPrompt = self.root.variables['safety']['ProgramTroleyRelease']
+        if TroleyPrompt:
+            def click(*args, **kwargs):
+                self.root.variables['safety']['ProgramTroleyRelease'] = False
+                self.root.variables['safety']['ProgramTroleyReleaseAcknowledged'] = True
+            tk.messagebox.showwarning("Należy skontrolować pozycję wymiennika, może być konieczny wyjazd wózkiem", command = click)
+
         super().update()
         self.ackbutton.config(bg = 'red' if self.root.variables.internalEvents['error'] else 'yellow')
         if start: self.root.variables.internalEvents['start'] = False

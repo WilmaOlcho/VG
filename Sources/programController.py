@@ -103,7 +103,7 @@ class programController(object):
             lockerinstance[0].program['stepcomplete'] = True
         print('dupa')
 
-    def step0(self, lockerinstance):
+    def step0(self, lockerinstance): #Scout prepare recipe
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S0']
             scoutrecipe = lockerinstance[0].scout['recipe']
@@ -116,8 +116,8 @@ class programController(object):
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
 
-    def step1(self, lockerinstance):
-        with lockerinstance[0].lock:
+    def step1(self, lockerinstance): #Scout change recipe
+        with lockerinstance[0].lock: 
             lockerinstance[0].shared['Statuscodes'] = ['S1']
             scoutrecipe = lockerinstance[0].scout['recipe']
             lastrecipe = lockerinstance[0].scout['lastrecipe']
@@ -133,7 +133,7 @@ class programController(object):
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
     
-    def step2(self, lockerinstance):
+    def step2(self, lockerinstance): #Servo position checking
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S2']
             servopos = lockerinstance[0].servo['positionNumber']
@@ -146,22 +146,27 @@ class programController(object):
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
     
-    def step3(self, lockerinstance):
+    def step3(self, lockerinstance): #servo change position ()
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S3']
             servopos = lockerinstance[0].servo['positionNumber']
             programservopos = lockerinstance[0].program['programline'][control.SERVOPOS]
             robothome = lockerinstance[0].robot['homepos']
         if servopos == -1:
-            ErrorEventWrite(lockerinstance, 'servo is not ready')
+            #ErrorEventWrite(lockerinstance, 'servo is not ready')
+            with lockerinstance[0].lock:
+                lockerinstance[0].servo['positionNumber'] = 0
         elif servopos == programservopos:
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
         else:
             with lockerinstance[0].lock:
                 if robothome:
-                    if lockerinstance[0].servo['ioready']:
-                        lockerinstance[0].servo['step'] = True
+                    #if lockerinstance[0].servo['ioready']:
+                    #    lockerinstance[0].servo['step'] = True
+                    lockerinstance[0].program['running'] = False
+                    lockerinstance[0].servo['positionNumber'] = programservopos
+                    lockerinstance[0].safety['TroleyReadyForcedbyProgram'] = True
                 else:
                     lockerinstance[0].robot['homing'] = True
     

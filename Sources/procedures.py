@@ -5,6 +5,7 @@ import json
 import time
 from pathlib import Path
 
+##Constants
 ID = 0
 STEP = 1
 RECIPE = 2
@@ -12,6 +13,7 @@ PAGE = 3
 ROBOTPOS = 4
 ROBOTTABLE = 5
 SERVOPOS = 6
+
 
 def startauto(lockerinstance):
     with lockerinstance[0].lock:
@@ -21,6 +23,7 @@ def startauto(lockerinstance):
             lockerinstance[0].program['running'] = True
             lockerinstance[0].program['stepnumber'] = 0
             lockerinstance[0].program['cycle'] = 0
+
 
 def endprogram(lockerinstance):
     with lockerinstance[0].lock:
@@ -32,6 +35,7 @@ def endprogram(lockerinstance):
             lockerinstance[0].program['stepnumber'] = 0
             lockerinstance[0].program['cycle'] = 0
 
+
 def nextstep(lockerinstance):
     with lockerinstance[0].lock:
         stepcomplete = lockerinstance[0].program['stepcomplete']
@@ -40,11 +44,13 @@ def nextstep(lockerinstance):
             lockerinstance[0].program['stepcomplete'] = False
             lockerinstance[0].program['stepnumber'] +=1
 
+
 def startprocedure(lockerinstance):
     with lockerinstance[0].lock:
         step, auto = lockerinstance[0].program['stepmode'], lockerinstance[0].program['automode']
     if auto: startauto(lockerinstance)
     if step: nextstep(lockerinstance)
+
 
 def CheckSafety(lockerinstance):
     with lockerinstance[0].lock:
@@ -71,6 +77,7 @@ def CheckSafety(lockerinstance):
         return True
     return False
 
+
 def CheckProgram(lockerinstance):
     errmsg = ''
     programname = ''
@@ -96,6 +103,7 @@ def CheckProgram(lockerinstance):
     else:
         return True
 
+
 def CheckPositions(lockerinstance):
     with lockerinstance[0].lock:
         initialised = lockerinstance[0].program['initialised']
@@ -103,7 +111,7 @@ def CheckPositions(lockerinstance):
     if not initialised:
         result = CheckPiston(lockerinstance, 'Seal', 'Down')
         result &= RobotState(lockerinstance, 'homepos')
-        result &= ServoState(lockerinstance, 'positionNumber') == 0
+        #result &= ServoState(lockerinstance, 'positionNumber') == 0
         result &= CheckPiston(lockerinstance, 'Air', 'Ok')
         result &= CheckPiston(lockerinstance, 'ShieldingGas', 'Ok')
         result &= CheckPiston(lockerinstance, 'Vacuum', 'Ok')
@@ -113,10 +121,12 @@ def CheckPositions(lockerinstance):
         result = True
     return result
 
+
 def CheckPiston(lockerinstance, pistonname, action):
     with lockerinstance[0].lock:
         pistonState = lockerinstance[0].pistons['sensor' + pistonname + action]
     return pistonState
+
 
 def GetState(lockerinstance, path, state, alternativepath = ''):
     with lockerinstance[0].lock:
@@ -129,21 +139,27 @@ def GetState(lockerinstance, path, state, alternativepath = ''):
             currentstate = -1
     return currentstate
 
+
 def RobotState(lockerinstance, state):
     return GetState(lockerinstance, 'robot', state)
+
 
 def ServoState(lockerinstance, state):
     return GetState(lockerinstance, 'servo', state)
 
+
 def LaserState(lockerinstance, state):
     return GetState(lockerinstance, 'lcon', state, alternativepath= 'mux')
+
 
 def SCOUTState(lockerinstance, state):
     return GetState(lockerinstance, 'SCOUT', state)
 
+
 def SetPiston(lockerinstance, pistonname, action):
     with lockerinstance[0].lock:
         lockerinstance[0].pistons[pistonname + action] = True
+
 
 def RobotGopos(lockerinstance, posnumber):
     with lockerinstance[0].lock:
@@ -153,13 +169,16 @@ def RobotGopos(lockerinstance, posnumber):
         else:
             lockerinstance[0].robot['homing'] = True
 
+
 def ServoSetState(lockerinstance, state):
     with lockerinstance[0].lock:
         lockerinstance[0].servo[state] = True
 
+
 def LaserSetState(lockerinstance, state):
     with lockerinstance[0].lock:
         lockerinstance[0].lcon[state] = True
+
 
 def Initialise(lockerinstance):
     with lockerinstance[0].lock:
@@ -208,21 +227,22 @@ def Initialise(lockerinstance):
     if step == 2:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
+            lockerinstance[0].program['stepnumber'] += 1
         #checking if servo is at home
-        ServoSetState(lockerinstance, 'reset')
-        ServoSetState(lockerinstance, 'run')
-        servopos = ServoState(lockerinstance, 'positionNumber')
-        ready = ServoState(lockerinstance, 'ready')
-        print(servopos)
-        if servopos == 0:
-            with lockerinstance[0].lock:
-                lockerinstance[0].program['stepnumber'] += 1
-        elif servopos == -1:
-            if ready:
-                ServoSetState(lockerinstance, 'homing')
-        else:
-            if ready:
-                ServoSetState(lockerinstance, 'step')   
+        #ServoSetState(lockerinstance, 'reset')
+        #ServoSetState(lockerinstance, 'run')
+        #servopos = ServoState(lockerinstance, 'positionNumber')
+        #ready = ServoState(lockerinstance, 'ready')
+        #print(servopos)
+        #if servopos == 0:
+        #    with lockerinstance[0].lock:
+        #        lockerinstance[0].program['stepnumber'] += 1
+        #elif servopos == -1:
+        #    if ready:
+        #        ServoSetState(lockerinstance, 'homing')
+        #else:
+        #    if ready:
+        #        ServoSetState(lockerinstance, 'step')   
     if step == 3:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']
@@ -271,6 +291,7 @@ def Initialise(lockerinstance):
             lockerinstance[0].program['initialising'] = False
             lockerinstance[0].program['initialised'] = True
 
+
 def checkrecipes(lockerinstance, program):
     for recipe in [line[RECIPE] for line in program['Table']]:
         if recipe:
@@ -281,6 +302,7 @@ def checkrecipes(lockerinstance, program):
             else:
                 return False
     return True
+
 
 def loadprogramline(lockerinstance, program, number):
     #program dict with key table, where is list of lists of 9 elements each

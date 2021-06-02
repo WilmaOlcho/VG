@@ -106,7 +106,9 @@ class Variables(dict):
             'Estopresetrecquired':False,
             'Zoneresetrecquired':False,
             'OpenTheDoor':False,
-            "TroleyReady":False
+            "TroleyReady":False,
+            'ProgramTroleyRelease':False,
+            'ProgramTroleyReleaseAcknowledged':False
         }
         self['scout'] = {
             'WaitingForData':False,
@@ -346,7 +348,11 @@ class Variables(dict):
             self['safety']['Estopresetrecquired'] = safety['Estopresetrecquired']
             self['safety']['Zoneresetrecquired'] = safety['Zoneresetrecquired']
             safety['TroleyReady'] = self['safety']['TroleyReady']
-
+            safety['TroleyReady'] |= safety['TroleyReadyForcedbyProgram']
+            self['safety']['ProgramTroleyRelease'] = safety['TroleyReadyForcedbyProgram']
+            if self['safety']['ProgramTroleyReleaseAcknowledged']:
+                safety['TroleyReadyForcedbyProgram'] = False
+                self['safety']['ProgramTroleyReleaseAcknowledged'] = False
 
     def pneumaticsupdate(self):
         lock = self.lockerinstance[0].lock
