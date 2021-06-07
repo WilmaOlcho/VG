@@ -23,6 +23,7 @@
         "LaserIsOn":3,
         "LaserWarning":4,
         "ChillerWarning":6,
-        "ChillerError":5
+        "ChillerError":5,
+        "InternalControlSet":7
     }
 }

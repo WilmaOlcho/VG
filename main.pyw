@@ -12,6 +12,7 @@ from multiprocessing import Process, current_process, freeze_support, set_start_
 from Sources.StaticLock import SharedLocker
 from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
 from Sources.Kawasaki import RobotVG
+from Sources.LaserBeamRedirector import RobotPlyty
 from Sources.Pneumatics import PneumaticsVG
 from Sources.Servo import Servo
 from Sources.Troley import Troley

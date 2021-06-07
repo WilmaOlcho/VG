@@ -17,7 +17,8 @@ class SharedLocker(object):
                 'GMOD':True,
                 'Troley':True,
                 'Program':True,
-                'SCOUT':True
+                'SCOUT':True,
+                'RobotPlyty':True
             }),
             'paramfiles':manager.dict({
                 'Window':(mainpath + 'widgetsettings.json', mainpath + 'Programs.json',),
@@ -29,6 +30,7 @@ class SharedLocker(object):
                 'GMOD':(mainpath + 'SICKGMODconfiguration.json',),
                 'Troley':(mainpath + 'Troleysettings.json',),
                 'Program':(mainpath + 'Programs.json',),
+                'RobotPlyty':(mainpath + 'robot2Configuration.json',),
                 'SCOUT':(mainpath + 'Scoutconfiguration.json',)
             }),
             'SCOUT':manager.dict({
@@ -122,7 +124,9 @@ class SharedLocker(object):
                 'ChillerWarning':False,
                 'LaserReady':False,
                 'LaserOn':False,
-                'LaserAssigned':False
+                'LaserAssigned':False,
+                'InternalControlSet':False,
+                'locklaserloop':False
                 }),
             'events':manager.dict({
                 'stopprogram':False,
@@ -257,6 +261,14 @@ class SharedLocker(object):
                 'StatusRegister4':0,
                 'StatusRegister5':0,
                 'StatusRegister6':0}),
+            'robot2':manager.dict({
+                'Alive':False,
+                'error':False,
+                'Status':0,
+                'Info':0,
+                'Est_VG':0.0,
+                'Est_PLYTY':0.0,
+                'laserlocked':False}),
             'console':manager.dict({
                 'Alive':False}),
             'GPIO':manager.dict({
@@ -304,7 +316,8 @@ class SharedLocker(object):
                 'startpos':0,
                 'endpos':0,
                 'programline':manager.list([]),
-                'cycleended':False
+                'cycleended':False,
+                'handmodelaserrequire':False
                 })
                 })
         self.scout = self.shared['SCOUT']
@@ -322,6 +335,7 @@ class SharedLocker(object):
         self.mux = self.shared['mux']
         self.servo = self.shared['servo']
         self.robot = self.shared['robot']
+        self.robot2 = self.shared['robot2']
         self.console = self.shared['console']
         self.GPIO = self.shared['GPIO']
         self.SICKGMOD0 = self.shared['SICKGMOD0']

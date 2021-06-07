@@ -19,6 +19,7 @@ parameters = {
             'PneumaticsConfiguration.json',
             'ScoutConfiguration.json',
             'robotConfiguration.json',
+            'robot2Configuration.json',
             'ServoSettings.json',
             'SICKGMODconfiguration.json',
             #'Programs.json',

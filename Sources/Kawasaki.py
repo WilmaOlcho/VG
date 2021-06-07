@@ -1,13 +1,14 @@
-from Sources.modbusTCPunits import KawasakiVG
+from Sources.modbusTCPunits import Kawasaki, KawasakiVGParams
 from Sources.TactWatchdog import TactWatchdog as WDT
 from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
 from functools import lru_cache
 from threading import Thread, currentThread
 import json
 
-class RobotVG(KawasakiVG):
+class RobotVG(Kawasaki):
     def __init__(self, lockerinstance, configFile='', *args, **kwargs):
         self.bitconverter = Bits(len=16)
+        self.params = KawasakiVGParams()
         self.Alive = True
         while self.Alive:
             try:

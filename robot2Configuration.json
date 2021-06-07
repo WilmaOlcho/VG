@@ -1,0 +1,6 @@
+{
+    "RobotParameters":{
+        "IPAddress":"192.168.4.102",
+        "Port":9200
+    }
+}

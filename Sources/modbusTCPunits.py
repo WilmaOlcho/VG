@@ -1141,7 +1141,34 @@ class ParameterIsNotWritable(TypeError):
         self.args = args
         ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
     
-class KawasakiRobot(object):
+
+class KawasakiPLYTYParams(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.laserIO = {
+            "status":(0x0FA0,('int',0),'r'), #4000
+            'status_values':{
+                0:'nop',
+                1:'laser_required',
+                2:'welding',
+                3:'done'
+            },
+            "info":(0x0FB0,('int',0),'w'), #4016
+            'info_values':{
+                0:'nop',
+                1:'busy',
+                2:'redirected'
+            },
+            "est_time_VG":(0x0FC0,('float',0),'r'), #4032
+            "est_time_PLYTY":(0x0FD0,('float',0),'r') #4048
+        }
+        self.addresses = {
+            **self.laserIO
+            }
+        self['info_values'] = {**self.laserIO['info_values']}
+        self['status_values'] = {**self.laserIO['status_values']}
+        
+class KawasakiVGParams(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.status = {
@@ -1276,10 +1303,11 @@ class KawasakiRobot(object):
             **self.correction,
             **self.status}
         
-class KawasakiVG(ModbusTcpClient):
+class Kawasaki(ModbusTcpClient):
     def __init__(self, lockerinstance, address = '192.168.0.1', port = 9200, *args, **kwargs):
         super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
-        self.params = KawasakiRobot()
+        params = kwargs.pop('params',KawasakiVGParams())
+        self.params = params
         self.addresses = self.params.addresses
 
     def __getAddress(self, lockerinstance, parameterName=''):
@@ -1288,7 +1316,7 @@ class KawasakiVG(ModbusTcpClient):
         except:
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['error'] = True
-            raise ParameterDictionaryError(lockerinstance, 'KawasakiVG __getAddress, parameter = ' + str(parameterName))
+            raise ParameterDictionaryError(lockerinstance, 'Kawasaki __getAddress, parameter = ' + str(parameterName))
 
     def read_coils(self, lockerinstance, input = 'I1', NumberOfCoils = 1, **kwargs):
         access = ''
@@ -1301,7 +1329,7 @@ class KawasakiVG(ModbusTcpClient):
                 except:
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['error'] = True
-                    raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
+                    raise ParameterDictionaryError(lockerinstance, 'Kawasaki read_coils, parameter = ' + input)
             elif 'O' in input:
                 try:
                     ParameterTuple = self.addresses['O' + ''.join(re.findall(r'\d',input))]
@@ -1309,11 +1337,11 @@ class KawasakiVG(ModbusTcpClient):
                 except:
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['error'] = True
-                    raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
+                    raise ParameterDictionaryError(lockerinstance, 'Kawasaki read_coils, parameter = ' + input)
             else:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
-                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + input)
+                raise ParameterDictionaryError(lockerinstance, 'Kawasaki read_coils, parameter = ' + input)
         if isinstance(input,int):
             try:
                 ParameterTuple = self.addresses['I' + str(input)]
@@ -1321,11 +1349,11 @@ class KawasakiVG(ModbusTcpClient):
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
-                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
+                raise ParameterDictionaryError(lockerinstance, 'Kawasaki read_coils, parameter = ' + str(input))
         if 'r' not in access:
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['error'] = True
-            raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_coils, parameter = ' + str(input))
+            raise ParameterIsNotReadable(lockerinstance, 'Kawasaki read_coils, parameter = ' + str(input))
         try:
             result = super().read_coils(address, NumberOfCoils, **kwargs)
             assert (not isinstance(result,Exception))
@@ -1349,7 +1377,7 @@ class KawasakiVG(ModbusTcpClient):
                 except:
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['error'] = True
-                    raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
+                    raise ParameterDictionaryError(lockerinstance, 'Kawasaki write_coil, parameter = ' + str(Coil))
             else:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
@@ -1361,11 +1389,11 @@ class KawasakiVG(ModbusTcpClient):
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
-                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
+                raise ParameterDictionaryError(lockerinstance, 'Kawasaki write_coil, parameter = ' + str(Coil))
         if access == 'r':
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['error'] = True
-            raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_coil, parameter = ' + str(Coil))
+            raise ParameterIsNotWritable(lockerinstance, 'Kawasaki write_coil, parameter = ' + str(Coil))
         try:
             result = super().write_coil(address, value, **kwargs)
             assert (not isinstance(result,Exception))
@@ -1388,15 +1416,15 @@ class KawasakiVG(ModbusTcpClient):
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
-                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + registerToStartFrom)
+                raise ParameterDictionaryError(lockerinstance, 'Kawasaki read_holding_registers, parameter = ' + registerToStartFrom)
         else:
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['error'] = True
-            raise ParameterDictionaryError(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterDictionaryError(lockerinstance, 'Kawasaki read_holding_registers, parameter = ' + str(registerToStartFrom))
         if access == 'w':
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['error'] = True
-            raise ParameterIsNotReadable(lockerinstance, 'KawasakiVG read_holding_registers, parameter = ' + str(registerToStartFrom))
+            raise ParameterIsNotReadable(lockerinstance, 'Kawasaki read_holding_registers, parameter = ' + str(registerToStartFrom))
         try:
             result = super().read_holding_registers(address, count, **kwargs)
             assert (not isinstance(result,Exception))
@@ -1421,15 +1449,15 @@ class KawasakiVG(ModbusTcpClient):
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
-                raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
+                raise ParameterDictionaryError(lockerinstance, 'Kawasaki write_register, parameter = ' + str(register))
         else:
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['error'] = True
-            raise ParameterDictionaryError(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
+            raise ParameterDictionaryError(lockerinstance, 'Kawasaki write_register, parameter = ' + str(register))
         if access == 'r':
             with lockerinstance[0].lock:
                 lockerinstance[0].robot['error'] = True
-            raise ParameterIsNotWritable(lockerinstance, 'KawasakiVG write_register, parameter = ' + str(register))
+            raise ParameterIsNotWritable(lockerinstance, 'Kawasaki write_register, parameter = ' + str(register))
         try:
             result = super().write_register(address, value, **kwargs)
             assert (not isinstance(result,Exception))

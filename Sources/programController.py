@@ -89,6 +89,8 @@ class programController(object):
             if step == 10: self.step10(lockerinstance)                        
             if step == 11: self.step11(lockerinstance)
             if step == 12: self.step12(lockerinstance)
+            if step == 13: self.step13(lockerinstance)
+            if step == 14: self.step14(lockerinstance)
             with lockerinstance[0].lock:
                 if lockerinstance[0].program['stepcomplete'] and automode:
                     lockerinstance[0].program['stepcomplete'] = False
@@ -216,9 +218,29 @@ class programController(object):
         stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
         WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 3, scale = 's')
     
+
     def step8(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S8']
+            laserisbusy = lockerinstance[0].robot2['laserlocked']
+            lockerinstance[0].program['laserrequire'] = True
+        if laserisbusy:
+            return
+        with lockerinstance[0].lock:
+            onpath = lockerinstance[0].mux['onpath']
+            LaserReady = lockerinstance[0].lcon['LaserReady']
+            if not onpath or not LaserReady:
+                lockerinstance[0].lcon['SetChannel'] = True
+                lockerinstance[0].mux['acquire'] = True
+            if not LaserReady:
+                lockerinstance[0].lcon['LaserReset']
+        if onpath and LaserReady:
+            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
+            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 3, scale = 's')
+    
+    def step9(self, lockerinstance):
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = ['S9']
             kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
             kdrawautostart = lockerinstance[0].scout['status']['AutoStart']
         if not kdrawwaiting and not kdrawautostart:
@@ -228,9 +250,9 @@ class programController(object):
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
     
-    def step9(self, lockerinstance):
+    def step10(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S9']
+            lockerinstance[0].shared['Statuscodes'] = ['S10']
             lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
             kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
             kdrawmanualaligncheck = b'MANUAL_ALIGN' in lockerinstance[0].scout['actualmessage']
@@ -245,12 +267,10 @@ class programController(object):
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
 
-    def step10(self, lockerinstance):
-        pass
 
     def step11(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S10']
+            lockerinstance[0].shared['Statuscodes'] = ['S11']
             lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
             kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
             manualweldcheck = b'MANUAL_WELD' in lockerinstance[0].scout['actualmessage']
@@ -266,13 +286,10 @@ class programController(object):
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
    
+
     def step12(self, lockerinstance):
-        pass
-
-
-    def step13(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S11']
+            lockerinstance[0].shared['Statuscodes'] = ['S12']
             lockerinstance[0].scout['LaserCTRVal'] = False
             kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
             lastmess = 'LaserCTRL' in lockerinstance[0].scout['LastMessageType']
@@ -282,10 +299,17 @@ class programController(object):
             stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
             WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
 
+    def step13(self, lockerinstance):
+        with lockerinstance[0].lock:
+            lockerinstance[0].shared['Statuscodes'] = ['S13']
+            lockerinstance[0].program['laserrequire'] = False
+        stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
+        WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+        
 
     def step14(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S12']
+            lockerinstance[0].shared['Statuscodes'] = ['S13']
             lockerinstance[0].program['cycleended'] = True
             lockerinstance[0].program['stepnumber'] = 0
         step = 0

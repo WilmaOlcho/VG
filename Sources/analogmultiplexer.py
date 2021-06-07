@@ -268,6 +268,15 @@ class LaserControl(ADAMDataAcquisitionModule):
                 errmessage = "SetChannel ResetErrors Error\n"+ str(e)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
+    def InternalControlSet(self, lockerinstance):
+        self.request(lockerinstance)
+        try:
+            self.write_coil(lockerinstance, 'DO'+str(self.LconParameters['InternalControlSet']), False)
+            time.sleep(0.5)
+        except Exception as e:
+            errmessage = "SetChannel ResetErrors Error\n"+ str(e)
+            ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
+
     def SetChannel(self, lockerinstance):
         self.acquireLightPath(lockerinstance)
 
@@ -384,23 +393,32 @@ class MyLaserControl(LaserControl):
     def Lconloop(self, lockerinstance):
         while self.Alive:
             with lockerinstance[0].lock:
-                setchannel = lockerinstance[0].lcon['SetChannel']
-                if setchannel: lockerinstance[0].lcon['SetChannel'] = False
-                releasechannel = lockerinstance[0].lcon['ReleaseChannel']
-                if releasechannel: lockerinstance[0].lcon['ReleaseChannel'] = False
-                startlaser = lockerinstance[0].lcon['LaserTurnOn']
-                if startlaser: lockerinstance[0].lcon['LaserTurnOn'] = False
-                stoplaser = lockerinstance[0].lcon['LaserTurnOff']
-                if stoplaser: lockerinstance[0].lcon['LaserTurnOff'] = False
-                resetlaser = lockerinstance[0].lcon['LaserReset']
-                if resetlaser: lockerinstance[0].lcon['LaserReset'] = False
                 self.Alive = lockerinstance[0].lcon['Alive']
+                locklaserloop = lockerinstance[0].lcon['locklaserloop']
             if not self.Alive: break
-            WDT(lockerinstance, errToRaise = 'LconGetStateTimer',noerror=True, limit=10, scale = 's', additionalFuncOnStart=lambda obj = self, lck = lockerinstance: obj.getState(lck))
-            self.getState(lockerinstance)
-            if setchannel: self.SetChannel(lockerinstance)
-            if releasechannel: self.ReleaseChannel(lockerinstance)
-            if startlaser: self.laserOn(lockerinstance)
-            if stoplaser: self.StopLaser(lockerinstance)
-            if resetlaser: self.resetError(lockerinstance)
+            if locklaserloop:
+                self.releaserequest(lockerinstance)
+            else:
+                with lockerinstance[0].lock:
+                    setchannel = lockerinstance[0].lcon['SetChannel']
+                    if setchannel: lockerinstance[0].lcon['SetChannel'] = False
+                    releasechannel = lockerinstance[0].lcon['ReleaseChannel']
+                    if releasechannel: lockerinstance[0].lcon['ReleaseChannel'] = False
+                    startlaser = lockerinstance[0].lcon['LaserTurnOn']
+                    if startlaser: lockerinstance[0].lcon['LaserTurnOn'] = False
+                    stoplaser = lockerinstance[0].lcon['LaserTurnOff']
+                    if stoplaser: lockerinstance[0].lcon['LaserTurnOff'] = False
+                    resetlaser = lockerinstance[0].lcon['LaserReset']
+                    if resetlaser: lockerinstance[0].lcon['LaserReset'] = False
+                    InternalControlSet = lockerinstance[0].lcon['InternalControlSet']
+                    if InternalControlSet: lockerinstance[0].lcon['InternalControlSet'] = False
+                    
+                WDT(lockerinstance, errToRaise = 'LconGetStateTimer',noerror=True, limit=10, scale = 's', additionalFuncOnStart=lambda obj = self, lck = lockerinstance: obj.getState(lck))
+                self.getState(lockerinstance)
+                if setchannel: self.SetChannel(lockerinstance)
+                if releasechannel: self.ReleaseChannel(lockerinstance)
+                if startlaser: self.laserOn(lockerinstance)
+                if stoplaser: self.StopLaser(lockerinstance)
+                if resetlaser: self.resetError(lockerinstance)
+                if InternalControlSet: self.InternalControlSet(lockerinstance)
 

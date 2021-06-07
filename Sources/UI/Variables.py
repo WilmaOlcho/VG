@@ -244,6 +244,7 @@ class Variables(dict):
         laser = self.lockerinstance[0].lcon
         safety = self.lockerinstance[0].safety
         multiplexer = self.lockerinstance[0].mux
+        program = self.lockerinstance[0].program
         if isinstance(self['scout']['page'], str):
             if self['scout']['page'].isnumeric():
                 self['scout']['page'] = int(self['scout']['page'])
@@ -291,18 +292,23 @@ class Variables(dict):
                 if self['safety']['OpenTheDoor']:
                     if laser['LaserReady']:
                         laser['ReleaseChannel'] = True
+                        program['handmodelaserrequire'] = False
                     else:
                         safety['OpenTheDoor'] = True
                     if safety['OpenTheDoorAck']:
                         self['safety']['OpenTheDoor'] = False
                         safety['OpenTheDoor'] = False
-                laser['SetChannel'] |= self['laser']['GetChannel'] #Here are the issues
+                laser['SetChannel'] |= self['laser']['GetChannel'] 
+                program['handmodelaserrequire'] |= self['laser']['GetChannel'] 
+                program['handmodelaserrequire'] &= not self['laser']['ReleaseChannel'] 
                 multiplexer['acquire'] |= self['laser']['GetChannel']
-                laser['ReleaseChannel'] |= self['laser']['ReleaseChannel'] #Here are the issues
+                laser['ReleaseChannel'] |= self['laser']['ReleaseChannel'] 
                 multiplexer['release'] |= self['laser']['ReleaseChannel']
                 laser['LaserTurnOn'] |= self['laser']['LaserTurnOn']
                 laser['LaserTurnOff'] |= self['laser']['LaserTurnOff']
                 laser['LaserReset'] |= self['laser']['ResetErrors']
+            else:
+                program['handmodelaserrequire'] = False
             self['scout']['ready'] = scout['status']['ReadyOn']
             self['scout']['atstart'] = scout['status']['AutoStart']
             self['scout']['alarm'] = scout['status']['Alarm']
