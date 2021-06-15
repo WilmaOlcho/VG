@@ -1159,7 +1159,7 @@ class KawasakiPLYTYParams(dict):
                 1:'busy',
                 2:'redirected'
             },
-            "est_time_VG":(0x0FC0,('float',0),'r'), #4032
+            "est_time_VG":(0x0FC0,('float',0),'w'), #4032
             "est_time_PLYTY":(0x0FD0,('float',0),'r') #4048
         }
         self.addresses = {

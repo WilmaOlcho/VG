@@ -75,14 +75,16 @@ class Window(dict):
         self.frame = Frame(master = root)
         self.frame.pack()
         self.Alive = True
-        self.loop()
+        self.loop(lockerinstance)
 
-    def loop(self):
+    def loop(self, lockerinstance):
         while self.Alive:
             self.window.update()
             self.frame.update()
             self.window.variables.update()
             self.Alive = self.window.variables.Alive
+            with lockerinstance[0].lock:
+                lockerinstance[0].console['Alive'] = self.Alive
 
 if __name__ == '__main__':
     settings = str(Path(__file__).parent.absolute())+'//widgetsettings.json'

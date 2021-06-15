@@ -173,7 +173,6 @@ class KDrawTCPInterface(socket.socket):
         if statusreceived:
             if statusdata[1] and statusdata[0]:
                 binarydata = self.Bits(int(statusdata[1]))
-                print(binarydata, statusdata[0])
                 with lockerinstance[0].lock:
                     scout = lockerinstance[0].scout
                     scout['StatusCheckCode'] = bool(int(statusdata[0]))
@@ -488,7 +487,6 @@ class KDrawTCPInterface(socket.socket):
         with lockerinstance[0].lock:
             lockerinstance[0].scout['lastrecipe'] = recipe
         message = self.encode_message(lockerinstance, ['RECIPE_CHANGE',recipe])
-        print( '{}'.format(message))
         self.add_to_queue(lockerinstance, message)
 
     def SetWobble(self, lockerinstance):

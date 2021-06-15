@@ -2,7 +2,7 @@ from multiprocessing import Manager, Lock, Array, Value
 
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
-        mainpath = kwargs.pop('mainpath','.\\')
+        self.mainpath = kwargs.pop('mainpath','.\\')
         manager = Manager()
         self.inputs = Array('b',32*[False])
         self.outputs = Array('b',32*[False])
@@ -21,17 +21,17 @@ class SharedLocker(object):
                 'RobotPlyty':True
             }),
             'paramfiles':manager.dict({
-                'Window':(mainpath + 'widgetsettings.json', mainpath + 'Programs.json',),
-                'MyMultiplexer':(mainpath + 'amuxConfiguration.json',),
-                'Servo':(mainpath + 'ServoSettings.json',),
-                'MyLaserControl':(mainpath + 'amuxConfiguration.json',),
-                'RobotVG':(mainpath + 'robotConfiguration.json',),
-                'PneumaticsVG':(mainpath + 'PneumaticsConfiguration.json',),
-                'GMOD':(mainpath + 'SICKGMODconfiguration.json',),
-                'Troley':(mainpath + 'Troleysettings.json',),
-                'Program':(mainpath + 'Programs.json',),
-                'RobotPlyty':(mainpath + 'robot2Configuration.json',),
-                'SCOUT':(mainpath + 'Scoutconfiguration.json',)
+                'Window':(self.mainpath + 'widgetsettings.json', self.mainpath + 'Programs.json',),
+                'MyMultiplexer':(self.mainpath + 'amuxConfiguration.json',),
+                'Servo':(self.mainpath + 'ServoSettings.json',),
+                'MyLaserControl':(self.mainpath + 'amuxConfiguration.json',),
+                'RobotVG':(self.mainpath + 'robotConfiguration.json',),
+                'PneumaticsVG':(self.mainpath + 'PneumaticsConfiguration.json',),
+                'GMOD':(self.mainpath + 'SICKGMODconfiguration.json',),
+                'Troley':(self.mainpath + 'Troleysettings.json',),
+                'Program':(self.mainpath + 'Programs.json',),
+                'RobotPlyty':(self.mainpath + 'robot2Configuration.json',),
+                'SCOUT':(self.mainpath + 'Scoutconfiguration.json',)
             }),
             'SCOUT':manager.dict({
                 'Alive':False,
