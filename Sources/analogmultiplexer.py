@@ -405,8 +405,8 @@ class MyLaserControl(LaserControl):
                     if stoplaser: lockerinstance[0].lcon['LaserTurnOff'] = False
                     resetlaser = lockerinstance[0].lcon['LaserReset']
                     if resetlaser: lockerinstance[0].lcon['LaserReset'] = False
-                    InternalControlSet = lockerinstance[0].lcon['InternalControlSet']
-                    if InternalControlSet: lockerinstance[0].lcon['InternalControlSet'] = False
+                    #InternalControlSet = lockerinstance[0].lcon['InternalControlSet']
+                    #if InternalControlSet: lockerinstance[0].lcon['InternalControlSet'] = False
                     
                 WDT(lockerinstance, errToRaise = 'LconGetStateTimer',noerror=True, limit=10, scale = 's', additionalFuncOnStart=lambda obj = self, lck = lockerinstance: obj.getState(lck))
                 self.getState(lockerinstance)
@@ -415,5 +415,5 @@ class MyLaserControl(LaserControl):
                 if startlaser: self.laserOn(lockerinstance)
                 if stoplaser: self.StopLaser(lockerinstance)
                 if resetlaser: self.resetError(lockerinstance)
-                if InternalControlSet: self.InternalControlSet(lockerinstance)
+                #if InternalControlSet: self.InternalControlSet(lockerinstance)
 

@@ -20,6 +20,19 @@ class SharedLocker(object):
                 'SCOUT':True,
                 'RobotPlyty':True
             }),
+            'PID':manager.dict({
+                'Window':0,
+                'MyMultiplexer':0,
+                'Servo':0,
+                'MyLaserControl':0,
+                'RobotVG':0,
+                'PneumaticsVG':0,
+                'GMOD':0,
+                'Troley':0,
+                'Program':0,
+                'SCOUT':0,
+                'RobotPlyty':0
+            }),
             'paramfiles':manager.dict({
                 'Window':(self.mainpath + 'widgetsettings.json', self.mainpath + 'Programs.json',),
                 'MyMultiplexer':(self.mainpath + 'amuxConfiguration.json',),

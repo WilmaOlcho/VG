@@ -1,13 +1,6 @@
 from multiprocessing import Process, current_process, freeze_support, set_start_method
-
-#import site # py2exe can't find it
-#import os, re
-#for path in os.environ['PATH'].split(';'):
-#    if any(re.findall('Python',path)):
-#        if not re.findall('Scripts',path) and not re.findall('site-packgages',path):
-#            site.addsitedir(path+'lib\\site-packages')
-#        else:
-#            site.addsitedir(path)
+from pathlib import Path
+import os
 
 from Sources.StaticLock import SharedLocker
 from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
@@ -19,7 +12,6 @@ from Sources.Troley import Troley
 from Sources.sickgmod import GMOD
 #from gui import console
 from Sources.UI.MainWindow import Window
-from pathlib import Path
 from Sources.scout import SCOUT
 from Sources.programController import programController as Program
 
@@ -43,8 +35,12 @@ class ApplicationManager(object):
                 if self.locker.shared['main'][processclass]:
                     self.processes.append(Process(name = processclass, target = eval(processclass), args=(self.lock, *self.locker.shared['paramfiles'][processclass])) )
 
-        for process in self.processes: 
+        for process in self.processes:
             process.start()
+        for process in self.processes:
+            with self.locker.lock:
+                self.locker.shared['PID'][process.name] = process.pid
+            print(process.name, process.pid)
         self.EventLoop(self.lock, *args, **kwargs)
 
     def EventLoop(self, lockerinstance, *args, **kwargs):
