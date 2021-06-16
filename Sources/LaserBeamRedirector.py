@@ -185,8 +185,17 @@ class RobotPlyty(Kawasaki):
 
             self.InfoUpdate(lockerinstance)
             self.lasercontrol(lockerinstance)
+            self.SendInfo(lockerinstance)
 
+    def SendInfo(self, lockerinstance):
+        with lockerinstance[0].lock:
+            info = lockerinstance[0].robot2['Info']
+        try:
+            self.write_register(lockerinstance, register = 'info', value = int(info))
 
+            #self.write_register(lockerinstance, register = 'est_time_VG', value = int(est_vg))
+        except:
+            pass
 
     def StatusUpdate(self, lockerinstance):
 
@@ -213,20 +222,13 @@ class RobotPlyty(Kawasaki):
 
             nprtstr = "BETON: {}, PLYTY: {}".format(self.params['info_values'][info],self.params['status_values'][currentstatus])
 
-            if nprtstr != self.prtstr or True:
+            if nprtstr != self.prtstr:
                     
                 self.prtstr = nprtstr
             
                 print(nprtstr)
 
-            try:
-
-                self.write_register(lockerinstance, register = 'info', value = int(info))
-
-                #self.write_register(lockerinstance, register = 'est_time_VG', value = int(est_vg))
-
-            except:
-                pass
+            
 
 
 
