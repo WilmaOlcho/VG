@@ -43,6 +43,7 @@ class ApplicationManager(object):
             print(process.name, process.pid)
         self.EventLoop(self.lock, *args, **kwargs)
 
+
     def EventLoop(self, lockerinstance, *args, **kwargs):
         ps = []
         psb = []
@@ -51,12 +52,11 @@ class ApplicationManager(object):
             with self.lock[0].lock:
                 self.ApplicationAlive = not self.lock[0].events['closeApplication']
                 if not self.ApplicationAlive:
-                    self.lock[0].servo['Alive'] = False
-                    self.lock[0].mux['Alive'] = False
-                    self.lock[0].robot['Alive'] = False
-                    self.lock[0].pistons['Alive'] = False
-                    self.lock[0].console['Alive'] = False
-                    self.lock[0].lcon['Alive'] = False
+                    for key in self.lock[0].shared.keys():
+                        if hasattr(self.lock[0].shared[key],'__dict__'):
+                            cdict = self.lock[0].shared[key]
+                            if 'Alive' in cdict.keys():
+                                cdict['Alive'] = False
             if not self.ApplicationAlive:
                 stillalive = False
                 for i, process in enumerate(self.processes):
@@ -76,11 +76,25 @@ class ApplicationManager(object):
                 if not stillalive: break
             self.errorcatching(lockerinstance)
 
+
     def errorcatching(self, lockerinstance):
-        for proces in self.processes:
-            if not proces.is_alive():
+        restoring = []
+        for process in [*self.processes,*restoring]:
+            if not process.is_alive():
                 with self.lock[0].lock:
-                    self.lock[0].events['closeApplication'] = True
+                   restore = not self.lock[0].events['closeApplication']
+                if restore:
+                    if hasattr(process,"name"):
+                        restoring.append(process.name)
+                        self.processes.remove(process)
+        for processclass in self.locker.shared['main'].keys():
+            if processclass in restoring:
+                process = Process(name = processclass, target = eval(processclass), args=(self.lock, *self.locker.shared['paramfiles'][processclass]))
+                self.processes.append(process)
+                process.start()
+                with lockerinstance[0].lock:
+                    self.lock[0].shared['PID'][process.name] = process.pid
+                print(process.name, 'restored    PID:',process.pid)
         with lockerinstance[0].lock:
             if lockerinstance[0].events['ack']:
                 lockerinstance[0].events['Error'] = False
