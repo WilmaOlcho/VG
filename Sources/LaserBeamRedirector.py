@@ -81,12 +81,24 @@ class RobotPlyty(Kawasaki):
                     super().__init__(lockerinstance, self.IPAddress, self.Port, params = KawasakiPLYTYParams(), *args, **kwargs)
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot2['Alive'] = self.Alive
-                    self.selfwindow = self.getselfwindow(lockerinstance)
-                    self.scout = self.scoutwindowhandle()
-                    self.kdrawprocess = self.getkdrawprocess()
-                    self.klasernet = self.klasernetwindowhandle()
-                    self.prtstr = ''
-                    self.Robotloop(lockerinstance)
+                    try:
+                        self.selfwindow = self.getselfwindow(lockerinstance)
+                    except:
+                        print('Przejecie okna glownego nie powiodlo sie')
+                    else:
+                        try:
+                            self.scout = self.scoutwindowhandle()
+                            self.kdrawprocess = self.getkdrawprocess()
+                        except:
+                            print('Przejecie okna K-Draw nie powiodlo sie')
+                        else:
+                            try:
+                                self.klasernet = self.klasernetwindowhandle()
+                            except:
+                                print('Przejecie okna KLaserNet nie powiodlo sie')
+                            else:
+                                self.prtstr = ''
+                                self.Robotloop(lockerinstance)
                 finally:
                     with lockerinstance[0].lock:
                         self.Alive = lockerinstance[0].robot2['Alive']
