@@ -5,6 +5,11 @@ from binascii import b2a_hex, a2b_hex
 import logging
 _logger = logging.getLogger(__name__)
 
+
+BASE32_LITERALS =  ['0','1','2','3','4','5','6','7','8','9',
+                    'A','B','C','D','E','F','G','H','I','J',
+                    'K','L','M','N','O','P','Q','R','S','T',
+                    'U','V']
 class MRJ4Framer(ModbusFramer):
 
     """
@@ -38,7 +43,7 @@ class MRJ4Framer(ModbusFramer):
 
     def decode_data(self, data):
         if len(data) > 1:
-            uid = int(data[1:3], 16)
+            uid = int(data[1:3], 32)
             fcode = int(data[3:5], 16)
             return dict(unit=uid, fcode=fcode)
         return dict()
@@ -54,16 +59,20 @@ class MRJ4Framer(ModbusFramer):
         end = self._buffer.find(self._endtext)
         if end != -1:
             self._header['len'] = end
-            self._header['uid'] = int(self._buffer[1:2], 16)
-            self._header['lrc'] = int(self._buffer[end:end+2], 16)
-            data = a2b_hex(self._buffer[start + 1:end])
+            self._header['uid'] = int(self._buffer[1:2].decode(), 16)
+            self._header['lrc'] = int(self._buffer[end:end+2].decode(), 16)
+            data = self._buffer[start + 1:end].decode()
             return self.checkLRC(data, self._header['lrc'])
         return False
 
-    def checkLRC(data, lrc):
+    def computeLRC(self, data):
+        sum = 0
+        for byte in data:
+            sum += int(byte,16)
+        return hex(sum)[-2:]
 
-
-        pass
+    def checkLRC(self, data, lrc):
+        return True if self.computeLRC(data) == lrc else False
 
     def advanceFrame(self):
         self._buffer = self._buffer[self._header['len'] + 2:]
@@ -102,7 +111,8 @@ class MRJ4Framer(ModbusFramer):
                     frame = self.getFrame()
                     result = self.decoder.decode(frame)
                     if result is None:
-                        raise ModbusIOException("Unable to decode response")
+                        pass
+                        #raise ModbusIOException("Unable to decode response")
                     self.populateResult(result)
                     self.advanceFrame()
                     callback(result)  # defer this
@@ -113,15 +123,40 @@ class MRJ4Framer(ModbusFramer):
             else:
                 break
 
+    def base32(self,parameter):
+        if isinstance(parameter, str):
+            result = 0
+            for iterator, element in enumerate(parameter):
+                if element in BASE32_LITERALS:
+                    result += pow(32,(len(parameter)-iterator-1))*BASE32_LITERALS.index(element)
+                else:
+                    return None
+            return result
+        elif isinstance(parameter, int):
+            digitlist = []
+            while parameter > 0:
+                digitlist.append(parameter%32)
+                parameter=int(parameter/32)
+            result = ''
+            for digit in digitlist:
+                result += BASE32_LITERALS[digit]
+            result = result[::-1]
+            while result[0] == '0' and len(result > 1):
+                result = result[1:]
+            return result
+        
+
     def buildPacket(self, message):
         encoded = message.encode()
-        buffer = struct.pack(ASCII_FRAME_HEADER, message.unit_id,
-                             message.function_code)
-        checksum = computeLRC(encoded + buffer)
+        uid = self.base32(message.unit_id).encode()
+        fc = ('%02x' % message.function_code).encode()
+        buffer = struct.pack('>BBB', uid,
+                             fc)
+        checksum = self.computeLRC(encoded + buffer)
         packet = bytearray()
-        params = (message.unit_id, message.function_code)
         packet.extend(self._start)
-        packet.extend(('%02x%02x' % params).encode())
+        packet.extend(uid)
+        packet.extend(fc)
         packet.extend(b2a_hex(encoded))
         packet.extend(('%02x' % checksum).encode())
         packet.extend(self._end)
