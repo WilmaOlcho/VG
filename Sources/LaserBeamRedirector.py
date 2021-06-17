@@ -38,6 +38,7 @@ class AppController(Application):
         self.ProcessHandle = psutil.Process(self.PID)
         super().__init__(backend = kwargs.pop('backend','win32'))
         if self.PID:
+            self.resume()
             self.connect(process = self.PID)
         self.top = self.top_window() if self.PID else None
 
@@ -47,6 +48,10 @@ class AppController(Application):
         InstanceWeLookingFor = list(filter(IsProcessValid,self.processes))
         if InstanceWeLookingFor:
             InstanceWeLookingFor = InstanceWeLookingFor[0]
+            if ProcessValueToReturnName == 'Name':
+                return InstanceWeLookingFor.Name
+            if ProcessValueToReturnName == 'ProcessId':
+                return InstanceWeLookingFor.ProcessId
             return InstanceWeLookingFor.Properties_(ProcessValueToReturnName).Value
     
     def __GetPIDFromName(self, **kwargs):
@@ -54,6 +59,10 @@ class AppController(Application):
 
     def __GetNameFromPID(self):
         return self.__RetrieveValueFromProcess(self.PID,'ProcessId','Name')
+
+    def Properties_(self, propstring):
+        return self.__RetrieveValueFromProcess(self.Name,'Name',propstring)
+
 
     def suspend(self):
         self.ProcessHandle.suspend()
@@ -87,6 +96,9 @@ class RobotPlyty(Kawasaki):
                         print('Przejecie okna glownego nie powiodlo sie')
                     else:
                         try:
+                            with lockerinstance[0].lock:
+                                scoutalive = lockerinstance[0].scout['Alive']
+                            assert(scoutalive)
                             self.scout = self.scoutwindowhandle()
                             self.kdrawprocess = self.getkdrawprocess()
                         except:
@@ -98,6 +110,7 @@ class RobotPlyty(Kawasaki):
                                 print('Przejecie okna KLaserNet nie powiodlo sie')
                             else:
                                 self.prtstr = ''
+                                self.selfwindow.set_focus()
                                 self.Robotloop(lockerinstance)
                 finally:
                     with lockerinstance[0].lock:
@@ -112,14 +125,18 @@ class RobotPlyty(Kawasaki):
 
     def FreezeKdraw(self):
         if self.kdrawprocess:
-            print('FreezeKdraw')
-            self.kdrawprocess.suspend()
+            state = self.kdrawprocess.ProcessHandle.status()
+            if state == 'running':
+                print('FreezeKdraw')
+                self.kdrawprocess.suspend()
 
 
     def ResumeKdraw(self):
         if self.kdrawprocess:
-            print('ResumeKdraw')
-            self.kdrawprocess.resume()
+            state = self.kdrawprocess.ProcessHandle.status()
+            if not state == 'running':
+                print('ResumeKdraw',state)
+                self.kdrawprocess.resume()
 
 
     def getselfwindow(self, lockerinstance):
@@ -208,10 +225,11 @@ class RobotPlyty(Kawasaki):
             est_vg = lockerinstance[0].robot2['Est_VG']
             est_plyty = lockerinstance[0].robot2['Est_PLYTY']
         if self.params['info_values'][info] in ['busy']:
-            return
+            if not self.params['status_values'][status] in ['laser_required', 'welding']:
+                self.redirectlasertoVG(lockerinstance)
         elif self.params['info_values'][info] in ['nop', 'redirected']:
             if self.params['status_values'][status] in ['nop', 'done']:
-                self.redirectlasertoVG(lockerinstance)
+                pass
             elif self.params['status_values'][status] in ['laser_required']:
                 self.redirectlasertoPLYTY(lockerinstance)
 
@@ -222,16 +240,13 @@ class RobotPlyty(Kawasaki):
             lockerinstance[0].lcon['InternalControlSet'] = True
             lockerinstance[0].robot2['laserlocked'] = True
             lockerinstance[0].lcon['locklaserloop'] = True
-            info = lockerinstance[0].robot2['Info']
-        if not 'redirected' in self.params['info_values'][info]:
-            self.FreezeKdraw()
-            self.ExControlOff()
+        self.ExControlOff()
+        self.FreezeKdraw()
+        self.ExControlOff()
 
 
     def redirectlasertoVG(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].robot2['laserlocked'] = False
             lockerinstance[0].lcon['locklaserloop'] = False
-            info = lockerinstance[0].robot2['Info']
-        if 'redirected' in self.params['info_values'][info]:
-            self.ResumeKdraw()
+        self.ResumeKdraw()

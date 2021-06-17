@@ -26,7 +26,7 @@ class KDrawTCPInterface(socket.socket):
                 "port":3000 <- port serwera K-draw
             },
             "ProgramPath":"C:\\K-Draw\\", <- główny folder programu K-Draw
-            "Receptures":"C:\\K-Draw\\Design" <- folder z recepturami K-Draw
+            "Recipes":"C:\\K-Draw\\Design" <- folder z recepturami K-Draw
         }
         '''
         super().__init__(socket.AF_INET, socket.SOCK_STREAM,)
@@ -40,7 +40,7 @@ class KDrawTCPInterface(socket.socket):
             ErrorEventWrite(lockerinstance, errstring)
         else:
             with lockerinstance[0].lock:
-                lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
+                lockerinstance[0].scout['recipesdir'] = self.config['Recipes']
 
     def connect(self, lockerinstance):
         '''
@@ -538,20 +538,25 @@ class SCOUT():
             except Exception as e:
                 ErrorEventWrite(lockerinstance, 'SCOUT manager cant load json file:\n{}'.format(str(e)))
             else:
-                self.Alive = True
-                with lockerinstance[0].lock:
-                    lockerinstance[0].scout['Alive'] = True
-                    lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
-                self.connection = KDrawTCPInterface(lockerinstance, configfile)
                 try:
-                    self.connection.connect(lockerinstance)
-                    self.connection.setblocking(False)
+                    self.startkdraw()
                 except Exception as e:
-                    ErrorEventWrite(lockerinstance, 'SCOUT manager cant connect with k-draw:\n{}'.format(str(e)))
+                    ErrorEventWrite(lockerinstance, 'SCOUT manager cant start k-draw:\n{}'.format(str(e)))
                 else:
+                    self.Alive = True
                     with lockerinstance[0].lock:
-                        lockerinstance[0].scout['lastrecipe'] = ''
-                    self.loop(lockerinstance)
+                        lockerinstance[0].scout['Alive'] = True
+                        lockerinstance[0].scout['recipesdir'] = self.config['Recipes']
+                    self.connection = KDrawTCPInterface(lockerinstance, configfile)
+                    try:
+                        self.connection.connect(lockerinstance)
+                        self.connection.setblocking(False)
+                    except Exception as e:
+                        ErrorEventWrite(lockerinstance, 'SCOUT manager cant connect with k-draw:\n{}'.format(str(e)))
+                    else:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].scout['lastrecipe'] = ''
+                        self.loop(lockerinstance)
             finally:
                 with lockerinstance[0].lock:
                     self.Alive = lockerinstance[0].scout['Alive']
@@ -559,6 +564,22 @@ class SCOUT():
                 if not self.Alive or letdie:
                     self.connection.close()
                     break
+
+    def startkdraw(self):
+        from os import popen
+        from time import sleep
+        import wmi
+        pcs = list(filter(lambda p:'K-Draw.exe' == p.Properties_('Name').Value, wmi.WMI().InstancesOf('Win32_Process')))
+        if not pcs:
+            startstr = 'start "K-Draw.exe" /D '+str(self.config['ProgramPath']) + ' ' + str(self.config['ProgramPath'])+'K-Draw.exe'
+            popen(startstr)
+            sleep(15)
+        else:
+            import psutil
+            pcs = pcs[0]
+            handle = psutil.Process(int(pcs.Properties_('ProcessId')))
+            handle.resume()
+
 
     def loop(self, lockerinstance):
         while self.Alive:

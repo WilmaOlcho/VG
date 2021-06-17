@@ -330,7 +330,8 @@ class SharedLocker(object):
                 'endpos':0,
                 'programline':manager.list([]),
                 'cycleended':False,
-                'handmodelaserrequire':False
+                'handmodelaserrequire':False,
+                'laserrequire':False
                 })
                 })
         self.scout = self.shared['SCOUT']
