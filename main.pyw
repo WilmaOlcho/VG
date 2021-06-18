@@ -87,6 +87,16 @@ class ApplicationManager(object):
                     if hasattr(process,"name"):
                         restoring.append(process.name)
                         self.processes.remove(process)
+                        if process.name in ['scout','RobotPlyty']:
+                            import psutil, wmi, re
+                            applist = wmi.WMI()
+                            def IsProcessValid(process, KnownProcessValue='K-Draw', VariableName='Name'):
+                                return re.findall(str(KnownProcessValue), str(process.Properties_(VariableName).Value))
+                            InstanceWeLookingFor = list(filter(IsProcessValid,self.processes))
+                            if InstanceWeLookingFor:
+                                psutil.Process(InstanceWeLookingFor[0].ProcessId).terminate()
+
+
         for processclass in self.locker.shared['main'].keys():
             if processclass in restoring:
                 process = Process(name = processclass, target = eval(processclass), args=(self.lock, *self.locker.shared['paramfiles'][processclass]))

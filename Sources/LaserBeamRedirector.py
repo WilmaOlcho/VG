@@ -1,20 +1,12 @@
 from Sources.modbusTCPunits import Kawasaki, KawasakiPLYTYParams
-
 from Sources.TactWatchdog import TactWatchdog as WDT
-
 from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
-
 from functools import lru_cache
-
-from threading import Thread, currentThread
-
 from pywinauto import Application
-
 import psutil
-
 import json
-
 import wmi, os, re
+from time import sleep
 
 class AppController(Application):
     allow_magic_lookup = True
@@ -22,6 +14,8 @@ class AppController(Application):
         self.WMI = wmi.WMI()
         self.processes = self.WMI.InstancesOf('Win32_Process')
         self.allow_magic_lookup = kwargs.pop("allow_magic_lookup",True)
+        self.title = kwargs.pop("title",'')
+        self.visibleonly = kwargs.pop('visible_only',False)
         name_re = kwargs.pop("Name_re",'')
         if name_re:
             self.Name = name_re
@@ -40,7 +34,17 @@ class AppController(Application):
         if self.PID:
             self.resume()
             self.connect(process = self.PID)
-        self.top = self.top_window() if self.PID else None
+        if self.PID:
+            if self.title:
+                apptitles = [window.window_text() for window in self.windows()]
+                title = list(filter(lambda t, self = self: re.findall(self.title, t),apptitles))
+                if title: title=title[0]
+                else: raise Exception()
+                self.top = self.window(title = title, visible_only=self.visibleonly)
+            else:
+                self.top = self.top_window(visible_only=self.visibleonly)
+        else:
+            self.top =  None
 
     def __RetrieveValueFromProcess(self, KnownProcessValue, VariableName, ProcessValueToReturnName, **kwargs):
         def IsProcessValid(process, KnownProcessValue=KnownProcessValue, VariableName=VariableName):
@@ -99,8 +103,8 @@ class RobotPlyty(Kawasaki):
                             with lockerinstance[0].lock:
                                 scoutalive = lockerinstance[0].scout['Alive']
                             assert(scoutalive)
-                            self.scout = self.scoutwindowhandle()
                             self.kdrawprocess = self.getkdrawprocess()
+                            self.scout = self.scoutwindowhandle()
                         except:
                             print('Przejecie okna K-Draw nie powiodlo sie')
                         else:
@@ -109,18 +113,42 @@ class RobotPlyty(Kawasaki):
                             except:
                                 print('Przejecie okna KLaserNet nie powiodlo sie')
                             else:
-                                self.prtstr = ''
-                                self.selfwindow.set_focus()
-                                self.Robotloop(lockerinstance)
+                                try:
+                                    self.LasernetPID = self.RunLaserNet()
+                                except:
+                                    print('Otwarcie okna LaserNet nie powiodlo sie')
+                                else:
+                                    try:
+                                        self.Lasernet = AppController(PID = self.LasernetPID, title = ' LaserNet')
+                                    except:
+                                        print('Przejęcie okna LaserNet nie powiodlo sie')
+                                    else:
+                                        self.prtstr = ''
+                                        self.selfwindow.set_focus()
+                                        self.Robotloop(lockerinstance)
                 finally:
                     with lockerinstance[0].lock:
                         self.Alive = lockerinstance[0].robot2['Alive']
                         closeapp = lockerinstance[0].events['closeApplication']
                     if closeapp: break
 
+    def RunLaserNet(self):
+        print('RunLaserNet')
+        param = self.parameters['LaserBeamRedirector']
+        pcs = list(filter(lambda p,namestr=param['LaserNet']: namestr == p.Name, wmi.WMI().InstancesOf('Win32_Process')))
+        if not pcs:
+            startstr = 'start "'+param['LaserNet']+'" /D "'+param['LaserNetPath']+'" "'+param['LaserNetPath'] +param['LaserNet']+'"'
+            os.popen(startstr)
+            sleep(3)
+            return self.RunLaserNet()
+        else:
+            PID = int(pcs[0].Properties_('ProcessId'))
+            print('LaserNet PID:',PID)
+            return PID
+
 
     def getkdrawprocess(self):
-        return AppController(Name = 'Draw')
+        return AppController(Name = 'Draw', title ='Draw ', backend = 'uia')
 
 
     def FreezeKdraw(self):
@@ -145,28 +173,30 @@ class RobotPlyty(Kawasaki):
                 selfwindow = lockerinstance[0].shared['PID']['Window']
             else:
                 selfwindow = 0
-        selfapp = AppController(PID = selfwindow)
+        selfapp = AppController(PID = selfwindow, title='Spawanie')
         return selfapp.top
 
     def scoutwindowhandle(self):
-        return AppController(Name_re = "Draw", backend = 'uia').top
+        return self.kdrawprocess.top
 
 
     def klasernetwindowhandle(self):
-        self.scout.TabControl.Drawing.select()
-        self.scout.PlugIn.select()
-        self.scout.IPC_Laser.select()
-        klasernetapp = AppController(Name_re="KLaser")
-        window = klasernetapp.top
-        window.move_window(x=-1000)
-        self.scout.TabControl.Auto.select()
-        return window
+        if self.scout:
+            self.scout.TabControl.Drawing.select()
+            self.scout.PlugIn.select()
+            self.scout.IPC_Laser.select()
+            klasernetapp = AppController(Name_re="KLaser", title = 'KLaser')
+            window = klasernetapp.top
+            window.move_window(x=-1000)
+            self.scout.TabControl.Auto.select()
+            return window
 
 
     def ExControlOff(self):
-        self.klasernet.set_focus()
-        self.klasernet.ExternalControlOff.click()
-        self.selfwindow.set_focus()
+        btntxt = self.Lasernet.top.Button8.window_text()
+        print(btntxt)
+        if not btntxt == 'OFF':
+            self.klasernet.ExternalControlOff.click()
 
 
     def Robotloop(self, lockerinstance):
@@ -227,10 +257,8 @@ class RobotPlyty(Kawasaki):
         if self.params['info_values'][info] in ['busy']:
             if not self.params['status_values'][status] in ['laser_required', 'welding']:
                 self.redirectlasertoVG(lockerinstance)
-        elif self.params['info_values'][info] in ['nop', 'redirected']:
-            if self.params['status_values'][status] in ['nop', 'done']:
-                pass
-            elif self.params['status_values'][status] in ['laser_required']:
+        elif self.params['info_values'][info] in ['nop']:
+            if self.params['status_values'][status] in ['laser_required']:
                 self.redirectlasertoPLYTY(lockerinstance)
 
 
