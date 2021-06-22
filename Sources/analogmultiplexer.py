@@ -300,7 +300,11 @@ class MyMultiplexer(AnalogMultiplexer):
                 with lockerinstance[0].lock:
                     letdie = lockerinstance[0].events['closeApplication']
                     self.Alive = lockerinstance[0].mux['Alive']
-                if letdie: break
+                    letdie |= self.Alive
+                if letdie: 
+                    self.releasePath(lockerinstance)
+                    self.resetPath(lockerinstance)
+                    break
         
     def isBusy(self, lockerinstance):
         result = super().isBusy(lockerinstance) 
@@ -383,7 +387,12 @@ class MyLaserControl(LaserControl):
             finally:
                 with lockerinstance[0].lock:
                     letdie = lockerinstance[0].events['closeApplication']
-                if letdie: break
+                    self.Alive = lockerinstance[0].lcon['Alive']
+                    letdie |= self.Alive
+                if letdie:
+                    self.ReleaseChannel(lockerinstance)
+                    self.releaserequest(lockerinstance)
+                    break
 
     def Lconloop(self, lockerinstance):
         while self.Alive:

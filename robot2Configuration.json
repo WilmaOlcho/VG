@@ -8,5 +8,25 @@
         "LaserNetPath":"C:\\lasernet\\"
 
 
+    },
+    "Registers":{
+        "laserIO" : {
+            "status":["0x0FA0",["int",0],"r"],
+            "status_values":{
+                "0":"nop",
+                "1":"laser_required",
+                "2":"welding",
+                "3":"done"
+            },
+            "info":["0x0FB0",["int",0],"w"],
+            "info_values":{
+                "0":"nop",
+                "1":"busy",
+                "2":"redirected"
+            },
+            "est_time_VG":["0x0FC0",["float",0],"w"],
+            "est_time_PLYTY":["0x0FD0",["float",0],"r"]
+        }
+
     }
 }

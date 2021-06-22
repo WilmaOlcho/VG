@@ -91,7 +91,7 @@ class RobotPlyty(Kawasaki):
                 except:
                     ErrorEventWrite(lockerinstance, 'RobotPLYTY init error - Error while reading config file')
                 else:
-                    super().__init__(lockerinstance, self.IPAddress, self.Port, params = KawasakiPLYTYParams(), *args, **kwargs)
+                    super().__init__(lockerinstance, self.IPAddress, self.Port, params = self.parameters["Registers"], *args, **kwargs)
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot2['Alive'] = self.Alive
                     try:
@@ -130,7 +130,9 @@ class RobotPlyty(Kawasaki):
                     with lockerinstance[0].lock:
                         self.Alive = lockerinstance[0].robot2['Alive']
                         closeapp = lockerinstance[0].events['closeApplication']
-                    if closeapp: break
+                    if closeapp or not self.Alive:
+                        self.redirectlasertoPLYTY(lockerinstance)
+                        break
 
     def RunLaserNet(self):
         print('RunLaserNet')
@@ -193,10 +195,10 @@ class RobotPlyty(Kawasaki):
 
 
     def ExControlOff(self):
-        btntxt = self.Lasernet.top.Button8.window_text()
-        print(btntxt)
-        if not btntxt == 'OFF':
-            self.klasernet.ExternalControlOff.click()
+        if self.Lasernet:
+            if self.Lasernet.status == 'running':
+                if self.Lasernet.top.Button8.window_text() == 'ON':
+                    self.klasernet.ExternalControlOff.click()
 
 
     def Robotloop(self, lockerinstance):
@@ -232,7 +234,7 @@ class RobotPlyty(Kawasaki):
                 #lockerinstance[0].robot2['Est_PLYTY'] = est_plyty
                 info = lockerinstance[0].robot2['Info']
                 #est_vg = lockerinstance[0].robot2['Est_VG']
-            nprtstr = "BETON: {}, PLYTY: {}".format(self.params['info_values'][info],self.params['status_values'][currentstatus])
+            nprtstr = "BETON: {}, PLYTY: {}".format(self.params.addresses['info_values'][info],self.params.addresses['status_values'][currentstatus])
             if nprtstr != self.prtstr:
                 self.prtstr = nprtstr
                 print(nprtstr)
@@ -241,11 +243,11 @@ class RobotPlyty(Kawasaki):
     def InfoUpdate(self, lockerinstance):
         with lockerinstance[0].lock:
             if lockerinstance[0].program['handmodelaserrequire'] or (lockerinstance[0].program['running'] and lockerinstance[0].program['laserrequire']):
-                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params['info_values'],'busy')
+                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params.addresses['info_values'],'busy')
             elif lockerinstance[0].robot2['laserlocked']:
-                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params['info_values'],'redirected')
+                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params.addresses['info_values'],'redirected')
             else:
-                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params['info_values'],'nop')
+                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params.addresses['info_values'],'nop')
 
 
     def lasercontrol(self, lockerinstance):
@@ -254,11 +256,11 @@ class RobotPlyty(Kawasaki):
             info = lockerinstance[0].robot2['Info']
             est_vg = lockerinstance[0].robot2['Est_VG']
             est_plyty = lockerinstance[0].robot2['Est_PLYTY']
-        if self.params['info_values'][info] in ['busy']:
-            if not self.params['status_values'][status] in ['laser_required', 'welding']:
+        if self.params.addresses['info_values'][info] in ['busy']:
+            if not self.params.addresses['status_values'][status] in ['laser_required', 'welding']:
                 self.redirectlasertoVG(lockerinstance)
-        elif self.params['info_values'][info] in ['nop']:
-            if self.params['status_values'][status] in ['laser_required']:
+        elif self.params.addresses['info_values'][info] in ['nop']:
+            if self.params.addresses['status_values'][status] in ['laser_required']:
                 self.redirectlasertoPLYTY(lockerinstance)
 
 

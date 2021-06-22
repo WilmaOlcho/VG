@@ -23,7 +23,7 @@ class RobotVG(Kawasaki):
                 except:
                     ErrorEventWrite(lockerinstance, 'RobotVG init error - Error while reading config file')
                 else:
-                    super().__init__(lockerinstance, self.IPAddress, self.Port, *args, **kwargs)
+                    super().__init__(lockerinstance, self.IPAddress, self.Port, params = self.parameters['Registers']*args, **kwargs)
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['Alive'] = self.Alive
                     self.IOtab = [32*[False],32*[False]]

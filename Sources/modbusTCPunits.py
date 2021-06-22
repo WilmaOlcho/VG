@@ -5,7 +5,7 @@ from pymodbus.factory import ClientDecoder
 from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from Sources.TactWatchdog import TactWatchdog as WDT
 from Sources import Bits, ErrorEventWrite
-import re
+import re, json
 import struct
 from pymodbus.framer import SOCKET_FRAME_HEADER
 
@@ -1140,175 +1140,21 @@ class ParameterIsNotWritable(TypeError):
         errstring = '\nTrying to write to read-only register in ' + ''.join(map(str, *args))
         self.args = args
         ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
-    
-
-class KawasakiPLYTYParams(dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.laserIO = {
-            "status":(0x0FA0,('int',0),'r'), #4000
-            'status_values':{
-                0:'nop',
-                1:'laser_required',
-                2:'welding',
-                3:'done'
-            },
-            "info":(0x0FB0,('int',0),'w'), #4016
-            'info_values':{
-                0:'nop',
-                1:'busy',
-                2:'redirected'
-            },
-            "est_time_VG":(0x0FC0,('float',0),'w'), #4032
-            "est_time_PLYTY":(0x0FD0,('float',0),'r') #4048
-        }
-        self.addresses = {
-            **self.laserIO
-            }
-        self['info_values'] = {**self.laserIO['info_values']}
-        self['status_values'] = {**self.laserIO['status_values']}
-        
-class KawasakiVGParams(object):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.status = {
-            'StatusRegister0':(0x0030,('int',0),'r'), #dec 48
-            'StatusRegister1':(0x0040,('int',0),'r'), #dec 64
-            'StatusRegister2':(0x0050,('int',0),'r'), #dec 80
-            'StatusRegister3':(0x0060,('int',0),'r'), #dec 96
-            'StatusRegister4':(0x0070,('int',0),'r'), #dec 112
-            'StatusRegister5':(0x0080,('int',0),'r'), #dec 128
-            'StatusRegister6':(0x0090,('int',0),'r'), #dec 144
-            'StatusRegisterValuesMasks':{
-                "st0":0b0000000000000001,
-                "st1":0b0000000000000010,
-                "st2":0b0000000000000100,
-                "st3":0b0000000000001000,
-                "st4":0b0000000000010000,
-                "st5":0b0000000000100000,
-                "st6":0b0000000001000000,
-                "st7":0b0000000010000000,
-                "st8":0b0000000100000000,
-                "st9":0b0000001000000000,
-                "st10":0b0000010000000000,
-                "st11":0b0000100000000000,
-                "st12":0b0001000000000000,
-                "st13":0b0010000000000000,
-                "st14":0b0100000000000000,
-                "st15":0b1000000000000000}}
-        self.position = {
-            'CurrentPositionNumber':(0x0FA0,('int',0),'r'), #4000
-            'DestinationPositionNumber':(0x0FA8,('int',0),'rw')} #4008
-        self.correction = {
-            'MaxValues':{
-                'A':(0x0FB0,('int',0),'rw'), #4016
-                'X':(0x0FB8,('int',0),'rw'), #4024
-                'Y':(0x0FC0,('int',0),'rw'), #4032
-                'Z':(0x0FC8,('int',0),'rw') #4040
-            },
-            'A':(0x0FD0,('int',0),'rw'), #4048
-            '00A':(0x0FD8,('int',0),'rw'), #4056
-            'X':(0x0FE0,('int',0),'rw'), #4064
-            '00X':(0x0FE8,('int',0),'rw'), #4072
-            'Y':(0x0FF0,('int',0),'rw'), #4080
-            '00Y':(0x0FF8,('int',0),'rw'), #4088
-            'Z':(0x1000,('int',0),'rw'), #4096
-            '00Z':(0x1008,('int',0),'rw')} #4104
-        self.inputs = {
-            'I1-16':(0x03E9,('int',0),'r'), #1001
-            'I17-32':(0x03F9,('int',0),'r'), #1017
-            'I1':(0x03E9,('bit',0),'r'), #1001
-            'I2':(0x03EA,('bit',0),'r'), #1002
-            'I3':(0x03EB,('bit',0),'r'), #1003
-            'I4':(0x03EC,('bit',0),'r'), #1004
-            'I5':(0x03ED,('bit',0),'r'), #1005
-            'I6':(0x03EE,('bit',0),'r'), #1006
-            'I7':(0x03EF,('bit',0),'r'), #1007
-            'I8':(0x03F0,('bit',0),'r'), #1008
-            'I9':(0x03F1,('bit',0),'r'), #1009
-            'I10':(0x03F2,('bit',0),'r'), #1010
-            'I11':(0x03F3,('bit',0),'r'), #1011
-            'I12':(0x03F4,('bit',0),'r'), #1012
-            'I13':(0x03F5,('bit',0),'r'), #1013
-            'I14':(0x03F6,('bit',0),'r'), #1014
-            'I15':(0x03F7,('bit',0),'r'), #1015
-            'I16':(0x03F8,('bit',0),'r'), #1016
-            'I17':(0x03F9,('bit',0),'r'), #1017
-            'I18':(0x03FA,('bit',0),'r'), #1018
-            'I19':(0x03FB,('bit',0),'r'), #1019
-            'I20':(0x03FC,('bit',0),'r'), #1020
-            'I21':(0x03FD,('bit',0),'r'), #1021
-            'I22':(0x03FE,('bit',0),'r'), #1022
-            'I23':(0x03FF,('bit',0),'r'), #1023
-            'I24':(0x0400,('bit',0),'r'), #1024
-            'I25':(0x0401,('bit',0),'r'), #1025
-            'I26':(0x0402,('bit',0),'r'), #1026
-            'I27':(0x0403,('bit',0),'r'), #1027
-            'I28':(0x0404,('bit',0),'r'), #1028
-            'I29':(0x0405,('bit',0),'r'), #1029
-            'I30':(0x0406,('bit',0),'r'), #1030
-            'I31':(0x0407,('bit',0),'r'), #1031
-            'I32':(0x0408,('bit',0),'r')} #1032
-        self.outputs = {
-            'O1-16':(0x0001,('int',0),'rw'), #1
-            'O17-32':(0x0011,('int',0),'rw'), #17
-            'O1':(0x0001,('bit',0),'rw'), #1
-            'O2':(0x0002,('bit',0),'rw'), #2
-            'O3':(0x0003,('bit',0),'rw'), #3
-            'O4':(0x0004,('bit',0),'rw'), #4
-            'O5':(0x0005,('bit',0),'rw'), #5
-            'O6':(0x0006,('bit',0),'rw'), #6
-            'O7':(0x0007,('bit',0),'rw'), #7
-            'O8':(0x0008,('bit',0),'rw'), #8
-            'O9':(0x0009,('bit',0),'rw'), #9
-            'O10':(0x000A,('bit',0),'rw'), #10
-            'O11':(0x000B,('bit',0),'rw'), #11
-            'O12':(0x000C,('bit',0),'rw'), #12
-            'O13':(0x000D,('bit',0),'rw'), #13
-            'O14':(0x000E,('bit',0),'rw'), #14
-            'O15':(0x000F,('bit',0),'rw'), #15
-            'O16':(0x0010,('bit',0),'rw'), #16
-            'O17':(0x0011,('bit',0),'rw'), #17
-            'O18':(0x0012,('bit',0),'rw'), #18
-            'O19':(0x0013,('bit',0),'rw'), #19
-            'O20':(0x0014,('bit',0),'rw'), #20
-            'O21':(0x0015,('bit',0),'rw'), #21
-            'O22':(0x0016,('bit',0),'rw'), #22
-            'O23':(0x0017,('bit',0),'rw'), #23
-            'O24':(0x0018,('bit',0),'rw'), #24
-            'O25':(0x0019,('bit',0),'rw'), #25
-            'O26':(0x001A,('bit',0),'rw'), #26
-            'O27':(0x001B,('bit',0),'rw'), #27
-            'O28':(0x001C,('bit',0),'rw'), #28
-            'O29':(0x001D,('bit',0),'rw'), #29
-            'O30':(0x001E,('bit',0),'rw'), #30
-            'O31':(0x001F,('bit',0),'rw'), #31
-            'O32':(0x0020,('bit',0),'rw')} #32
-        self.command = {
-            'command':(0x1010,('bit',0),'rw'), #4112
-            'command_values':{
-                'NOP':0,
-                'homing':1,
-                'go':2
-            }}
-        self.postable = {
-            'table':(0x1020,('int',0),'rw') #4128
-            }
-        self.addresses = {
-            **self.postable,
-            **self.command,
-            **self.inputs,
-            **self.outputs,
-            **self.position,
-            **self.correction,
-            **self.status}
-        
 class Kawasaki(ModbusTcpClient):
     def __init__(self, lockerinstance, address = '192.168.0.1', port = 9200, *args, **kwargs):
         super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
-        params = kwargs.pop('params',KawasakiVGParams())
-        self.params = params
-        self.addresses = self.params.addresses
+        params = kwargs.pop('params',{})
+        if isinstance(params,str):
+            try:
+                with open(params) as Hfile:
+                        self.parameters = json.load(Hfile)["Registers"]
+            except Exception as e:
+                raise ParameterDictionaryError(lockerinstance, 'Unable to read JSON file with Registers descriptions' + params)
+        elif isinstance(params,dict):
+            self.params = params
+        self.addresses = {}
+        for subkey in self.params.keys():
+            self.addresses.update(self.params[subkey])
 
     def __getAddress(self, lockerinstance, parameterName=''):
         try:
