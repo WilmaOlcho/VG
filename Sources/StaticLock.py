@@ -227,12 +227,21 @@ class SharedLocker(object):
                 'reset':False,
                 'run':False,
                 'stop':False,
-                'positionNumber':-1,
+                'positionNumber':0,
                 'moving':False,
                 'active':False,
                 'iocoin':False,
                 'ioready':False,
-                'iotgon':False
+                'iotgon':False,
+                "notreadytoswitchon":False,
+                "disabled":False,
+                "readytoswitchon":False,
+                "switchon":False,
+                "operationenabled":False,
+                "faultreactionactive":False,
+                "fault":False,
+                "warning":False,
+                'positionreached':False
                 }),
             'troley':manager.dict({
                 'Alive':False,

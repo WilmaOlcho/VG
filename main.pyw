@@ -91,7 +91,8 @@ class ApplicationManager(object):
                             import psutil, wmi, re
                             applist = wmi.WMI()
                             def IsProcessValid(process, KnownProcessValue='K-Draw', VariableName='Name'):
-                                return re.findall(str(KnownProcessValue), str(process.Properties_(VariableName).Value))
+                                if hasattr(process, 'Properties_'):
+                                    return re.findall(str(KnownProcessValue), str(process.Properties_(VariableName).Value))
                             InstanceWeLookingFor = list(filter(IsProcessValid,self.processes))
                             if InstanceWeLookingFor:
                                 psutil.Process(InstanceWeLookingFor[0].ProcessId).terminate()

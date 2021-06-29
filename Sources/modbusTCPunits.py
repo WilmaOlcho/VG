@@ -1140,6 +1140,7 @@ class ParameterIsNotWritable(TypeError):
         errstring = '\nTrying to write to read-only register in ' + ''.join(map(str, *args))
         self.args = args
         ErrorEventWrite(lockerinstance, errstring, errorlevel = 2)
+
 class Kawasaki(ModbusTcpClient):
     def __init__(self, lockerinstance, address = '192.168.0.1', port = 9200, *args, **kwargs):
         super().__init__(address, port, framer=ModbusAsciiFramer, *args, **kwargs)
@@ -1172,6 +1173,8 @@ class Kawasaki(ModbusTcpClient):
                 try:
                     ParameterTuple = self.addresses['I' + ''.join(re.findall(r'\d',input))]
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
+                    if isinstance(address, str):
+                        address = int(address,16)
                 except:
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['error'] = True
@@ -1180,6 +1183,8 @@ class Kawasaki(ModbusTcpClient):
                 try:
                     ParameterTuple = self.addresses['O' + ''.join(re.findall(r'\d',input))]
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
+                    if isinstance(address, str):
+                        address = int(address,16)
                 except:
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['error'] = True
@@ -1192,6 +1197,8 @@ class Kawasaki(ModbusTcpClient):
             try:
                 ParameterTuple = self.addresses['I' + str(input)]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
+                if isinstance(address, str):
+                    address = int(address,16)
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
@@ -1220,6 +1227,8 @@ class Kawasaki(ModbusTcpClient):
                 try:
                     ParameterTuple = self.addresses['O' + ''.join(re.findall(r'\d',Coil))]
                     address, access = ParameterTuple[::len(ParameterTuple)-1]
+                    if isinstance(address, str):
+                        address = int(address,16)
                 except:
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['error'] = True
@@ -1232,6 +1241,8 @@ class Kawasaki(ModbusTcpClient):
             try:
                 ParameterTuple = self.addresses['O' + str(Coil)]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
+                if isinstance(address, str):
+                    address = int(address,16)
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
@@ -1259,6 +1270,8 @@ class Kawasaki(ModbusTcpClient):
             try:
                 ParameterTuple = self.addresses[registerToStartFrom]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
+                if isinstance(address, str):
+                    address = int(address,16)
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True
@@ -1292,6 +1305,8 @@ class Kawasaki(ModbusTcpClient):
             try:
                 ParameterTuple = self.addresses[register]
                 address, access = ParameterTuple[::len(ParameterTuple)-1]
+                if isinstance(address, str):
+                    address = int(address,16)
             except:
                 with lockerinstance[0].lock:
                     lockerinstance[0].robot['error'] = True

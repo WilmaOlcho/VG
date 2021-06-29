@@ -54,15 +54,27 @@ class Variables(dict):
             'pos':-1
         }
         self['troley'] = {
-            'servoON':False,
-            'servoRUN':False,
-            'servoSTOP':False,
-            'servoCOIN':False,
-            'servoREADY':False,
-            'servoSTEP':False,
-            'servoHOMING':False,
-            'servoRESET':False,
-            'servoTGON':False,
+            'homing':False,
+            'step':False,
+            'reset':False,
+            'run':False,
+            'stop':False,
+            'positionNumber':0,
+            'position':0,
+            'moving':False,
+            'active':False,
+            'iocoin':False,
+            'ioready':False,
+            'iotgon':False,
+            "notreadytoswitchon":False,
+            "disabled":False,
+            "readytoswitchon":False,
+            "switchon":False,
+            "operationenabled":False,
+            "faultreactionactive":False,
+            "fault":False,
+            "warning":False,
+            'positionreached':False,
             'TroleyDocked':False
         }
         self['robot'] = {
@@ -93,7 +105,8 @@ class Variables(dict):
             'LaserWarning':False,
             'ChillerError':False,
             'ChillerWarning':False,
-            'LaserBusy':False
+            'LaserBusy':False,
+            'locklaserloop':False
         }
         self['safety'] = {
             'EstopArmed':False,
@@ -215,28 +228,33 @@ class Variables(dict):
         troley = self.lockerinstance[0].troley
         with lock:
             if not self['ProgramActive']:
-                servo['homing'] |= self['troley']['servoHOMING']
-                servo['run'] |= self['troley']['servoRUN']
-                servo['stop'] |= self['troley']['servoSTOP']
-                servo['reset'] |= self['troley']['servoRESET']
-                servo['step'] |= self['troley']['servoSTEP']
+                self['troley']['position'] != servo['positionNumber']
+                servo['positionNumber'] = self['troley']['position']
+                servo['homing'] |= self['troley']['homing']
+                servo['run'] |= self['troley']['run']
+                servo['stop'] |= self['troley']['stop']
+                servo['reset'] |= self['troley']['reset']
+                servo['step'] |= self['troley']['step']
             if troley['docked'] and not troley['error']:
                 self['statusindicators']['Troley'] = 1
             elif troley['error'] or not troley['Alive']:
                 self['statusindicators']['Troley'] = -1
             else:
                 self['statusindicators']['Troley'] = 0
-            self['troley']['servoON'] = servo['active']
-            self['troley']['servoCOIN'] = servo['iocoin']
-            self['troley']['servoREADY'] = servo['ioready']
-            self['troley']['servoTGON'] = servo['iotgon']
+            self['troley']['readytoswitchon'] = servo['readytoswitchon']
+            self['troley']['switchon'] = servo['switchon']
+            self['troley']['operationenabled'] = servo['operationenabled']
+            self['troley']['faultreactionactive'] = servo['faultreactionactive']
+            self['troley']['fault'] = servo['fault']
+            self['troley']['warning'] = servo['warning']
+            self['troley']['positionreached'] = servo['positionreached']
             self['troley']['TroleyDocked'] = troley['docked']
             self['servo']['pos'] = servo['positionNumber']
-        self['troley']['servoRUN'] = False
-        self['troley']['servoSTOP'] = False
-        self['troley']['servoHOMING'] = False
-        self['troley']['servoSTEP'] = False
-        self['troley']['servoRESET'] = False
+        self['troley']['run'] = False
+        self['troley']['stop'] = False
+        self['troley']['homing'] = False
+        self['troley']['step'] = False
+        self['troley']['reset'] = False
 
     def scoutupdate(self):
         lock = self.lockerinstance[0].lock
@@ -324,6 +342,7 @@ class Variables(dict):
             self['laser']['LaserWarning'] = laser['LaserWarning']
             self['laser']['ChillerError'] = laser['ChillerError']
             self['laser']['ChillerWarning'] = laser['ChillerWarning']
+            self['laser']['locklaserloop'] = laser['locklaserloop']
         self['laser']['LaserTurnOn'] = False
         self['laser']['LaserTurnOff'] = False
         self['laser']['GetChannel'] = False

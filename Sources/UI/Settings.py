@@ -149,9 +149,12 @@ class ServoControl(LabelFrame):
     def __init__(self, master = None, buttons = {}, lamps = {}):
         super().__init__(master = master, branch = 'Servo')
         self.buttonsframe = Frame(self)
+        self.entriesframe = Frame(self)
         statusframe = StatusIndicators(self)
         for key, value in self.settings['buttons'].items():
             Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for key, value in self.settings['entries'].items():
+            Entry(self.entriesframe, text = key, key = value).pack(anchor = tk.N)
         Entry(statusframe)
         for widget in self.winfo_children():
             widget.pack(side = tk.LEFT, anchor = tk.N)

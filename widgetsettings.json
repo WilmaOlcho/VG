@@ -147,10 +147,34 @@
                             "width":15,
                             "height":2
                         },
+                        "Entry":{
+                            "masterkey":"troley",
+                            "width":25  
+                        },
+                        "entries":{
+                            "Pozycja zadana":"position"
+                        },
                         "StatusIndicators":{
                             "Label":"Status",
                             "masterkey":"troley",
-                            "servoON":{
+                            "readytoswitchon":{
+                                "Label":"Serwo  gotowe do w\u0142\u0105czenia",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
+                            },
+                            "switchon":{
                                 "Label":"Serwo w\u0142\u0105czone",
                                 "width":40,
                                 "height":40,
@@ -167,7 +191,24 @@
                                     "error":"red"
                                 }
                             },
-                            "servoCOIN":{
+                            "operationenabled":{
+                                "Label":"Operacja wybrana",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
+                            },
+                            "positionreached":{
                                 "Label":"Serwo na pozycji",
                                 "width":40,
                                 "height":40,
@@ -184,8 +225,8 @@
                                     "error":"red"
                                 }
                             },
-                            "servoREADY":{
-                                "Label":"Serwo gotowe",
+                            "faultreactionactive":{
+                                "Label":"Reakcja na b\u0142\u0105d",
                                 "width":40,
                                 "height":40,
                                 "frame":{
@@ -197,12 +238,12 @@
                                 },
                                 "Color":{
                                     "normal":"black",
-                                    "active":"green",
+                                    "active":"red",
                                     "error":"red"
                                 }
                             },
-                            "servoTGON":{
-                                "Label":"Serwo w ruchu",
+                            "fault":{
+                                "Label":"b\u0142\u0105d",
                                 "width":40,
                                 "height":40,
                                 "frame":{
@@ -214,8 +255,25 @@
                                 },
                                 "Color":{
                                     "normal":"black",
-                                    "active":"green",
+                                    "active":"red",
                                     "error":"red"
+                                }
+                            },
+                            "warning":{
+                                "Label":"Ostrzezenie",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"yellow",
+                                    "error":"yellow"
                                 }
                             },
                             "TroleyDocked":{
@@ -244,11 +302,11 @@
                             }
                         },
                         "buttons":{
-                            "W\u0142\u0105cz":"servoRUN",
-                            "Wy\u0142\u0105cz":"servoSTOP",
-                            "Krok":"servoSTEP",
-                            "Bazowanie":"servoHOMING",
-                            "Reset":"servoRESET"}
+                            "W\u0142\u0105cz":"run",
+                            "Wy\u0142\u0105cz":"stop",
+                            "Krok":"step",
+                            "Bazowanie":"homing",
+                            "Reset":"reset"}
                     }
                 },
                 "Pneumatics":{
@@ -279,6 +337,23 @@
                     "StatusIndicators":{
                         "Label":"",
                         "masterkey":"laser",
+                        "locklaserloop":{
+                            "Label":"Laser przej\u0119ty przez p\u0142yty",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"yellow",
+                                "error":"red"
+                            }
+                        },
                         "!LaserBusy":{
                             "Label":"Laser zaj\u0119ty",
                             "width":40,

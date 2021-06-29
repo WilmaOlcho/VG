@@ -1,4 +1,4 @@
-from Sources.modbusTCPunits import Kawasaki, KawasakiPLYTYParams
+from Sources.modbusTCPunits import Kawasaki
 from Sources.TactWatchdog import TactWatchdog as WDT
 from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
 from functools import lru_cache
@@ -224,7 +224,7 @@ class RobotPlyty(Kawasaki):
 
     def StatusUpdate(self, lockerinstance):
         try:
-            currentstatus = self.read_holding_registers(lockerinstance, registerToStartFrom='status')[0]
+            currentstatus = str(self.read_holding_registers(lockerinstance, registerToStartFrom='status')[0])
             #est_plyty = self.read_holding_registers(lockerinstance, registerToStartFrom='est_time_PLYTY')[0]
         except Exception as e:
             print(str(e))
@@ -232,35 +232,35 @@ class RobotPlyty(Kawasaki):
             with lockerinstance[0].lock:
                 lockerinstance[0].robot2['Status'] = currentstatus
                 #lockerinstance[0].robot2['Est_PLYTY'] = est_plyty
-                info = lockerinstance[0].robot2['Info']
+                info = str(lockerinstance[0].robot2['Info'])
                 #est_vg = lockerinstance[0].robot2['Est_VG']
-            nprtstr = "BETON: {}, PLYTY: {}".format(self.params.addresses['info_values'][info],self.params.addresses['status_values'][currentstatus])
-            if nprtstr != self.prtstr:
-                self.prtstr = nprtstr
-                print(nprtstr)
-
+            if (info in self.addresses['info_values'].keys()) and (currentstatus in self.addresses['status_values'].keys()):         
+                nprtstr = "BETON: {}, PLYTY: {}".format(self.addresses['info_values'][info],self.addresses['status_values'][currentstatus])
+                if nprtstr != self.prtstr:
+                    self.prtstr = nprtstr
+                    ErrorEventWrite(lockerinstance, nprtstr)
 
     def InfoUpdate(self, lockerinstance):
         with lockerinstance[0].lock:
             if lockerinstance[0].program['handmodelaserrequire'] or (lockerinstance[0].program['running'] and lockerinstance[0].program['laserrequire']):
-                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params.addresses['info_values'],'busy')
+                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.addresses['info_values'],'busy')
             elif lockerinstance[0].robot2['laserlocked']:
-                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params.addresses['info_values'],'redirected')
+                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.addresses['info_values'],'redirected')
             else:
-                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.params.addresses['info_values'],'nop')
+                lockerinstance[0].robot2['Info'] = dictKeyByVal(self.addresses['info_values'],'nop')
 
 
     def lasercontrol(self, lockerinstance):
         with lockerinstance[0].lock:
-            status = lockerinstance[0].robot2['Status']
-            info = lockerinstance[0].robot2['Info']
+            status = str(lockerinstance[0].robot2['Status'])
+            info = str(lockerinstance[0].robot2['Info'])
             est_vg = lockerinstance[0].robot2['Est_VG']
             est_plyty = lockerinstance[0].robot2['Est_PLYTY']
-        if self.params.addresses['info_values'][info] in ['busy']:
-            if not self.params.addresses['status_values'][status] in ['laser_required', 'welding']:
+        if self.addresses['info_values'][info] in ['busy']:
+            if not self.addresses['status_values'][status] in ['laser_required', 'welding']:
                 self.redirectlasertoVG(lockerinstance)
-        elif self.params.addresses['info_values'][info] in ['nop']:
-            if self.params.addresses['status_values'][status] in ['laser_required']:
+        elif self.addresses['info_values'][info] in ['nop']:
+            if self.addresses['status_values'][status] in ['laser_required']:
                 self.redirectlasertoPLYTY(lockerinstance)
 
 

@@ -1,4 +1,4 @@
-from Sources.modbusTCPunits import Kawasaki, KawasakiVGParams
+from Sources.modbusTCPunits import Kawasaki
 from Sources.TactWatchdog import TactWatchdog as WDT
 from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
 from functools import lru_cache
@@ -8,7 +8,6 @@ import json
 class RobotVG(Kawasaki):
     def __init__(self, lockerinstance, configFile='', *args, **kwargs):
         self.bitconverter = Bits(len=16)
-        self.params = KawasakiVGParams()
         self.Alive = True
         while self.Alive:
             try:
@@ -23,7 +22,7 @@ class RobotVG(Kawasaki):
                 except:
                     ErrorEventWrite(lockerinstance, 'RobotVG init error - Error while reading config file')
                 else:
-                    super().__init__(lockerinstance, self.IPAddress, self.Port, params = self.parameters['Registers']*args, **kwargs)
+                    super().__init__(lockerinstance, self.IPAddress, self.Port, params = self.parameters['Registers'], *args, **kwargs)
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot['Alive'] = self.Alive
                     self.IOtab = [32*[False],32*[False]]
