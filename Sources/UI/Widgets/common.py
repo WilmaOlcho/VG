@@ -64,6 +64,7 @@ class Button(GeneralWidget, tk.Button):
         self.callback = callback
 
     def click(self):
+        self.focus_set()
         self.root.variables.internalEvents['buttonclicked'] = True
         if self.key:
             if self.keyattribute == '-':

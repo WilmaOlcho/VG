@@ -127,7 +127,11 @@ class Servo(ModbusSerialClient):
 
 
     def homing(self, lockerinstance):
-        pass
+        desiredmode = self.settings['modes']['homing'] & 0xffff
+        modeready = self.changemode(lockerinstance, desiredmode)
+        if modeready == desiredmode:
+            if self.status(lockerinstance, "operationenabled"):
+                self.command(lockerinstance, self.settings["commands"]["homingoperationstart"])
 
 
     def decode16bit2scomplement(self, _2s):
@@ -137,16 +141,45 @@ class Servo(ModbusSerialClient):
         else:
             return _2s & 0xffffffff
 
+    def changemode(self, lockerinstance, desiredmode):
+        currentmode = self.currentmode() & 0xffff
+        desiredmode &= 0xffff
+        print(currentmode, desiredmode)
+        with lockerinstance[0].lock:
+            switchon = lockerinstance[0].servo['switchon']
+            openabled = lockerinstance[0].servo["operationenabled"]
+        if currentmode != desiredmode:
+            while True:
+                self.IO(lockerinstance)
+                with lockerinstance[0].lock:
+                    disabled = lockerinstance[0].servo['disabled']
+                    fault = lockerinstance[0].servo['fault']
+                if disabled or fault:
+                    break
+                else:
+                    self.stop(lockerinstance)
+                try:
+                    ret = self.write_registers(int(self.settings['addresses']['setmode'],16), values = [desiredmode],unit=self.unit)
+                    assert(not isinstance(ret, Exception))
+                except Exception as e:
+                    ErrorEventWrite(lockerinstance, "Servo changemode returned exception: " + str(e) + str(ret))
+                else:
+                    if switchon or openabled:
+                        self.run(lockerinstance)
+                    if openabled:
+                        self.run(lockerinstance)
+        return self.currentmode() & 0xffff
+
+
     def step(self, lockerinstance):
         """
         In pointtable positioning this method check the direction of
         shaft to reach desired point of table and drives motor there.
 
-
         """
-##set mode to positioning
-
-        if True:
+        desiredmode = self.settings['modes']['pointtablepositioning'] & 0xffff
+        modeready = self.changemode(lockerinstance, desiredmode)
+        if modeready == desiredmode:
             if self.status(lockerinstance, "operationenabled"):
                 with lockerinstance[0].lock:
                     stepnb = int(lockerinstance[0].servo['positionNumber'])
@@ -181,10 +214,11 @@ class Servo(ModbusSerialClient):
     
 
     def reset(self, lockerinstance):
-        command = []
+        faultreset = self.settings['commands']['faultreset']
+        _faultreset = map(lambda it: -it,faultreset)
         if self.status(lockerinstance, "fault"):
-            command = self.settings['commands']['faultreset']
-        self.command(lockerinstance, command)
+            self.command(lockerinstance, _faultreset)
+            self.command(lockerinstance, faultreset)
 
 
     def stop(self, lockerinstance):
