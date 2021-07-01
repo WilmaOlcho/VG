@@ -2,6 +2,7 @@ import re
 INT = type(1)
 STRING = type('')
 MENU = "MENU"
+PROMPTMENU = "PROMPTMENU"
 
 class Variables(dict):
     def __init__(self, lockerinstance, **widgetsettings):
@@ -15,7 +16,7 @@ class Variables(dict):
         self.programcolumns = ["ID","Kolejność","Program SCOUT","Warstwa SCOUT","Pozycja robota","Tabela pozycji","Pozycja serwo","Pilnuj lasera","reserved"]
         self.displayedprogramcolumns = [False,True,True,True,True,True,True,True,False]
         self.columnwidths = [4,10,30,15,14,14,17,17,15]
-        self.columntypes = [INT, INT, MENU, INT, INT, INT, INT, INT, INT]
+        self.columntypes = [INT, INT, MENU, INT, INT, INT, INT, PROMPTMENU, INT]
         self.internalEvents = {
             'ProgramMenuRefresh':False,
             'RefreshStartEnd':False,

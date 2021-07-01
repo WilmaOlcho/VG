@@ -197,7 +197,9 @@ class Window(GeneralWidget, tk.Toplevel):
         y = int(screenHeigth/2 - size[1]/2)
         self.geometry('+{}+{}'.format(x,y))
 
-class RecipesMenu(Frame):
+
+
+class Menu(Frame):
     def __init__(self, master = None, callback = Blank,items = [], width = 20, variable = '', settings = {}, text = '', side = tk.TOP):
         super().__init__(master, branch = '')
         if settings: self.settings = settings
@@ -232,9 +234,9 @@ class RecipesMenu(Frame):
         super().update()
 
 
-    def setvariable(self, recipe):
-        self.menubutton.configure(text = recipe)
-        self.variable = recipe
+    def setvariable(self, text):
+        self.menubutton.configure(text = text)
+        self.variable = text
         self.callback(self)
 
 
@@ -254,3 +256,8 @@ class RecipesMenu(Frame):
         self.variable = value
     
 
+#class PromptMenu(Menu):
+
+
+#class RecipesMenu(Menu):
+    

@@ -40,6 +40,7 @@ class programController(object):
             recipes = lockerinstance[0].program['recipes']
         if isdir(path):
             files = [file for file in listdir(path) if isfile(join(path, file))]
+            files = list(filter(lambda file: file[:4]==".dsg",files))
             if files != recipes:
                 with lockerinstance[0].lock:
                     lockerinstance[0].program['recipes'] = files

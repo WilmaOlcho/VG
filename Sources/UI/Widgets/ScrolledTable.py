@@ -1,6 +1,6 @@
 import tkinter as tk
 import json
-from .common import LabelFrame, GeneralWidget, getroot, RecipesMenu
+from .common import LabelFrame, GeneralWidget, getroot, Menu
 from functools import reduce
 
 class ScrolledWidget(LabelFrame):
@@ -247,7 +247,10 @@ class PosTable(GeneralWidget):
     def __entry(self, row, column, value):
         sticky = tk.NS
         if row != 0 and self.root.variables.columntypes[column] == 'MENU':
-            entry = RecipesMenu(self, callback = self.RetrieveSynctable, items = self.recipes)
+            entry = Menu(self, callback = self.RetrieveSynctable, items = self.recipes)
+            sticky = tk.EW
+        elif row != 0 and self.root.variables.columntypes[column] == 'PROMPTMENU':
+            entry = Menu(self, callback = self.RetrieveSynctable, items = ["Nie","Tak"])
             sticky = tk.EW
         else:
             entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
@@ -314,6 +317,9 @@ class PosTable(GeneralWidget):
                 if value == widget:
                     changedvariable = value.get()
                     if self.root.variables.columntypes[column] == type('') or isinstance(self.root.variables.columntypes[column],str):
+                        if isinstance(changedvariable, str):
+                            if changedvariable in ['Nie', 'Tak']:
+                                changedvariable = True if changedvariable == 'Tak' else False
                         self.synctable[row][column] = changedvariable
                         return
                     if self.root.variables.columntypes[column] == type(1):
