@@ -293,6 +293,23 @@
                                     "error":"red"
                                 }
                             },
+                            "~homepositionisknown":{
+                                "Label":"Wymagane bazowanie",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"white",
+                                    "error":"red"
+                                }
+                            },
                             "Entry":{
                                 "label":"Pozycja serwo",
                                 "width":3,

@@ -12,7 +12,13 @@
         "command":["0x6040",["int",0],"w"],
         "setmode":["0x6060",["int",0],"w"],
         "currentmode":["0x6061",["int",0],"w"],
-        "setposition":["0x2d60",["int"],"w"]
+        "setposition":["0x2d60",["int"],"w"],
+        "homingspeed":["0x6099",["int"],"w"],
+        "homingmethod":["0x6098",["int"],"w"],
+        "currenttable":["0x2d69",["int"],"w"],
+        "targettable":["0x2d60",["int"],"w"],
+        "tablebaseaddress":["0x2800",["int"],"w"],
+        "":[]
     },
     "unit":1,
     "codes":{
@@ -44,6 +50,13 @@
         "pointtablepositioning":-101,
         "homing":6
 
+    },
+    "homing":{
+        "lsBspeed":500,
+        "msBspeed":0,
+        "lsBreturnspeed":10,
+        "msBreturnspeed":0,
+        "method":"0xFF"
     }
     
 }

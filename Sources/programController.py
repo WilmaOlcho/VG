@@ -3,6 +3,7 @@ import Sources.procedures as control
 from Sources import EventManager, WDT, ErrorEventWrite
 from os import listdir
 from os.path import isfile, join, isdir
+import inspect
 #
 
 class programController(object):

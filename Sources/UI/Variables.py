@@ -75,7 +75,8 @@ class Variables(dict):
             "fault":False,
             "warning":False,
             'positionreached':False,
-            'TroleyDocked':False
+            'TroleyDocked':False,
+            'homepositionisknown':False
         }
         self['robot'] = {
             'RobotGo':False,
@@ -248,8 +249,10 @@ class Variables(dict):
             self['troley']['fault'] = servo['fault']
             self['troley']['warning'] = servo['warning']
             self['troley']['positionreached'] = servo['positionreached']
+            self['troley']['homepositionisknown'] = servo['homepositionisknown']
             self['troley']['TroleyDocked'] = troley['docked']
             self['servo']['pos'] = servo['positionNumber']
+            
         self['troley']['run'] = False
         self['troley']['stop'] = False
         self['troley']['homing'] = False

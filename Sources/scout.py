@@ -5,6 +5,8 @@ import time
 from .common import ErrorEventWrite, EventManager, Bits
 from .TactWatchdog import TactWatchdog
 WDT = TactWatchdog.WDT
+from pywinauto import Application
+from threading import Thread
 
 class KDrawTCPInterface(socket.socket):
     '''Klasa dziedzicząca po socket.socket, zawierająca metody służące
@@ -529,6 +531,34 @@ class KDrawTCPInterface(socket.socket):
         message = self.encode_message(lockerinstance, ['WELD_RUN', len(pages), *pages])
         self.add_to_queue(lockerinstance, message)
 
+class scoutwindowThread(Application):
+    def __init__(self, lockerinstance, *args, **kwargs):
+        super().__init__(backend="uia")
+        self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
+        self.controlloop(lockerinstance)
+
+    def controlloop(self, lockerinstance):
+        while True:
+            try:
+                self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
+            except Exception as e:
+                ErrorEventWrite(lockerinstance, "SCOUTwindowThread raised exception:" + str(e))
+            with lockerinstance[0].lock:
+                recipe = lockerinstance[0].scout['recipe']
+                currentrecipe = lockerinstance[0].scout['currentrecipe']
+            if recipe != currentrecipe:
+                try:
+                    recpath = self.scoutwindow.child_window(title_re=".*dsg").window_text()
+                except:
+                    pass
+                else:
+                    if recpath:
+                        recipename = recpath.split("\\")[-1][:-4]
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].scout['currentrecipe'] = recipename
+            with lockerinstance[0].lock:
+                alive = not lockerinstance[0].events["closeApplication"]
+            if not alive: break
 class SCOUT():
     def __init__(self, lockerinstance, configfile):
         while True:
@@ -556,6 +586,8 @@ class SCOUT():
                     else:
                         with lockerinstance[0].lock:
                             lockerinstance[0].scout['lastrecipe'] = ''
+                        scoutapp = Thread(target = scoutwindowThread, args=(lockerinstance,))
+                        scoutapp.start()
                         self.loop(lockerinstance)
             finally:
                 with lockerinstance[0].lock:
@@ -614,7 +646,6 @@ class SCOUT():
                 if getaligninfo: lockerinstance[0].scout['GetAlignInfo'] = False
                 laserctrl = lockerinstance[0].scout['LaserCTRL']
                 if laserctrl: lockerinstance[0].scout['LaserCTRL'] = False
-                 #TODO laserctrl
             if alarm and lastrecv != 'AL_REPORT': self.connection.GetAlarmReport(lockerinstance)
             if tlaseron: self.connection.TurnOnLaser(lockerinstance)
             if tlaseroff: self.connection.TurnOffLaser(lockerinstance)

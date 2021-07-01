@@ -187,7 +187,7 @@ class RobotPlyty(Kawasaki):
             self.scout.TabControl.Drawing.select()
             self.scout.PlugIn.select()
             self.scout.IPC_Laser.select()
-            klasernetapp = AppController(Name_re="KLaser", title = 'KLaser')
+            klasernetapp = AppController(visible_only=False, backend = 'win32', Name_re="KLaser", title = 'KLaser')
             window = klasernetapp.top
             window.move_window(x=-1000)
             self.scout.TabControl.Auto.select()
@@ -195,10 +195,11 @@ class RobotPlyty(Kawasaki):
 
 
     def ExControlOff(self):
-        if self.Lasernet:
-            if self.Lasernet.status == 'running':
-                if self.Lasernet.top.Button8.window_text() == 'ON':
-                    self.klasernet.ExternalControlOff.click()
+        #if self.Lasernet:
+        #    if self.Lasernet.status == 'running':
+        #        self.Lasernet.top.TabControl.select("Control")
+        #        if self.Lasernet.top.Button8.window_text() == 'ON':
+        self.klasernet.ExternalControlOff.click()
 
 
     def Robotloop(self, lockerinstance):

@@ -57,6 +57,7 @@ class SharedLocker(object):
                 'recipe':'test',
                 'lastrecipe':'test',
                 'recipesdir':'',
+                'currentrecipe':"",
                 'pagesToWeld':manager.list([]),
                 'weldrunpagescount':0,
                 'LaserOn':False,
@@ -165,7 +166,8 @@ class SharedLocker(object):
                 'closeApplication':False,
                 'OutputChangedByRobot':False,
                 'requestlconresettimer':False,
-                'OutputsChangedByRobot':''}),
+                'OutputsChangedByRobot':'',
+                'servo.positionreached':False}),
             'pistons':manager.dict({
                 'Alive':False,
                 'SealUp':False,
@@ -221,6 +223,7 @@ class SharedLocker(object):
                 'Alive':False,
                 'Channel':-1}),
             'servo':manager.dict({
+                'homepositionisknown':False,
                 'Alive':False,
                 'homing':False,
                 'step':False,
