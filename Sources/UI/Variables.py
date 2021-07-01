@@ -12,9 +12,9 @@ class Variables(dict):
         self.currentProgramIndex = 0
         self.programposstart = 0
         self.programposend = 1
-        self.programcolumns = ["ID","Kolejność","Program SCOUT","Warstwa SCOUT","Pozycja robota","Tabela pozycji","Pozycja serwo","reserved","reserved"]
-        self.displayedprogramcolumns = [False,True,True,True,True,True,True,False,False]
-        self.columnwidths = [4,10,30,15,14,14,17,15,15]
+        self.programcolumns = ["ID","Kolejność","Program SCOUT","Warstwa SCOUT","Pozycja robota","Tabela pozycji","Pozycja serwo","Pilnuj lasera","reserved"]
+        self.displayedprogramcolumns = [False,True,True,True,True,True,True,True,False]
+        self.columnwidths = [4,10,30,15,14,14,17,17,15]
         self.columntypes = [INT, INT, MENU, INT, INT, INT, INT, INT, INT]
         self.internalEvents = {
             'ProgramMenuRefresh':False,

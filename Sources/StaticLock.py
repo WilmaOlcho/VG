@@ -167,7 +167,7 @@ class SharedLocker(object):
                 'OutputChangedByRobot':False,
                 'requestlconresettimer':False,
                 'OutputsChangedByRobot':'',
-                'servo.positionreached':False}),
+                'servo.homingattained':False}),
             'pistons':manager.dict({
                 'Alive':False,
                 'SealUp':False,
@@ -244,7 +244,9 @@ class SharedLocker(object):
                 "faultreactionactive":False,
                 "fault":False,
                 "warning":False,
-                'positionreached':False
+                'positionreached':False,
+                "homingattained":False,
+                "homepositionerror":False
                 }),
             'troley':manager.dict({
                 'Alive':False,
@@ -343,7 +345,8 @@ class SharedLocker(object):
                 'programline':manager.list([]),
                 'cycleended':False,
                 'handmodelaserrequire':False,
-                'laserrequire':False
+                'laserrequire':False,
+                "holdtofillwithgas":False
                 })
                 })
         self.scout = self.shared['SCOUT']

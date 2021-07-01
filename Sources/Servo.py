@@ -35,6 +35,15 @@ class Servo(ModbusSerialClient):
                         self.Bits = Bits(len=16, LE = True)
                         self.addresses = self.settings['addresses']
                         self.unit = int(self.settings['unit'])
+                        self.statusregisters=[
+                            "notreadytoswitchon",
+                            "disabled","readytoswitchon",
+                            "switchon","operationenabled",
+                            "faultreactionactive","fault",
+                            "warning",'positionreached',
+                            "homingattained","homepositionerror"
+                        ]
+
                         self.servoloop(lockerinstance)
             with lockerinstance[0].lock:
                 self.Alive = lockerinstance[0].servo['Alive']
@@ -68,26 +77,14 @@ class Servo(ModbusSerialClient):
         else:
             stbits = self.Bits(status.registers[0])
             codes = self.settings['codes']
-            notreadytoswitchon = self.checkcode(stbits,codes['notreadytoswitchon'])
-            disabled = self.checkcode(stbits,codes['disabled'])
-            readytoswitchon = self.checkcode(stbits,codes['readytoswitchon'])
-            switchon = self.checkcode(stbits,codes['switchon'])
-            operationenabled = self.checkcode(stbits,codes['operationenabled'])
-            faultreactionactive = self.checkcode(stbits,codes['faultreactionactive'])
-            fault = self.checkcode(stbits,codes['fault'])
-            warning = self.checkcode(stbits,codes['warning'])
-            positionreached = self.checkcode(stbits,codes['positionreached'])
-            with lockerinstance[0].lock:
-                servo = lockerinstance[0].servo
-                servo['notreadytoswitchon'] = notreadytoswitchon
-                servo['disabled'] = disabled
-                servo['readytoswitchon'] = readytoswitchon
-                servo['switchon'] = switchon
-                servo['operationenabled'] = operationenabled
-                servo['faultreactionactive'] = faultreactionactive
-                servo['fault'] = fault
-                servo['warning'] = warning
-                servo['positionreached'] = positionreached
+            for register in self.statusregisters:
+                registerstatus = self.checkcode(stbits,codes[register])
+                with lockerinstance[0].lock:
+                    lockerinstance[0].servo[register] = registerstatus
+        with lockerinstance[0].lock:
+            lockerinstance[0].servo["homepositionisknown"] |= not lockerinstance[0].troley['docked']
+            
+
 
 
     def status(self, lockerinstance, key):
@@ -152,11 +149,11 @@ class Servo(ModbusSerialClient):
 
             if self.status(lockerinstance, "operationenabled"):
                 self.command(lockerinstance, self.settings["commands"]["homingoperationstart"])
-        EventManager.AdaptEvent(lockerinstance,input = 'servo.positionreached',event='servo.positionreached')
+        EventManager.AdaptEvent(lockerinstance,input = 'servo.homingattained',event='servo.homingattained')
         def homereached(lockerinstance = lockerinstance):
             with lockerinstance[0].lock:
                 lockerinstance[0].servo['homepositionisknown'] = True
-        TactWatchdog.WDT(lockerinstance, limitval=20, scale = 's', eventToCatch= "servo.positionreached", additionalFuncOnCatch= homereached, errToRaise= "Servo home positioning timeout error")
+        TactWatchdog.WDT(lockerinstance, limitval=20, scale = 's', eventToCatch= "servo.homingattained", additionalFuncOnCatch= homereached, errToRaise= "Servo home positioning timeout error")
 
     def decode16bit2scomplement(self, _2s):
         if not isinstance(_2s, int): return

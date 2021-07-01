@@ -31,7 +31,9 @@
         "fault":[4,-3,-2,-1],
         "mainpoweron":[5],
         "warning":[8],
-        "positionreached":[11]
+        "positionreached":[11],
+        "homingattained":[13],
+        "homepositionerror":[14]
     },
     "commands":{
         "shutdown":[-1,2,3,-8],

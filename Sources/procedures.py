@@ -13,7 +13,7 @@ PAGE = 3
 ROBOTPOS = 4
 ROBOTTABLE = 5
 SERVOPOS = 6
-
+LASERHOLD = 7
 
 def startauto(lockerinstance):
     with lockerinstance[0].lock:
@@ -228,20 +228,22 @@ def Initialise(lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
             lockerinstance[0].program['stepnumber'] += 1
+
         #checking if servo is at home
-        #ServoSetState(lockerinstance, 'reset')
-        #ServoSetState(lockerinstance, 'run')
-        #servopos = ServoState(lockerinstance, 'positionNumber')
-        #ready = ServoState(lockerinstance, 'ready')
-        #if servopos == 0:
-        #    with lockerinstance[0].lock:
-        #        lockerinstance[0].program['stepnumber'] += 1
-        #elif servopos == -1:
-        #    if ready:
-        #        ServoSetState(lockerinstance, 'homing')
-        #else:
-        #    if ready:
-        #        ServoSetState(lockerinstance, 'step')   
+        ServoSetState(lockerinstance, 'reset')
+        ServoSetState(lockerinstance, 'run')
+        homepositionisknown = ServoState(lockerinstance, 'homepositionisknown')
+        if homepositionisknown:
+            with lockerinstance[0].lock:
+                lockerinstance[0].program['stepnumber'] += 1
+        else:
+            if ((ServoState(lockerinstance, 'disabled')
+                or ServoState(lockerinstance, 'readytoswitchon')
+                or ServoState(lockerinstance, 'switchon'))
+                and not ServoState(lockerinstance, 'fault')):
+                ServoSetState(lockerinstance, 'run')
+            elif ServoState(lockerinstance, 'positionreached'):
+                ServoSetState(lockerinstance, 'homing')
     if step == 3:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']
