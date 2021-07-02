@@ -11,8 +11,7 @@ class ScrolledWidget(LabelFrame):
         for i, state in enumerate(self.root.variables.displayedprogramcolumns):
             if state: self.width += (self.root.variables.columnwidths[i]*6)
         self['width'] = self.width
-        self.pack(expand = tk.N)
-        self.cnv = tk.Canvas(master = self, width = self.width, height = self.widgetheight)
+        self.cnv = tk.Canvas(master = self, height = self.widgetheight)
         self.cnv.__setattr__('settings',self.settings)
         self.xscrollbar = tk.Scrollbar(master = self, orient='horizontal', command = self.cnv.xview) if self.settings['scrolltype'] in ['h', 'horizontal', 'x', 'xy', 'yx', 'both'] else False
         self.yscrollbar = tk.Scrollbar(master = self, orient='vertical', command = self.cnv.yview) if self.settings['scrolltype'] in ['v', 'vertical', 'y', 'xy', 'yx', 'both'] else False
@@ -22,6 +21,9 @@ class ScrolledWidget(LabelFrame):
         if self.yscrollbar:
             self.cnv.configure(yscrollcommand=self.yscrollbar.set)
             self.yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            self.width += 25
+        self.cnv.config(width = self.width)
+        self.pack(expand = tk.N)
         self.cnv.pack(expand = tk.YES, fill = tk.BOTH)
         self.container = tk.Frame(master= self.cnv, width = self.width, height = self.widgetheight)
         self.container.__setattr__('settings',self.settings)
@@ -228,7 +230,6 @@ class PosTable(GeneralWidget):
             widget.bind('<Right>',self.ChangeFocus)
         else:
             widget.bind('<ButtonRelease-3>',lambda event, _=self: [_.ChangeFocus(event,row=row, column = column,type = 'abs'), _.ContextMenuPopup(event)])
-            #widget.bind('<FocusIn>',lambda e: e.widget.select_range(0,tk.END))
             widget.bind('<Up>',self.ChangeFocus)
             widget.bind('<Down>',self.ChangeFocus)
             widget.bind('<Left>',self.ChangeFocus)
@@ -247,13 +248,13 @@ class PosTable(GeneralWidget):
     def __entry(self, row, column, value):
         sticky = tk.NS
         if row != 0 and self.root.variables.columntypes[column] == 'MENU':
-            entry = Menu(self, callback = self.RetrieveSynctable, items = self.recipes)
+            entry = Menu(self, width = self.root.variables.columnwidths[column], callback = self.RetrieveSynctable, items = self.recipes)
             sticky = tk.EW
         elif row != 0 and self.root.variables.columntypes[column] == 'PROMPTMENU':
-            entry = Menu(self, callback = self.RetrieveSynctable, items = ["Nie","Tak"])
+            entry = Menu(self, width = self.root.variables.columnwidths[column], callback = self.RetrieveSynctable, items = ["Nie","Tak"])
             sticky = tk.EW
         else:
-            entry = tk.Entry(self, width = self.root.variables.columnwidths[column])
+            entry = tk.Entry(self, justify = tk.CENTER, width = self.root.variables.columnwidths[column])
         self.entries[row][column] = entry
         self.entries[row][column].delete(0,tk.END)
         if row == 0:
@@ -317,9 +318,6 @@ class PosTable(GeneralWidget):
                 if value == widget:
                     changedvariable = value.get()
                     if self.root.variables.columntypes[column] == type('') or isinstance(self.root.variables.columntypes[column],str):
-                        if isinstance(changedvariable, str):
-                            if changedvariable in ['Nie', 'Tak']:
-                                changedvariable = True if changedvariable == 'Tak' else False
                         self.synctable[row][column] = changedvariable
                         return
                     if self.root.variables.columntypes[column] == type(1):

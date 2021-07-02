@@ -203,16 +203,16 @@ class Menu(Frame):
     def __init__(self, master = None, callback = Blank,items = [], width = 20, variable = '', settings = {}, text = '', side = tk.TOP):
         super().__init__(master, branch = '')
         if settings: self.settings = settings
-        self.width = width
+        self.width = width - 5
         self.callback = callback
-        self.menubutton = tk.Menubutton(self, width = self.width, relief = 'sunken', bg = 'white', text = text)
+        self.menubutton = tk.Menubutton(self, justify = tk.CENTER, width = self.width, relief = 'sunken', bg = 'white', text = text)
         self.menu = None
         self.items = items
         self.variable = variable
         self.createmenu()
         for widget in self.winfo_children():
             widget.unbind('<Button-3>')
-            widget.pack(side = side, expand = 1, fill = 'both')
+            widget.pack(side = side, expand = tk.YES, fill = tk.BOTH)
 
 
     def createmenu(self):
@@ -222,7 +222,7 @@ class Menu(Frame):
         self.menubutton['menu'] = self.menu
         for item in self.items:
             self.menu.add_command(label = item, command = lambda obj = self, choice = item: obj.setvariable(choice))
-        self.menubutton.pack(expand = 1, fill = 'both')
+        self.menubutton.pack(expand = tk.YES, fill = tk.BOTH)
 
 
     def config(self, **kwargs):
