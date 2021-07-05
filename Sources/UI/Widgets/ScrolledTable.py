@@ -25,7 +25,7 @@ class ScrolledWidget(LabelFrame):
         self.cnv.config(width = self.width)
         self.pack(expand = tk.N)
         self.cnv.pack(expand = tk.YES, fill = tk.BOTH)
-        self.container = tk.Frame(master= self.cnv, width = self.width, height = self.widgetheight)
+        self.container = tk.Frame(master= self.cnv)
         self.container.__setattr__('settings',self.settings)
         self.content = widgetCls(master = self.container)
         self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
@@ -37,9 +37,9 @@ class ScrolledWidget(LabelFrame):
             self.height = self.root.variables.displayedprogramtableheight
             self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
             self.cnv.itemconfig(self.intid1, window = self.container)        
-            self.cnv.config(scrollregion = (0,0,self.width,self.height), highlightthickness = 0)
-            self.cnv.xview_moveto(0)
-            self.cnv.yview_moveto(0)
+            self.cnv.config(scrollregion = self.cnv.bbox('all'), highlightthickness = 0)
+            #self.cnv.xview_moveto(0)
+            #self.cnv.yview_moveto(0)
         super().update()
 
 class PosTable(GeneralWidget):
@@ -53,7 +53,7 @@ class PosTable(GeneralWidget):
         self.synctable = []
         self.blankprogram = {
             "Name":"",
-            "Table":[[0,0,'',0,0,0,0,0,0]]
+            "Table":[[0,0,'',0,0,0,0,'',0]]
         }
         self.visibleColumns = []
         for i, val in enumerate(self.root.variables.displayedprogramcolumns):
@@ -306,7 +306,7 @@ class PosTable(GeneralWidget):
             self.configentries(state = 'disabled')
         if self.root.variables.internalEvents['stop']:
             self.configentries(state = 'normal')
-        return False
+        return True
     
     def RetrieveSynctable(self, event):
         if isinstance(event, tk.Event):
