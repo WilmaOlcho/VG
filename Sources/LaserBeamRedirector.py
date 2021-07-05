@@ -1,12 +1,14 @@
 from Sources.modbusTCPunits import Kawasaki
-from Sources.TactWatchdog import TactWatchdog as WDT
-from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
-from functools import lru_cache
+from .common import Bits, dictKeyByVal
 from pywinauto import Application
 import psutil
 import json
 import wmi, os, re
 from time import sleep
+
+
+import logging
+_logger = logging.getLogger(__name__)
 
 class AppController(Application):
     allow_magic_lookup = True
@@ -83,13 +85,13 @@ class RobotPlyty(Kawasaki):
                 with open(configFile) as Hfile:
                     self.parameters = json.load(Hfile)
             except:
-                ErrorEventWrite(lockerinstance, 'RobotPLYTY init error - Config file not found')
+                _logger.debug('RobotPLYTY init error - Config file not found')
             else:
                 try:
                     self.IPAddress = self.parameters['RobotParameters']['IPAddress']
                     self.Port = self.parameters['RobotParameters']['Port']
                 except:
-                    ErrorEventWrite(lockerinstance, 'RobotPLYTY init error - Error while reading config file')
+                    _logger.debug('RobotPLYTY init error - Error while reading config file')
                 else:
                     super().__init__(lockerinstance, self.IPAddress, self.Port, params = self.parameters["Registers"], *args, **kwargs)
                     with lockerinstance[0].lock:
@@ -97,7 +99,7 @@ class RobotPlyty(Kawasaki):
                     try:
                         self.selfwindow = self.getselfwindow(lockerinstance)
                     except:
-                        print('Przejecie okna glownego nie powiodlo sie')
+                        _logger.info('Przejecie okna glownego nie powiodlo sie')
                     else:
                         try:
                             with lockerinstance[0].lock:
@@ -106,22 +108,22 @@ class RobotPlyty(Kawasaki):
                             self.kdrawprocess = self.getkdrawprocess()
                             self.scout = self.scoutwindowhandle()
                         except:
-                            print('Przejecie okna K-Draw nie powiodlo sie')
+                            _logger.info('Przejecie okna K-Draw nie powiodlo sie')
                         else:
                             try:
                                 self.klasernet = self.klasernetwindowhandle()
                             except:
-                                print('Przejecie okna KLaserNet nie powiodlo sie')
+                                _logger.info('Przejecie okna KLaserNet nie powiodlo sie')
                             else:
                                 try:
                                     self.LasernetPID = self.RunLaserNet()
                                 except:
-                                    print('Otwarcie okna LaserNet nie powiodlo sie')
+                                    _logger.info('Otwarcie okna LaserNet nie powiodlo sie')
                                 else:
                                     try:
                                         self.Lasernet = AppController(PID = self.LasernetPID, title = ' LaserNet')
                                     except:
-                                        print('Przejęcie okna LaserNet nie powiodlo sie')
+                                        _logger.info('Przejęcie okna LaserNet nie powiodlo sie')
                                     else:
                                         self.prtstr = ''
                                         self.selfwindow.set_focus()
@@ -135,7 +137,7 @@ class RobotPlyty(Kawasaki):
                         break
 
     def RunLaserNet(self):
-        print('RunLaserNet')
+        _logger.info('RunLaserNet')
         param = self.parameters['LaserBeamRedirector']
         pcs = list(filter(lambda p,namestr=param['LaserNet']: namestr == p.Name, wmi.WMI().InstancesOf('Win32_Process')))
         if not pcs:

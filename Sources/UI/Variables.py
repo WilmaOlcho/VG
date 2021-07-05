@@ -455,8 +455,9 @@ class Variables(dict):
         lockerinstance = self.lockerinstance
         with lockerinstance[0].lock:
             self.alive = lockerinstance[0].console['Alive']
+            errors = '\n'.join(self['widgetsettings']['ErrorCodes'][i] for i in lockerinstance[0].shared['Errcodes'])
             info = '\n'.join(self['widgetsettings']['StatusCodes'][i] for i in lockerinstance[0].shared['Statuscodes'])
-            errors = lockerinstance[0].shared['Errors']
+            #errors = lockerinstance[0].shared['Errors']
             self['ImportantMessages'] = errors if errors else info
             events = lockerinstance[0].events
             if self.internalEvents['buttonclicked']:

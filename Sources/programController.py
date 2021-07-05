@@ -1,10 +1,12 @@
-import json
 import Sources.procedures as control
-from Sources import EventManager, WDT, ErrorEventWrite
+from Sources import EventManager, WDT
 from os import listdir
 from os.path import isfile, join, isdir
 import re
-#
+
+
+import logging
+_logger = logging.getLogger(__name__)
 
 class programController(object):
     def __init__(self, lockerinstance, programfilepath, *args, **kwargs):
@@ -49,12 +51,14 @@ class programController(object):
         safety = control.CheckSafety(lockerinstance)
         program = control.CheckProgram(lockerinstance)
         ready = control.CheckPositions(lockerinstance)
+        with lockerinstance[0].lock:
+            initialised = lockerinstance[0].program['initialised']
         if safety and program:
             EventManager.AdaptEvent(lockerinstance, input = 'events.startprogram', callback = control.startprocedure, callbackargs = (lockerinstance,))
         else:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['running'] = False
-        if not ready:
+        if not ready or not initialised:
             control.Initialise(lockerinstance)
         else:
             control.Program(lockerinstance)
@@ -73,26 +77,11 @@ class programController(object):
             step = lockerinstance[0].program['stepnumber']
             automode = lockerinstance[0].program['automode']
             error = lockerinstance[0].events['Error']
-            if lockerinstance[0].program['programline']:
-                programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
-            else:
-                programrecipe = ''
         if running and cycle and not cycleended and not error:
-            if step == 0: self.step0(lockerinstance)
-            if step == 1: self.step1(lockerinstance)
-            if step == 2: self.step2(lockerinstance)
-            if step == 3: self.step3(lockerinstance)
-            if step == 4: self.step4(lockerinstance)
-            if step == 5: self.step5(lockerinstance)
-            if step == 6: self.step6(lockerinstance)                 
-            if step == 7: self.step7(lockerinstance)
-            if step == 8: self.step8(lockerinstance)
-            if step == 9: self.step9(lockerinstance)
-            if step == 10: self.step10(lockerinstance)                        
-            if step == 11: self.step11(lockerinstance)
-            if step == 12: self.step12(lockerinstance)
-            if step == 13: self.step13(lockerinstance)
-            if step == 14: self.step14(lockerinstance)
+            try:
+                exec('self.step'+step+"(lockerinstance)")
+            except:
+                pass
             with lockerinstance[0].lock:
                 if lockerinstance[0].program['stepcomplete'] and automode:
                     lockerinstance[0].program['stepcomplete'] = False
@@ -102,225 +91,199 @@ class programController(object):
                 if step > lockerinstance[0].program['stepnumber']:
                     lockerinstance[0].program['stepnumber'] = step
 
+
     def stepexceed(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].program['stepcomplete'] = True
 
+
+    def step(func, *args, **kwargs):
+        def internal(self, lockerinstance, *args, **kwargs):
+            with lockerinstance[0].lock:
+                lockerinstance[0].shared['Statuscodes'] = "S" + str(re.search( r'.*\d+', func.__name__).group())
+            result = func(self, lockerinstance, *args, **kwargs)
+            if result:
+                stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
+                WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = int(result), scale = 's')
+            return result
+        return internal
+
+
+    @step
     def step0(self, lockerinstance): #Scout prepare recipe
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S0']
             scoutrecipe = lockerinstance[0].scout['currentrecipe']
             programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
         if scoutrecipe != programrecipe:
             with lockerinstance[0].lock:
                 lockerinstance[0].scout['recipe'] = programrecipe
                 lockerinstance[0].scout['Recipechangedsuccesfully'] = False
-        stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-        WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+            return True
 
+    @step
     def step1(self, lockerinstance): #Scout change recipe
-        with lockerinstance[0].lock: 
-            lockerinstance[0].shared['Statuscodes'] = ['S1']
-            scoutrecipe = lockerinstance[0].scout['recipe']
-            lastrecipe = lockerinstance[0].scout['currentrecipe']
-            recipechanged = lockerinstance[0].scout['Recipechangedsuccesfully']
-            kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
-            actmessage = lockerinstance[0].scout['actualmessage']
-        if scoutrecipe != lastrecipe and not recipechanged:
-            if not kdrawwaiting and not re.findall(scoutrecipe,actmessage.decode()):
-                with lockerinstance[0].lock:
-                    lockerinstance[0].scout['SetRecipe'] |= True
+        if ((control.SCOUTState(lockerinstance, 'recipe')
+            != control.SCOUTState(lockerinstance, 'currentrecipe'))
+            and not control.SCOUTState(lockerinstance, 'Recipechangedsuccesfully')):
+            if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
+                and not re.findall(control.SCOUTState(lockerinstance, 'recipe'),control.SCOUTState(lockerinstance, 'actualmessage').decode())):
+                control.SCOUTSetState(lockerinstance, 'SetRecipe')
         else:
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['Recipechangedsuccesfully'] = False
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
-    
+            control.SCOUTReetState(lockerinstance, 'Recipechangedsuccesfully')
+            return True
+
+
+    @step
     def step2(self, lockerinstance): #Seal down if there is needed to change servo position
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S2']
-            servopos = lockerinstance[0].servo['positionNumber']
             programservopos = lockerinstance[0].program['programline'][control.SERVOPOS]
-            sealdown = lockerinstance[0].pistons['sensorSealDown']
-        if (servopos != programservopos) and not sealdown:
-            with lockerinstance[0].lock:
-                lockerinstance[0].pistons['SealDown'] = True
+        if ((control.ServoState(lockerinstance,'positionNumber') != programservopos) 
+            and not control.CheckPiston(lockerinstance, "Seal", "Down")):
+            control.SetPiston(lockerinstance, "Seal", "Down")
         else:
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+            return True
 
 
+    @step
     def step3(self, lockerinstance): #servo positioning
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S3']
-            servopos = lockerinstance[0].servo['positionNumber']
-            posreached = lockerinstance[0].servo['positionreached']
             programservopos = lockerinstance[0].program['programline'][control.SERVOPOS]
-            robothome = lockerinstance[0].robot['homepos']
-            switchon = lockerinstance[0].servo['switchon']
-            operationenabled = lockerinstance[0].servo['operationenabled']
-            disabled = lockerinstance[0].servo['disabled']
-            readytoswitchon = lockerinstance[0].servo['readytoswitchon']
-            fault = lockerinstance[0].servo['fault']
-        if servopos == programservopos and posreached:
-            if switchon or operationenabled:
-                with lockerinstance[0].lock:
-                    lockerinstance[0].servo['stop'] = True
+        if (control.ServoState(lockerinstance,'positionNumber') == programservopos
+            and control.ServoState(lockerinstance,'positionreached')):
+            if (control.ServoState(lockerinstance, 'switchon') 
+                or control.ServoState(lockerinstance, "operationenabled")):
+                control.ServoSetState(lockerinstance, 'stop')
             else:
-                stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-                WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+                return True
         else:
-            if robothome:
-                if (readytoswitchon or disabled or switchon) and not fault:
-                    with lockerinstance[0].lock:
-                        lockerinstance[0].servo['run'] = True
-                if operationenabled:
-                    with lockerinstance[0].lock:
-                        lockerinstance[0].servo['step'] = True
+            if control.RobotState(lockerinstance,'homepos'):
+                if ((control.ServoState(lockerinstance, 'readytoswitchon') 
+                    or control.ServoState(lockerinstance, 'disabled') 
+                    or control.ServoState(lockerinstance, 'switchon'))
+                    and not control.ServoState(lockerinstance, 'fault')):
+                    control.ServoSetState(lockerinstance, 'run')
+                if control.ServoState(lockerinstance, "operationenabled"):
+                    control.ServoSetState(lockerinstance, 'step')
             else:
-                with lockerinstance[0].lock:
-                    lockerinstance[0].robot['homing'] = True
-    
+                control.ServoSetState(lockerinstance, 'homing')
+
+
+    @step
     def step4(self, lockerinstance): #robot position setting
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S4']
             programtable = lockerinstance[0].program['programline'][control.ROBOTTABLE]
             programpos = lockerinstance[0].program['programline'][control.ROBOTPOS]
-            robotpostable = lockerinstance[0].robot['settable']
-            robotpos = lockerinstance[0].robot['setpos']
-        if (robotpos !=  programpos) or (robotpostable != programtable):
-            with lockerinstance[0].lock:
-                lockerinstance[0].robot['settable'] = programtable
-                lockerinstance[0].robot['setpos'] = programpos
+        if ((control.RobotState(lockerinstance,'setpos') !=  programpos)
+            or (control.RobotState(lockerinstance,'settable') != programtable)):
+            control.RobotSetValue(lockerinstance, 'settable', programtable)
+            control.RobotSetValue(lockerinstance, 'setpos', programpos)
         else:
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
-    
+            return True
+
+
+    @step
     def step5(self, lockerinstance): #robot moving
-        with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S5']
-            robotinpos = lockerinstance[0].robot['currentpos'] == lockerinstance[0].robot['setpos']
-            robotincommand = lockerinstance[0].robot['activecommand']
-        if not robotinpos:
-            if not robotincommand:
-                with lockerinstance[0].lock:
-                    lockerinstance[0].robot['go'] = True
+        if not control.RobotState(lockerinstance,'currentpos') == control.RobotState(lockerinstance,'setpos'):
+            if not control.RobotState(lockerinstance,'activecommand'):
+                control.RobotGopos(lockerinstance,control.RobotState(lockerinstance,'setpos'))
         else:
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
-    
+            return True
+
+
+    @step
     def step6(self, lockerinstance): #pneumatics arming
         holdtofillwithgas = False
-        with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S6']
-            sealdown = lockerinstance[0].pistons['sensorSealDown']
-        if sealdown:
+        if control.CheckPiston(lockerinstance, "Seal", "Down"):
             holdtofillwithgas = True
-            with lockerinstance[0].lock:
-                lockerinstance[0].pistons['SealUp'] = True
-                lockerinstance[0].program['holdtofillwithgas'] = holdtofillwithgas
+            control.SetPiston(lockerinstance, "Seal", "Up")
+            control.setvalue(lockerinstance,"program","holdtofillwithgas",True)
         else:
-            with lockerinstance[0].lock:
-                lockerinstance[0].pistons['ShieldingGas'] = True 
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 5 if holdtofillwithgas else 1, scale = 's')
+            control.SetPiston(lockerinstance, "ShieldingGas")
+            return 5 if holdtofillwithgas else 1
     
+
+    @step
     def step7(self, lockerinstance): #filling chamber with gas
         with lockerinstance[0].lock:
             holdtofillwithgas = lockerinstance[0].program['holdtofillwithgas']
             lockerinstance[0].shared['Statuscodes'] = ['S7.2' if holdtofillwithgas else 'S7']
-        stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-        WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 30 if holdtofillwithgas else 3, scale = 's')
-    
+        return 30 if holdtofillwithgas else 3
 
+
+    @step
     def step8(self, lockerinstance):
-        with lockerinstance[0].lock:
-            laserisbusy = lockerinstance[0].robot2['laserlocked']
-            lockerinstance[0].program['laserrequire'] = True
-        if laserisbusy:
+        control.setvalue(lockerinstance, "program", 'laserrequire', True)
+        if control.Robot2State(lockerinstance, "laserlocked"):
             with lockerinstance[0].lock:
                 lockerinstance[0].shared['Statuscodes'] = ['S8.2']
             return
-        with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S8']
-            onpath = lockerinstance[0].mux['onpath']
-            LaserReady = lockerinstance[0].lcon['LaserReady']
-            LaserError = lockerinstance[0].lcon['LaserError']
-        if not onpath or not LaserReady:
-            lockerinstance[0].lcon['SetChannel'] = True
-            lockerinstance[0].mux['acquire'] = True
-        if LaserError:
-            lockerinstance[0].lcon['LaserReset']
-        if onpath and LaserReady:
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
-    
+        if (not control.LaserState(lockerinstance, 'onpath') 
+            or not control.LaserState(lockerinstance, 'LaserReady')):
+            control.LaserSetState(lockerinstance, "SetChannel")
+            control.LaserSetState(lockerinstance, "acquire")
+        if control.LaserState(lockerinstance, 'LaserError'):
+            control.LaserSetState(lockerinstance, "LaserReset")
+        if (control.LaserState(lockerinstance, 'onpath')
+            and control.LaserState(lockerinstance, 'LaserReady')):
+            return True
+
+
+    @step
     def step9(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S9']
-            kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
             kdrawautostart = lockerinstance[0].scout['status']['AutoStart']
-        if not kdrawwaiting and not kdrawautostart:
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['AutostartOn'] = True
+        if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
+            and not kdrawautostart):
+            control.SCOUTSetState(lockerinstance, 'AutostartOn')
         elif kdrawautostart:
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+            return True
+
     
+    @step
     def step10(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S10']
             lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
-            kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
-            kdrawmanualaligncheck = lockerinstance[0].scout['ManualAlignCheck']
-        if not kdrawwaiting and not kdrawmanualaligncheck:
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['ManualAlign'] = True
-        elif kdrawmanualaligncheck:
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['ManualAlignCheck'] = False
-                lockerinstance[0].pistons['HeadCooling'] = True
-                lockerinstance[0].pistons['CrossJet'] = True
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+        if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
+            and not control.SCOUTState(lockerinstance, "ManualAlignCheck")):
+            control.SCOUTSetState(lockerinstance, 'ManualAlign')
+        elif control.SCOUTState(lockerinstance, "ManualAlignCheck"):
+            control.SCOUTResetState(lockerinstance, 'ManualAlignCheck')
+            control.SetPiston(lockerinstance, "HeadCooling")
+            control.SetPiston(lockerinstance, "CrossJet")
+            return True
 
 
+    @step
     def step11(self, lockerinstance):
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = ['S11']
             lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
-            kdrawwaiting = lockerinstance[0].events['KDrawWaitingForMessage']
-            manualweldcheck = lockerinstance[0].scout['manualweldcheck']
-        if not kdrawwaiting and not manualweldcheck:
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['ManualWeld'] = True
-        elif manualweldcheck:
-            with lockerinstance[0].lock:
-                lockerinstance[0].scout['ManualWeldCheck'] = False
-                lockerinstance[0].pistons['HeadCooling'] = False
-                lockerinstance[0].pistons['CrossJet'] = False                         
-                lockerinstance[0].pistons['ShieldingGas'] = False 
-            stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-            WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
-   
+        if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
+            and not control.SCOUTState(lockerinstance, 'manualweldcheck')):
+            control.SCOUTSetState(lockerinstance, 'ManualWeld')
+        elif control.SCOUTState(lockerinstance, 'manualweldcheck'):
+            control.SCOUTResetState(lockerinstance, "ManualWeldCheck")
+            control.ResetPiston(lockerinstance, "HeadCooling")
+            control.ResetPiston(lockerinstance, "CrossJet")
+            control.ResetPiston(lockerinstance, "ShieldingGas")            
+            return True
 
+
+    @step
     def step12(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S12']
             hold = lockerinstance[0].program['programline'][control.LASERHOLD]
         if not hold:
-            with lockerinstance[0].lock:
-                lockerinstance[0].mux['release'] = True
-                lockerinstance[0].lcon['ReleaseChannel'] = True            
-                lockerinstance[0].program['laserrequire'] = False            
-        stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
-        WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = 1, scale = 's')
+            control.LaserSetState(lockerinstance, "release")
+            control.LaserSetState(lockerinstance, "ReleaseChannel")
+            control.setvalue(lockerinstance, "program", 'laserrequire', False)           
+        return True
 
 
+    @step
     def step13(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S13']
             lockerinstance[0].program['cycleended'] = True
             lockerinstance[0].program['stepnumber'] = 0
-        step = 0
         

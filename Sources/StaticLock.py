@@ -116,6 +116,7 @@ class SharedLocker(object):
                 'LaserCTRVal':False
 
             }),
+            'Errorcodeslist':manager.list(),
             'Errors':'',
             'Errcodes':manager.list(),
             'Statuscodes':manager.list(),

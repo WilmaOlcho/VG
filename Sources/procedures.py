@@ -1,4 +1,3 @@
-
 from Sources import ErrorEventWrite
 from functools import reduce
 import json
@@ -14,6 +13,10 @@ ROBOTPOS = 4
 ROBOTTABLE = 5
 SERVOPOS = 6
 LASERHOLD = 7
+
+
+import logging
+_logger = logging.getLogger(__name__)
 
 def startauto(lockerinstance):
     with lockerinstance[0].lock:
@@ -62,29 +65,27 @@ def CheckSafety(lockerinstance):
         door = lockerinstance[0].safety['DoorClosed']
         troley = lockerinstance[0].safety['TroleyInside']
     if not estoparmed:
-        ErrorEventWrite(lockerinstance, "Przerwany obwód bezpieczeństwa!", noerror=True)
+        ErrorEventWrite(lockerinstance, errcode = "10", noerror=True)
     if not zonearmed:
-        ErrorEventWrite(lockerinstance, "Strefa bezpieczeństwa otwarta!", noerror=True)
+        ErrorEventWrite(lockerinstance, errcode = "11", noerror=True)
     if not door:
-        ErrorEventWrite(lockerinstance, "Drzwi serwisowe otwarte!", noerror=True)
-    if not door:
-        ErrorEventWrite(lockerinstance, "Drzwi serwisowe otwarte!", noerror=True)
+        ErrorEventWrite(lockerinstance, errcode = "12", noerror=True)
     if not troley:
-        ErrorEventWrite(lockerinstance, "Wózek poza pozycją bezpieczną!", noerror=True)
+        ErrorEventWrite(lockerinstance, errcode = "13", noerror=True)
     if resetreq:
-        ErrorEventWrite(lockerinstance, "Uzbrojenie maszyny wymagane!", noerror=True)
+        ErrorEventWrite(lockerinstance, errcode = "14", noerror=True)
     if (zonearmed and estoparmed) or (robotmode and deadman):
         return True
     return False
 
 
 def CheckProgram(lockerinstance):
-    errmsg = ''
+    errcode = ''
     programname = ''
     programpath = ''
     with lockerinstance[0].lock:
         if not lockerinstance[0].program['ProgramName'] or not lockerinstance[0].program['ProgramsFilePath']:
-            errmsg = 'Program not loaded'
+            errcode = '16'
         else:
             programname = lockerinstance[0].program['ProgramName']
             programpath = lockerinstance[0].program['ProgramsFilePath']
@@ -95,10 +96,10 @@ def CheckProgram(lockerinstance):
             if program['Name'] == programname:
                 recipesarepresent = checkrecipes(lockerinstance, program)
                 if not recipesarepresent:
-                    errmsg = 'Program is invalid'
+                    errcode = '15'
                 break
-    if errmsg:
-        ErrorEventWrite(lockerinstance, errmsg)
+    if errcode:
+        ErrorEventWrite(lockerinstance, errcode = errcode)
         return False
     else:
         return True
@@ -111,7 +112,7 @@ def CheckPositions(lockerinstance):
     if not initialised:
         result = CheckPiston(lockerinstance, 'Seal', 'Down')
         result &= RobotState(lockerinstance, 'homepos')
-        #result &= ServoState(lockerinstance, 'positionNumber') == 0
+        result &= ServoState(lockerinstance, 'homepositionisknown')
         result &= CheckPiston(lockerinstance, 'Air', 'Ok')
         result &= CheckPiston(lockerinstance, 'ShieldingGas', 'Ok')
         result &= CheckPiston(lockerinstance, 'Vacuum', 'Ok')
@@ -135,49 +136,91 @@ def GetState(lockerinstance, path, state, alternativepath = ''):
         elif alternativepath:
             currentstate = lockerinstance[0].shared[alternativepath][state]
         else:
-            ErrorEventWrite(lockerinstance, 'GetState procedure got wrong parameters')
+            _logger.debug('GetState procedure got wrong parameters')
             currentstate = -1
     return currentstate
 
-
-def RobotState(lockerinstance, state):
-    return GetState(lockerinstance, 'robot', state)
+def setvalue(lockerinstance, branch, register, value):
+    print('lockerinstance.shared[{}][{}] = {}'.format(branch, register, value))
+    with lockerinstance[0].lock:
+        lockerinstance[0].shared[branch][register] = value
 
 
 def ServoState(lockerinstance, state):
     return GetState(lockerinstance, 'servo', state)
 
+def EventState(lockerinstance, state):
+    return GetState(lockerinstance, 'events', state)
+
+def ServoSetState(lockerinstance, state):
+    setvalue(lockerinstance, 'servo', state, True)
+
+def LaserSetState(lockerinstance, state):
+    with lockerinstance[0].lock:
+        if state in lockerinstance[0].shared['lcon'].keys():
+            setvalue(lockerinstance, 'lcon', state, True)
+        else:
+            setvalue(lockerinstance, 'mux', state, True)
+
+def LaserResetState(lockerinstance, state):
+    with lockerinstance[0].lock:
+        if state in lockerinstance[0].shared['lcon'].keys():
+            setvalue(lockerinstance, 'lcon', state, False)
+        else:
+            setvalue(lockerinstance, 'mux', state, False)
 
 def LaserState(lockerinstance, state):
     return GetState(lockerinstance, 'lcon', state, alternativepath= 'mux')
 
-
 def SCOUTState(lockerinstance, state):
     return GetState(lockerinstance, 'SCOUT', state)
 
+def SCOUTSetState(lockerinstance, state):
+    setvalue(lockerinstance, 'SCOUT', state, True)
+
+def SCOUTResetState(lockerinstance, state):
+    setvalue(lockerinstance, 'SCOUT', state, False)
 
 def SetPiston(lockerinstance, pistonname, action):
-    with lockerinstance[0].lock:
-        lockerinstance[0].pistons[pistonname + action] = True
+    if action:
+        setvalue(lockerinstance, 'pistons', pistonname + action, True)
+    else:
+        setvalue(lockerinstance, 'pistons', pistonname, True)
 
+def ResetPiston(lockerinstance, pistonname, action):
+    setvalue(lockerinstance, 'pistons', pistonname + action, False)
+
+def RobotState(lockerinstance, state):
+    return GetState(lockerinstance, 'robot', state)
+
+def RobotSetState(lockerinstance, state):
+    setvalue(lockerinstance, 'robot', state, True)
+
+def RobotSetValue(lockerinstance, state, value):
+    setvalue(lockerinstance, 'robot', state, value)
+
+def RobotResetState(lockerinstance, state):
+    setvalue(lockerinstance, 'robot', state, False)
+
+def Robot2State(lockerinstance, state):
+    return GetState(lockerinstance, 'robot2', state)
+
+def Robot2SetState(lockerinstance, state):
+    setvalue(lockerinstance, 'robot2', state, True)
+
+def Robot2SetValue(lockerinstance, state, value):
+    setvalue(lockerinstance, 'robot2', state, value)
+
+def Robot2ResetState(lockerinstance, state):
+    setvalue(lockerinstance, 'robot2', state, False)
 
 def RobotGopos(lockerinstance, posnumber):
     with lockerinstance[0].lock:
         if posnumber:
             lockerinstance[0].robot['setpos'] = posnumber
-            lockerinstance[0].robot['go'] = True
+            lockerinstance[0].robot['go'] |= True
         else:
-            lockerinstance[0].robot['homing'] = True
-
-
-def ServoSetState(lockerinstance, state):
-    with lockerinstance[0].lock:
-        lockerinstance[0].servo[state] = True
-
-
-def LaserSetState(lockerinstance, state):
-    with lockerinstance[0].lock:
-        lockerinstance[0].lcon[state] = True
+            lockerinstance[0].robot['homing'] |= True
 
 
 def Initialise(lockerinstance):
@@ -209,31 +252,26 @@ def Initialise(lockerinstance):
             SetPiston(lockerinstance, 'Seal', 'Down')
         else:
             if not gas:
-                ErrorEventWrite(lockerinstance, "Initialisation step 1: Nie ma gazu")
+                ErrorEventWrite(lockerinstance, errcode = "17")
             if not air:
-                ErrorEventWrite(lockerinstance, "Initialisation step 1: Nie ma powietrza")
+                ErrorEventWrite(lockerinstance, errcode ="18")
     if step == 1:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I1']
         #checking if robot is at home
-        robothome = RobotState(lockerinstance, 'homepos')
-        robotmoving = RobotState(lockerinstance, 'activecommand')
-        if robothome:
+        if RobotState(lockerinstance, 'homepos'):
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
         else:
-            if not robotmoving:
+            if not RobotState(lockerinstance, 'activecommand'):
                 RobotGopos(lockerinstance, 0)
     if step == 2:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
-            lockerinstance[0].program['stepnumber'] += 1
-
         #checking if servo is at home
-        ServoSetState(lockerinstance, 'reset')
-        ServoSetState(lockerinstance, 'run')
-        homepositionisknown = ServoState(lockerinstance, 'homepositionisknown')
-        if homepositionisknown:
+        #ServoSetState(lockerinstance, 'reset')
+        #ServoSetState(lockerinstance, 'run')
+        if ServoState(lockerinstance, 'homepositionisknown'):
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
         else:
@@ -259,21 +297,20 @@ def Initialise(lockerinstance):
         elif not LaserOn:
             LaserSetState(lockerinstance, 'LaserTurnOn')
         elif LaserBusy:
-            ErrorEventWrite(lockerinstance, "Initialisation step 3: Laser Is Busy")
+            ErrorEventWrite(lockerinstance, errcode ="19")
         elif LaserError or ChillerError:
-            ErrorEventWrite(lockerinstance, "Initialisation step 3: Laser or Chiller Error")
+            ErrorEventWrite(lockerinstance, errcode ="20")
         else:
             LaserSetState(lockerinstance, 'SetChannel')
     if step == 4:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I4']
         #checking scout
-        StatusCheckCode = SCOUTState(lockerinstance, 'StatusCheckCode')
-        if StatusCheckCode:
+        if SCOUTState(lockerinstance, 'StatusCheckCode'):
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
         else:
-            ErrorEventWrite(lockerinstance, 'Błąd inicjalizacji SCOUT nie odpowiada')
+            ErrorEventWrite(lockerinstance, errcode ="21")
     if step == 5:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I5']
@@ -283,7 +320,7 @@ def Initialise(lockerinstance):
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
         else:
-            ErrorEventWrite(lockerinstance, 'Błąd inicjalizacji filtrowentylator nie włączony')
+            ErrorEventWrite(lockerinstance, errcode ="22")
     if step == 6:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I5']

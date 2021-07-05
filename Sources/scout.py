@@ -8,6 +8,9 @@ WDT = TactWatchdog.WDT
 from pywinauto import Application
 from threading import Thread
 
+import logging
+_logger = logging.getLogger(__name__)
+
 class KDrawTCPInterface(socket.socket):
     '''Klasa dziedzicząca po socket.socket, zawierająca metody służące
     do bezpośredniego wykonywania poleceń dla K-Draw po TCP\\IP'''

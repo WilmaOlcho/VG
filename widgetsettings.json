@@ -1508,6 +1508,23 @@
         "5":"B\u0142\u0105d SCOUTa",
         "6":"B\u0142\u0105d SCOUTa {}",
         
+        "10":"Przerwany obwód bezpieczeństwa",
+        "11":"Strefa bezpieczeństwa otwarta!",
+        "12":"Drzwi serwisowe otwarte!",
+        "13":"Wózek poza pozycją bezpieczną!",
+        "14":"Uzbrojenie maszyny wymagane!",
+        "15":"Program jest nieprawidłowy",
+        "16":"Załadowanie programu nie powiodło się",
+        "17":"Błąd inicjalizacji: Nie ma gazu",
+        "18":"Błąd inicjalizacji: Nie ma powietrza",
+        "19":"Błąd inicjalizacji: Laser jest zajęty",
+        "20":"Błąd inicjalizacji: Błąd lasera",
+        "21":"Błąd inicjalizacji: K-Draw nie odpowiada",
+        "22":"Błąd inicjalizacji: Filtrowentylator nie wytworzył odpowiedniego podciśnienia",
+
+
+        
+
         "100":"Przekroczenie czasu taktu ",
         "101":"Przekroczenie czasu taktu {}",
         "200":"B\u0142\u0105d serwo, serwo zosta\u0142o zatrzymane",

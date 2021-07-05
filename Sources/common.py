@@ -1,5 +1,9 @@
 from threading import Thread, currentThread
 
+
+import logging
+_logger = logging.getLogger(__name__)
+
 def BlankFunc(*args, **kwargs): #Blank func to use as default value in function type parameter
     pass
 
@@ -18,12 +22,18 @@ def dictKeyByVal(dict, byVal): #There is no default method to search for keys in
 
 def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255, noerror = False, errcode = ''):
     with lockerinstance[0].lock:
-        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring + '\n'
+        if errstring:
+            if errstring not in lockerinstance[0].shared['Errors']:
+                lockerinstance[0].shared['Errors'] += errstring + '\n'
+                _logger.info(errstring)
         if not noerror:
             lockerinstance[0].errorlevel[errorlevel] = True
             lockerinstance[0].events['Error'] = True
-        if errcode:
-            if errcode not in lockerinstance[0].shared['Errcodes']: lockerinstance[0].shared['Errcodes'].append(errcode)
+        if errcode and errcode in lockerinstance[0].shared['Errorcodeslist']:
+            if errcode not in lockerinstance[0].shared['Errcodes']:
+                lockerinstance[0].shared['Errcodes'].append(errcode)
+                _logger.info(lockerinstance[0].shared['Errorcodeslist']['errcode'])
+
 
 class EventManager():
     def __init__(self, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
