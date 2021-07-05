@@ -235,11 +235,11 @@ class RobotPlyty(Kawasaki):
                 #lockerinstance[0].robot2['Est_PLYTY'] = est_plyty
                 info = str(lockerinstance[0].robot2['Info'])
                 #est_vg = lockerinstance[0].robot2['Est_VG']
-            if (info in self.addresses['info_values'].keys()) and (currentstatus in self.addresses['status_values'].keys()):         
-                nprtstr = "BETON: {}, PLYTY: {}".format(self.addresses['info_values'][info],self.addresses['status_values'][currentstatus])
-                if nprtstr != self.prtstr:
-                    self.prtstr = nprtstr
-                    ErrorEventWrite(lockerinstance, nprtstr)
+            #if (info in self.addresses['info_values'].keys()) and (currentstatus in self.addresses['status_values'].keys()):         
+            #    nprtstr = "BETON: {}, PLYTY: {}".format(self.addresses['info_values'][info],self.addresses['status_values'][currentstatus])
+            #    if nprtstr != self.prtstr:
+            #        self.prtstr = nprtstr
+            #        ErrorEventWrite(lockerinstance, nprtstr)
 
     def InfoUpdate(self, lockerinstance):
         with lockerinstance[0].lock:
@@ -255,8 +255,8 @@ class RobotPlyty(Kawasaki):
         with lockerinstance[0].lock:
             status = str(lockerinstance[0].robot2['Status'])
             info = str(lockerinstance[0].robot2['Info'])
-            est_vg = lockerinstance[0].robot2['Est_VG']
-            est_plyty = lockerinstance[0].robot2['Est_PLYTY']
+            #est_vg = lockerinstance[0].robot2['Est_VG']
+            #est_plyty = lockerinstance[0].robot2['Est_PLYTY']
         if self.addresses['info_values'][info] in ['busy']:
             if not self.addresses['status_values'][status] in ['laser_required', 'welding']:
                 self.redirectlasertoVG(lockerinstance)

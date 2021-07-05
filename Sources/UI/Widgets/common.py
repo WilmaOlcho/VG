@@ -209,6 +209,7 @@ class Menu(Frame):
         self.menu = None
         self.items = items
         self.variable = variable
+        self.state = "normal"
         self.createmenu()
         for widget in self.winfo_children():
             widget.unbind('<Button-3>')

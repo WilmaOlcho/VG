@@ -31,6 +31,12 @@ class ScrolledWidget(LabelFrame):
         self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
         self.intid1 = self.cnv.create_window((0,0),window = self.container, anchor = tk.NW )
         self.cnv.config(scrollregion = (0,0,self.width, self.widgetheight), highlightthickness = 0)
+        self.cnv.bind_all("<MouseWheel>", self._mousescrolling)
+
+
+    def _mousescrolling(self, event):
+        self.cnv.yview_scroll(int(-1*(event.delta/120)), "units")
+
 
     def update(self):
         if self.content.update():
@@ -38,8 +44,7 @@ class ScrolledWidget(LabelFrame):
             self.container.pack(side = tk.LEFT, expand = tk.YES, fill = tk.BOTH)
             self.cnv.itemconfig(self.intid1, window = self.container)        
             self.cnv.config(scrollregion = self.cnv.bbox('all'), highlightthickness = 0)
-            #self.cnv.xview_moveto(0)
-            #self.cnv.yview_moveto(0)
+            self.cnv.bind_all("<MouseWheel>", self._mousescrolling)
         super().update()
 
 class PosTable(GeneralWidget):
@@ -63,6 +68,7 @@ class PosTable(GeneralWidget):
         self.recipes = self.root.variables['scout']['recipes']
         with open(self.root.variables.jsonpath, 'r') as jsonfile:
             self.tjson = json.load(jsonfile)
+
 
     def ChangeFocus(self, event = '', column = 0, row = 0, type = 'inc'):
         if event:
@@ -102,9 +108,9 @@ class PosTable(GeneralWidget):
         else:
             self.focused_on[1] = column
             self.focused_on[0] = row
-        print(self.focused_on)
         self.entries[self.focused_on[0]][self.focused_on[1]].focus_set()
         self.GetFocus(self.entries[self.focused_on[0]][self.focused_on[1]])
+
 
     def CreateContextMenu(self):
         menu = tk.Menu(master = self, tearoff = 0)
@@ -114,6 +120,7 @@ class PosTable(GeneralWidget):
             if 'command' in element:
                 menu.add_command(label = element['label'], command = eval(element['command']))
         return menu
+
 
     def ContextMenuPopup(self, event):
         try:
@@ -132,8 +139,10 @@ class PosTable(GeneralWidget):
                         self.focused_on = [row,column]
                     else: entry.config(bg='white')
 
+
     def getActiveRow(self):
         return self.focused_on[0]
+
 
     def CreateID(self):
         ID = 0
@@ -147,12 +156,14 @@ class PosTable(GeneralWidget):
                     IDChanged = True
         return ID
 
+
     def AddRowBefore(self):
         row = self.getActiveRow()
         self.synctable.insert(row,[self.CreateID(),0,0,0,0,0,0,0,0])
         self.UpdateJson()
         while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
+
 
     def AddRowAfter(self):
         row = self.getActiveRow()
@@ -161,12 +172,14 @@ class PosTable(GeneralWidget):
         while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
 
+
     def DeleteRow(self):
         row = self.getActiveRow()
         del self.synctable[row]
         self.UpdateJson()
         while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
+
 
     def SortTable(self):
         def sortconditions(element):
@@ -177,11 +190,13 @@ class PosTable(GeneralWidget):
         while self.root.variables.internalEvents['TableRefresh']: pass #wait until previous change is done
         self.root.variables.internalEvents['TableRefresh'] = True
 
+
     def __reframe(self):
         for child in list(self.children.values()):
             child.destroy()
         self.menu = self.CreateContextMenu()
         self.pack()
+
 
     def __getprogram(self, i = False):
         with open(self.root.variables.jsonpath, 'r') as jsonfile:
@@ -201,6 +216,7 @@ class PosTable(GeneralWidget):
                     return program
         return self.blankprogram
 
+
     def __resetTable(self):
         self.table = [[0,0,0,0,0,0,0,0,0]].copy()
         self.table.extend(self.program['Table'])
@@ -210,6 +226,7 @@ class PosTable(GeneralWidget):
             self.entries.append([None,None,None,None,None,None,None,None,None].copy())
             self.synctable.append(row.copy())
     
+
     def __bindEvents(self, row, column):
         widget = self.entries[row][column]
         self.unbind_all('<Button-3>')
@@ -217,10 +234,11 @@ class PosTable(GeneralWidget):
         widget.bind('<FocusIn>',self.GetFocus)
         if not isinstance(widget, tk.Entry):
             def popup(event, widget = widget):
-                try:
-                    widget.menu.tk_popup(widget.winfo_rootx(), widget.winfo_rooty(), 0)
-                finally:
-                    widget.menu.grab_release()
+                if widget.cget('state') == "normal":
+                    try:
+                        widget.menu.tk_popup(widget.winfo_rootx(), widget.winfo_rooty(), 0)
+                    finally:
+                        widget.menu.grab_release()
             widget.menubutton.bind('<ButtonRelease-3>',lambda event, _=self: [_.ChangeFocus(event,row=row, column = column,type = 'abs'), _.ContextMenuPopup(event)])
             widget.menubutton.bind('<Button-1>',lambda event, _=self: _.ChangeFocus(event,row=row, column = column,type = 'abs'))
             widget.bind('<space>', popup)
@@ -235,9 +253,11 @@ class PosTable(GeneralWidget):
             widget.bind('<Left>',self.ChangeFocus)
             widget.bind('<Right>',self.ChangeFocus)
 
+
     def __createnameentry(self, row, column):
         self.entries[row][column].insert(0,self.root.variables.programcolumns[column])
         self.entries[row][column].configure(state = 'disabled')
+
 
     def __createnormalnentry(self, row, column, value):
         self.entries[row][column].insert(0,value)
@@ -245,6 +265,7 @@ class PosTable(GeneralWidget):
         self.synctable[row][column] = value
         self.__bindEvents(row, column)
         
+
     def __entry(self, row, column, value):
         sticky = tk.NS
         if row != 0 and self.root.variables.columntypes[column] == 'MENU':
@@ -263,11 +284,13 @@ class PosTable(GeneralWidget):
             self.__createnormalnentry(row, column, value)
         self.entries[row][column].grid(row = row, column = column, sticky = sticky)
 
+
     def __createnewtable(self):
         for row, content in enumerate(self.table):
             for column, value in enumerate(content):
                 if self.root.variables.displayedprogramcolumns[column]:
                     self.__entry(row, column, value)
+
 
     def TableChanged(self):
         self.program = self.__getprogram()
@@ -278,6 +301,7 @@ class PosTable(GeneralWidget):
         tableheight = (self.width * len(self.table)) - len(self.table)
         self.root.variables.displayedprogramtableheight = tableheight
         self.pack(expand = tk.YES, fill=tk.BOTH)
+
 
     def configentries(self, **cfg):
         table = self.entries[1:]
@@ -290,6 +314,7 @@ class PosTable(GeneralWidget):
         entries = reduce(reduct, table, [])
         while None in entries: entries.remove(None)
         for entry in entries: entry.config(**cfg) #I've no idea why map doesn't work in this case
+
 
     def update(self):
         super().update()
@@ -308,6 +333,7 @@ class PosTable(GeneralWidget):
             self.configentries(state = 'normal')
         return True
     
+
     def RetrieveSynctable(self, event):
         if isinstance(event, tk.Event):
             widget = event.widget
@@ -328,13 +354,16 @@ class PosTable(GeneralWidget):
                             value.insert(0,self.synctable[row][column])
                         return
 
+
     def UpdateJson(self):
         i = self.__getprogram(i = 'only')
         self.tjson['Programs'][i]['Table'] = self.synctable[1:].copy()
         pass
+
 
     def WriteSyncTable(self):
         self.UpdateJson()
         with open(self.root.variables.jsonpath, 'w') as jsonfile:
             json.dump(self.tjson,jsonfile)
         self.root.variables.internalEvents['DumpProgramToFile'] = False
+
