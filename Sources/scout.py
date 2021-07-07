@@ -320,8 +320,9 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
                 alignpage = int(data[1]) == lockerinstance[0].scout['ManualAlignPage']
-                if checkcode and alignpage:
+                if checkcode == 1 and alignpage:
                     lockerinstance[0].scout['ManualAlignCheck'] = True
+                lockerinstance[0].scout['ManualWeldStatus'] = checkcode
                 lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualAlign fail:\n{}".format(data))
@@ -338,8 +339,9 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
                 weldpage = int(data[1]) == lockerinstance[0].scout['ManualWeldPage']
-                if checkcode and weldpage:
+                if checkcode == 1 and weldpage:
                     lockerinstance[0].scout['ManualWeldCheck'] = True
+                lockerinstance[0].scout['ManualWeldStatus'] = checkcode
                 lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualWeld went wrong:\n{}".format(data))
@@ -512,6 +514,8 @@ class KDrawTCPInterface(socket.socket):
         '''
         with lockerinstance[0].lock:
             page = lockerinstance[0].scout['ManualAlignPage']
+            lockerinstance[0].scout['ManualAlignCheck'] = False
+            lockerinstance[0].scout['ManualAlignStatus'] = 0
         message = self.encode_message(lockerinstance, ['MANUAL_ALIGN', str(page)])
         self.add_to_queue(lockerinstance, message)
 
@@ -521,6 +525,8 @@ class KDrawTCPInterface(socket.socket):
         '''
         with lockerinstance[0].lock:
             page = lockerinstance[0].scout['ManualWeldPage']
+            lockerinstance[0].scout['ManualWeldCheck'] = False
+            lockerinstance[0].scout['ManualWeldStatus'] = 0
         message = self.encode_message(lockerinstance, ['MANUAL_WELD', page])
         self.add_to_queue(lockerinstance, message)
 

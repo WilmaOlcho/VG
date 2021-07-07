@@ -101,9 +101,11 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
                 self.write_coil(lockerinstance, Coil = 'DO'+str(2), value = True)
             except Exception as e:
                 errmessage = 'AnalogMultiplexer Error - activatePath Error' + str(e)
+                print(errmessage)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
             errmessage = 'activatePath() DO'+str(self.myOutput)+' is prohibited'
+            print(errmessage)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
     def releasePath(self, lockerinstance):
@@ -112,9 +114,11 @@ class AnalogMultiplexer(ADAMDataAcquisitionModule):
                 self.write_coil(lockerinstance, Coil = 'DO'+str(2), value = False)
             except Exception as e:
                 errmessage = 'AnalogMultiplexer Error - releasePath Error' + str(e)
+                print(errmessage)
                 ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
         else:
             errmessage = 'releasePath() DO'+str(self.myOutput)+' is prohibited'
+            print(errmessage)
             ErrorEventWrite(lockerinstance, errmessage, errorlevel = 10)
 
 class LaserControl(ADAMDataAcquisitionModule):
@@ -325,25 +329,27 @@ class MyMultiplexer(AnalogMultiplexer):
         
     def __acquire(self, lockerinstance): 
         if not self.isBusy(lockerinstance):
-            if self.currentState[self.myOutput]:
-                if self.currentState[2]:
-                    with lockerinstance[0].lock:
-                        lockerinstance[0].mux['acquire'] = False
+            if self.currentState:
+                if self.currentState[self.myOutput]:
+                    if self.currentState[2]:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].mux['acquire'] = False
+                    else:
+                        self.activatePath(lockerinstance)
                 else:
-                    self.activatePath(lockerinstance)
-            else:
-                self.setPath(lockerinstance)
+                    self.setPath(lockerinstance)
 
     def __release(self, lockerinstance):
-        if self.currentState[self.myOutput] or not any(self.currentState[:2]):
-            if not self.currentState[self.myOutput]:
-                if self.currentState[2]:
-                    self.releasePath(lockerinstance)
+        if self.currentState:
+            if self.currentState[self.myOutput] or not any(self.currentState[:2]):
+                if not self.currentState[self.myOutput]:
+                    if self.currentState[2]:
+                        self.releasePath(lockerinstance)
+                    else:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].mux['release'] = False
                 else:
-                    with lockerinstance[0].lock:
-                        lockerinstance[0].mux['release'] = False
-            else:
-                self.resetPath(lockerinstance)
+                    self.resetPath(lockerinstance)
 
     def MUXloop(self, lockerinstance, *args, **kwargs):
         while self.Alive:
@@ -359,6 +365,7 @@ class MyMultiplexer(AnalogMultiplexer):
                 ack, rel = lockerinstance[0].mux['acquire'], lockerinstance[0].mux['release']
             if rel:
                 try:
+                    print('releasing')
                     self.__release(lockerinstance)
                 except Exception as e:
                     errstring = str(e)
@@ -366,6 +373,7 @@ class MyMultiplexer(AnalogMultiplexer):
                 continue
             if ack: 
                 try:
+                    print('acquiring')
                     self.__acquire(lockerinstance)
                 except Exception as e:
                     errstring = str(e)

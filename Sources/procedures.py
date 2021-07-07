@@ -162,11 +162,14 @@ def ServoSetValue(lockerinstance, state, value):
     setvalue(lockerinstance, 'servo', state, value)
 
 def LaserSetState(lockerinstance, state):
+    lcon = False
     with lockerinstance[0].lock:
         if state in lockerinstance[0].shared['lcon'].keys():
-            setvalue(lockerinstance, 'lcon', state, True)
-        else:
-            setvalue(lockerinstance, 'mux', state, True)
+            lcon = True
+    if lcon:
+        setvalue(lockerinstance, 'lcon', state, True)
+    else:
+        setvalue(lockerinstance, 'mux', state, True)
 
 def LaserResetState(lockerinstance, state):
     with lockerinstance[0].lock:
@@ -388,6 +391,7 @@ def Program(lockerinstance):
         programspath = progproxy['ProgramsFilePath']
         programname = progproxy['ProgramName']
         cycleended = progproxy['cycleended']
+        end = progproxy['endpos']
         if cycleended: progproxy['cycleended'] = False
         progproxy['currenttime'] = time.time()
         if progproxy['running']:
@@ -408,18 +412,18 @@ def Program(lockerinstance):
         with lockerinstance[0].lock:
             progproxy['programline'] = programline
             progproxy['cycle'] = cycle if startindex else 1
-    if cycleended:
-        cycle += 1
+    if (cycle +1) >= end:
         with lockerinstance[0].lock:
-            end = lockerinstance[0].program['endpos']
-        if cycle > end:
-            with lockerinstance[0].lock:
-                lockerinstance[0].shared['Statuscodes'] = ['CD']
-            endprogram(lockerinstance)
-        else:
-            programline = loadprogramline(lockerinstance, program, cycle)
-            with lockerinstance[0].lock:
-                progproxy['programline'] = programline
+            lockerinstance[0].shared['Statuscodes'] = ['CD']
+        endprogram(lockerinstance)
+    elif cycleended:
+        cycle += 1
+        programline = loadprogramline(lockerinstance, program, cycle)
+        with lockerinstance[0].lock:
+            progproxy['cycle'] = cycle
+            progproxy['stepnumber']=0
+            progproxy['programline'] = programline
+            progproxy['cycleended'] = False
 
         
 

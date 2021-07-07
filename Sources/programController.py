@@ -2,13 +2,14 @@ import Sources.procedures as control
 from Sources import EventManager, WDT
 from os import listdir
 from os.path import isfile, join, isdir
-import re
+import re, time
 
 
 import logging
 _logger = logging.getLogger(__name__)
 
 class programController(object):
+    stepfreeze = False
     def __init__(self, lockerinstance, programfilepath, *args, **kwargs):
         self.Alive = True
         with lockerinstance[0].lock:
@@ -71,7 +72,8 @@ class programController(object):
             error = lockerinstance[0].events['Error']
         if running and cycle and not cycleended and not error:
             try:
-                exec('self.step'+str(step)+"(lockerinstance)")
+                if hasattr(self,'step'+str(step)):
+                    exec('self.step'+str(step)+"(lockerinstance)")
             except Exception as e:
                 print('step:', step, 'failed:\n',str(e))
             with lockerinstance[0].lock:
@@ -86,11 +88,13 @@ class programController(object):
 
     def step(func, *args, **kwargs):
         def internal(self, lockerinstance, *args, **kwargs):
+            if self.stepfreeze:
+                return None
             with lockerinstance[0].lock:
                 scode = "S" + str(re.search( r'\d+', func.__name__).group())
                 lockerinstance[0].shared['Statuscodes'] = [scode]
-            result = func(self, lockerinstance, *args, **kwargs)
-            if result:
+            result = int(func(self, lockerinstance, *args, **kwargs))
+            if result != 0:
                 def stepexceed(lockerinstance=lockerinstance):
                     with lockerinstance[0].lock:
                         lockerinstance[0].program['stepcomplete'] = True
@@ -120,9 +124,15 @@ class programController(object):
             if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
                 and not re.findall(control.SCOUTState(lockerinstance, 'recipe'),control.SCOUTState(lockerinstance, 'actualmessage').decode())):
                 control.SCOUTSetState(lockerinstance, 'SetRecipe')
+                time.sleep(1)
+        elif control.SCOUTState(lockerinstance, 'Recipechangedsuccesfully'):
+            control.SCOUTResetState(lockerinstance, 'Recipechangedsuccesfully')
         else:
-            control.SCOUTReetState(lockerinstance, 'Recipechangedsuccesfully')
-            return True
+            with lockerinstance[0].lock:
+                scoutrecipe = lockerinstance[0].scout['currentrecipe']
+                programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
+            if scoutrecipe == programrecipe:
+                return True
         return False
 
 
@@ -134,7 +144,8 @@ class programController(object):
             and not control.CheckPiston(lockerinstance, "Seal", "Down")):
             control.ResetPiston(lockerinstance, "Seal", "Up")
             control.SetPiston(lockerinstance, "Seal", "Down", hold=True)
-        else:
+            time.sleep(1)
+        elif control.CheckPiston(lockerinstance, "Seal", "Down"):
             return True
         return False
 
@@ -146,10 +157,12 @@ class programController(object):
         if (control.ServoState(lockerinstance,'readposition') == programservopos
             and control.ServoState(lockerinstance,'positionreached')):
             if (control.ServoState(lockerinstance, 'switchon') 
-                or control.ServoState(lockerinstance, "operationenabled")):
+                or control.ServoState(lockerinstance, "operationenabled")
+                or not control.ServoState(lockerinstance, "disabled")):
                 control.ServoSetState(lockerinstance, 'stop')
             elif (not control.ServoState(lockerinstance, "operationenabled")
-                and not control.ServoState(lockerinstance, 'switchon')):
+                and not control.ServoState(lockerinstance, 'switchon')
+                and control.ServoState(lockerinstance, "disabled")):
                 return True
         else:
             if control.RobotState(lockerinstance,'homepos'):
@@ -158,12 +171,15 @@ class programController(object):
                     or control.ServoState(lockerinstance, 'switchon'))
                     and not control.ServoState(lockerinstance, 'fault')):
                     control.ServoSetState(lockerinstance, 'run')
+                    time.sleep(1)
                 if control.ServoState(lockerinstance, "operationenabled"):
                     control.ServoSetValue(lockerinstance, 'positionNumber', programservopos)
                     if not control.ServoState(lockerinstance, 'stepinprogress'): 
                         control.ServoSetState(lockerinstance, 'step')
+                        time.sleep(1)
             else:
                 control.RobotSetState(lockerinstance, 'homing')
+                time.sleep(1)
         return False
 
 
@@ -187,6 +203,7 @@ class programController(object):
             if not control.RobotState(lockerinstance,'currentpos') == control.RobotState(lockerinstance,'setpos'):
                 if not control.RobotState(lockerinstance,'activecommand'):
                     control.RobotGopos(lockerinstance,control.RobotState(lockerinstance,'setpos'))
+                    time.sleep(1)
             else:
                 if not control.RobotState(lockerinstance,'activecommand'):
                     return True
@@ -224,8 +241,8 @@ class programController(object):
             return
         if (not control.LaserState(lockerinstance, 'onpath') 
             or not control.LaserState(lockerinstance, 'LaserReady')):
-            control.LaserSetState(lockerinstance, "SetChannel")
             control.LaserSetState(lockerinstance, "acquire")
+            control.LaserSetState(lockerinstance, "SetChannel")
         if control.LaserState(lockerinstance, 'LaserError'):
             control.LaserSetState(lockerinstance, "LaserReset")
         if (control.LaserState(lockerinstance, 'onpath')
@@ -253,7 +270,7 @@ class programController(object):
         if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
             and not control.SCOUTState(lockerinstance, "ManualAlignCheck")):
             control.SCOUTSetState(lockerinstance, 'ManualAlign')
-        elif control.SCOUTState(lockerinstance, "ManualAlignCheck"):
+        elif control.SCOUTState(lockerinstance, "ManualAlignStatus") == 1:
             control.SCOUTResetState(lockerinstance, 'ManualAlignCheck')
             control.SetPiston(lockerinstance, "HeadCooling", hold=True)
             control.SetPiston(lockerinstance, "CrossJet", hold=True)
@@ -266,13 +283,16 @@ class programController(object):
         with lockerinstance[0].lock:
             lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
         if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
-            and not control.SCOUTState(lockerinstance, 'manualweldcheck')):
+            and not control.SCOUTState(lockerinstance, 'ManualWeldCheck')):
             control.SCOUTSetState(lockerinstance, 'ManualWeld')
-        elif control.SCOUTState(lockerinstance, 'manualweldcheck'):
+        elif control.SCOUTState(lockerinstance, 'ManualWeldStatus') == 1:
             control.SCOUTResetState(lockerinstance, "ManualWeldCheck")
             control.ResetPiston(lockerinstance, "HeadCooling")
             control.ResetPiston(lockerinstance, "CrossJet")
             control.ResetPiston(lockerinstance, "ShieldingGas")            
+            return True
+        elif (control.SCOUTState(lockerinstance, 'ManualWeldStatus') != 1
+            and control.SCOUTState(lockerinstance, 'ManualWeldCheck')):
             return True
         return False
 
@@ -281,12 +301,18 @@ class programController(object):
     def step12(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['S12']
+            kdrawautostart = lockerinstance[0].scout['status']['AutoStart']
             hold = lockerinstance[0].program['programline'][control.LASERHOLD]
-        if not hold:
-            control.LaserSetState(lockerinstance, "release")
-            control.LaserSetState(lockerinstance, "ReleaseChannel")
-            control.setvalue(lockerinstance, "program", 'laserrequire', False)           
-        return True
+        if not hold=='Tak':
+            control.SCOUTSetState(lockerinstance, 'AutostartOff')
+            if not kdrawautostart:
+                control.LaserSetState(lockerinstance, "release")
+                control.LaserSetState(lockerinstance, "ReleaseChannel")
+                control.setvalue(lockerinstance, "program", 'laserrequire', False)           
+                return True
+        else:
+            return True
+        return False
 
 
     @step
@@ -295,4 +321,4 @@ class programController(object):
             lockerinstance[0].shared['Statuscodes'] = ['S13']
             lockerinstance[0].program['cycleended'] = True
             lockerinstance[0].program['stepnumber'] = 0
-        return True
+        return False
