@@ -1,6 +1,7 @@
 from Sources import ErrorEventWrite
-from functools import reduce
-import json
+from Sources.TactWatchdog import TactWatchdog
+WDT = TactWatchdog.WDT
+import json, re
 import time
 from pathlib import Path
 
@@ -133,8 +134,10 @@ def GetState(lockerinstance, path, state, alternativepath = ''):
     with lockerinstance[0].lock:
         if state in lockerinstance[0].shared[path].keys():
             currentstate = lockerinstance[0].shared[path][state]
+            print('lockerinstance[0].',path,state,' is ',currentstate)
         elif alternativepath:
             currentstate = lockerinstance[0].shared[alternativepath][state]
+            print('lockerinstance[0].',alternativepath,state,' is ',currentstate)
         else:
             _logger.debug('GetState procedure got wrong parameters')
             currentstate = -1
@@ -154,6 +157,9 @@ def EventState(lockerinstance, state):
 
 def ServoSetState(lockerinstance, state):
     setvalue(lockerinstance, 'servo', state, True)
+
+def ServoSetValue(lockerinstance, state, value):
+    setvalue(lockerinstance, 'servo', state, value)
 
 def LaserSetState(lockerinstance, state):
     with lockerinstance[0].lock:
@@ -181,14 +187,35 @@ def SCOUTSetState(lockerinstance, state):
 def SCOUTResetState(lockerinstance, state):
     setvalue(lockerinstance, 'SCOUT', state, False)
 
-def SetPiston(lockerinstance, pistonname, action):
-    if action:
-        setvalue(lockerinstance, 'pistons', pistonname + action, True)
-    else:
-        setvalue(lockerinstance, 'pistons', pistonname, True)
 
-def ResetPiston(lockerinstance, pistonname, action):
-    setvalue(lockerinstance, 'pistons', pistonname + action, False)
+def SetPiston(lockerinstance, pistonname, action= '', hold = False):
+    def holdpiston(lockerinstance= lockerinstance, pname = pistonname, paction = action):
+        with lockerinstance[0].lock:
+            if not lockerinstance[0].program['running']:
+                import threading as thr
+                lockerinstance[0].wdt.remove(thr.currentThread().name)
+                return None
+        if paction:
+            setvalue(lockerinstance, 'pistons', pname + action, True)
+        else:
+            setvalue(lockerinstance, 'pistons', pname, True)
+    if hold:
+        WDT(lockerinstance, errToRaise= pistonname + action + 'hold',limitval=10, scale='y', noerror=True, additionalFuncOnLoop=holdpiston)
+    else:
+        holdpiston()
+
+def ResetPiston(lockerinstance, pistonname, action = ''):
+    if action:
+        setvalue(lockerinstance, 'pistons', pistonname + action, False)
+    else:
+        setvalue(lockerinstance, 'pistons', pistonname, False)
+    with lockerinstance[0].lock:
+        for i, hpiston in enumerate(lockerinstance[0].wdt):
+            sample = re.findall(pistonname + action + 'hold',hpiston)
+            if sample:
+                lockerinstance[0].wdt.remove(lockerinstance[0].wdt[i])
+                break
+
 
 def RobotState(lockerinstance, state):
     return GetState(lockerinstance, 'robot', state)
@@ -259,12 +286,16 @@ def Initialise(lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I1']
         #checking if robot is at home
-        if RobotState(lockerinstance, 'homepos'):
-            with lockerinstance[0].lock:
-                lockerinstance[0].program['stepnumber'] += 1
+        if RobotState(lockerinstance, 'cycle'):
+            if RobotState(lockerinstance, 'homepos'):
+                with lockerinstance[0].lock:
+                    lockerinstance[0].program['stepnumber'] += 1
+            else:
+                if not RobotState(lockerinstance, 'activecommand'):
+                    RobotGopos(lockerinstance, 0)
         else:
-            if not RobotState(lockerinstance, 'activecommand'):
-                RobotGopos(lockerinstance, 0)
+            with lockerinstance[0].lock:
+                lockerinstance[0].shared['Statuscodes'] = [symbol,'I1.2']
     if step == 2:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
@@ -280,28 +311,22 @@ def Initialise(lockerinstance):
                 or ServoState(lockerinstance, 'switchon'))
                 and not ServoState(lockerinstance, 'fault')):
                 ServoSetState(lockerinstance, 'run')
-            elif ServoState(lockerinstance, 'positionreached'):
-                ServoSetState(lockerinstance, 'homing')
+            else:
+                if not ServoState(lockerinstance, "hominginprogress"):
+                    ServoSetState(lockerinstance, 'homing')
     if step == 3:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']
         #checking if laser is ready
-        LaserOn = LaserState(lockerinstance, 'LaserOn')
-        LaserReady = LaserState(lockerinstance, 'LaserReady')
-        LaserBusy = LaserState(lockerinstance, 'busy')
-        LaserError = LaserState(lockerinstance, 'LaserError')
-        ChillerError = LaserState(lockerinstance, 'ChillerError')
-        if LaserReady and not LaserBusy:
+        if (LaserState(lockerinstance, 'LaserOn')
+            and not LaserState(lockerinstance, 'LaserError')):
             with lockerinstance[0].lock:
                 lockerinstance[0].program['stepnumber'] += 1
-        elif not LaserOn:
+        elif not LaserState(lockerinstance, 'LaserOn'):
             LaserSetState(lockerinstance, 'LaserTurnOn')
-        elif LaserBusy:
-            ErrorEventWrite(lockerinstance, errcode ="19")
-        elif LaserError or ChillerError:
+        elif (LaserState(lockerinstance, 'LaserError')
+            or LaserState(lockerinstance, 'ChillerError')):
             ErrorEventWrite(lockerinstance, errcode ="20")
-        else:
-            LaserSetState(lockerinstance, 'SetChannel')
     if step == 4:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I4']
@@ -382,6 +407,7 @@ def Program(lockerinstance):
         cycle = startindex
         with lockerinstance[0].lock:
             progproxy['programline'] = programline
+            progproxy['cycle'] = cycle if startindex else 1
     if cycleended:
         cycle += 1
         with lockerinstance[0].lock:

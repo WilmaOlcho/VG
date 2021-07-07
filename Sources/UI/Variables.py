@@ -77,7 +77,8 @@ class Variables(dict):
             "warning":False,
             'positionreached':False,
             'TroleyDocked':False,
-            'homepositionisknown':False
+            'homepositionisknown':False,
+            "homingattained":False
         }
         self['robot'] = {
             'RobotGo':False,
@@ -123,7 +124,8 @@ class Variables(dict):
             'OpenTheDoor':False,
             "TroleyReady":False,
             'ProgramTroleyRelease':False,
-            'ProgramTroleyReleaseAcknowledged':False
+            'ProgramTroleyReleaseAcknowledged':False,
+            "RobotEDM":False
         }
         self['scout'] = {
             'WaitingForData':False,
@@ -243,6 +245,7 @@ class Variables(dict):
                 self['statusindicators']['Troley'] = -1
             else:
                 self['statusindicators']['Troley'] = 0
+            self['troley']["homingattained"] = servo["homingattained"]
             self['troley']['readytoswitchon'] = servo['readytoswitchon']
             self['troley']['switchon'] = servo['switchon']
             self['troley']['operationenabled'] = servo['operationenabled']
@@ -372,6 +375,7 @@ class Variables(dict):
                 self['statusindicators']['Safety'] = -2
             else:
                 self['statusindicators']['Safety'] = 0
+            self['safety']['RobotEDM'] = safety['RobotEDM']
             self['safety']['EstopArmed'] = safety['EstopArmed']
             self['safety']['DoorLocked'] = safety['DoorLocked']
             self['safety']['TroleyInside'] = safety['TroleyInside']
@@ -455,8 +459,8 @@ class Variables(dict):
         lockerinstance = self.lockerinstance
         with lockerinstance[0].lock:
             self.alive = lockerinstance[0].console['Alive']
-            errors = '\n'.join(self['widgetsettings']['ErrorCodes'][i] for i in lockerinstance[0].shared['Errcodes'])
-            info = '\n'.join(self['widgetsettings']['StatusCodes'][i] for i in lockerinstance[0].shared['Statuscodes'])
+            errors = '\n'.join(self['widgetsettings']['ErrorCodes'][i if i in self['widgetsettings']['ErrorCodes'].keys() else '']  for i in lockerinstance[0].shared['Errcodes'])
+            info = '\n'.join(self['widgetsettings']['StatusCodes'][i if i in self['widgetsettings']['StatusCodes'].keys() else ''] for i in lockerinstance[0].shared['Statuscodes'])
             #errors = lockerinstance[0].shared['Errors']
             self['ImportantMessages'] = errors if errors else info
             events = lockerinstance[0].events

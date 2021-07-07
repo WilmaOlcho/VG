@@ -424,5 +424,10 @@ class MyLaserControl(LaserControl):
                 if startlaser: self.laserOn(lockerinstance)
                 if stoplaser: self.StopLaser(lockerinstance)
                 if resetlaser: self.resetError(lockerinstance)
+                setchannel = False
+                releasechannel = False
+                startlaser = False
+                stoplaser = False
+                resetlaser = False
                 #if InternalControlSet: self.InternalControlSet(lockerinstance)
 

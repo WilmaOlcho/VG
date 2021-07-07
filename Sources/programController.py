@@ -20,18 +20,15 @@ class programController(object):
             self.loop(lockerinstance)
 
     def loop(self, lockerinstance):
-        with lockerinstance[0].lock:
-            automode = lockerinstance[0].program['automode']
-            stepmode = lockerinstance[0].program['stepmode']
-        if automode: self.automode(lockerinstance)
-        if stepmode: self.stepmode(lockerinstance)
+        self._cycle(lockerinstance)
         self.retrievestate(lockerinstance)
 
     def retrievestate(self, lockerinstance):
         with lockerinstance[0].lock:
             running = lockerinstance[0].program['running']
             lockerinstance[0].program['/running'] = not running
-        if running: self.running(lockerinstance)
+        if running:
+            self.running(lockerinstance)
         self.CheckProgramsDirectory(lockerinstance)
         if lockerinstance[0].events['Error']:
             lockerinstance[0].program['running'] = False
@@ -63,11 +60,6 @@ class programController(object):
         else:
             control.Program(lockerinstance)
 
-    def automode(self, lockerinstance):
-        self._cycle(lockerinstance)
-
-    def stepmode(self, lockerinstance):
-        self._cycle(lockerinstance)
 
     def _cycle(self, lockerinstance):
         with lockerinstance[0].lock:
@@ -79,9 +71,9 @@ class programController(object):
             error = lockerinstance[0].events['Error']
         if running and cycle and not cycleended and not error:
             try:
-                exec('self.step'+step+"(lockerinstance)")
-            except:
-                pass
+                exec('self.step'+str(step)+"(lockerinstance)")
+            except Exception as e:
+                print('step:', step, 'failed:\n',str(e))
             with lockerinstance[0].lock:
                 if lockerinstance[0].program['stepcomplete'] and automode:
                     lockerinstance[0].program['stepcomplete'] = False
@@ -92,18 +84,16 @@ class programController(object):
                     lockerinstance[0].program['stepnumber'] = step
 
 
-    def stepexceed(self, lockerinstance):
-        with lockerinstance[0].lock:
-            lockerinstance[0].program['stepcomplete'] = True
-
-
     def step(func, *args, **kwargs):
         def internal(self, lockerinstance, *args, **kwargs):
             with lockerinstance[0].lock:
-                lockerinstance[0].shared['Statuscodes'] = "S" + str(re.search( r'.*\d+', func.__name__).group())
+                scode = "S" + str(re.search( r'\d+', func.__name__).group())
+                lockerinstance[0].shared['Statuscodes'] = [scode]
             result = func(self, lockerinstance, *args, **kwargs)
             if result:
-                stepexceed = lambda o = self, l = lockerinstance:o.stepexceed(l)
+                def stepexceed(lockerinstance=lockerinstance):
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].program['stepcomplete'] = True
                 WDT(lockerinstance,additionalFuncOnCatch = stepexceed, additionalFuncOnExceed = stepexceed, noerror = True, limitval = int(result), scale = 's')
             return result
         return internal
@@ -119,6 +109,8 @@ class programController(object):
                 lockerinstance[0].scout['recipe'] = programrecipe
                 lockerinstance[0].scout['Recipechangedsuccesfully'] = False
             return True
+        return False
+
 
     @step
     def step1(self, lockerinstance): #Scout change recipe
@@ -131,6 +123,7 @@ class programController(object):
         else:
             control.SCOUTReetState(lockerinstance, 'Recipechangedsuccesfully')
             return True
+        return False
 
 
     @step
@@ -139,21 +132,24 @@ class programController(object):
             programservopos = lockerinstance[0].program['programline'][control.SERVOPOS]
         if ((control.ServoState(lockerinstance,'positionNumber') != programservopos) 
             and not control.CheckPiston(lockerinstance, "Seal", "Down")):
-            control.SetPiston(lockerinstance, "Seal", "Down")
+            control.ResetPiston(lockerinstance, "Seal", "Up")
+            control.SetPiston(lockerinstance, "Seal", "Down", hold=True)
         else:
             return True
+        return False
 
 
     @step
     def step3(self, lockerinstance): #servo positioning
         with lockerinstance[0].lock:
             programservopos = lockerinstance[0].program['programline'][control.SERVOPOS]
-        if (control.ServoState(lockerinstance,'positionNumber') == programservopos
+        if (control.ServoState(lockerinstance,'readposition') == programservopos
             and control.ServoState(lockerinstance,'positionreached')):
             if (control.ServoState(lockerinstance, 'switchon') 
                 or control.ServoState(lockerinstance, "operationenabled")):
                 control.ServoSetState(lockerinstance, 'stop')
-            else:
+            elif (not control.ServoState(lockerinstance, "operationenabled")
+                and not control.ServoState(lockerinstance, 'switchon')):
                 return True
         else:
             if control.RobotState(lockerinstance,'homepos'):
@@ -163,9 +159,12 @@ class programController(object):
                     and not control.ServoState(lockerinstance, 'fault')):
                     control.ServoSetState(lockerinstance, 'run')
                 if control.ServoState(lockerinstance, "operationenabled"):
-                    control.ServoSetState(lockerinstance, 'step')
+                    control.ServoSetValue(lockerinstance, 'positionNumber', programservopos)
+                    if not control.ServoState(lockerinstance, 'stepinprogress'): 
+                        control.ServoSetState(lockerinstance, 'step')
             else:
-                control.ServoSetState(lockerinstance, 'homing')
+                control.RobotSetState(lockerinstance, 'homing')
+        return False
 
 
     @step
@@ -179,15 +178,19 @@ class programController(object):
             control.RobotSetValue(lockerinstance, 'setpos', programpos)
         else:
             return True
+        return False
 
 
     @step
     def step5(self, lockerinstance): #robot moving
-        if not control.RobotState(lockerinstance,'currentpos') == control.RobotState(lockerinstance,'setpos'):
-            if not control.RobotState(lockerinstance,'activecommand'):
-                control.RobotGopos(lockerinstance,control.RobotState(lockerinstance,'setpos'))
-        else:
-            return True
+        if control.RobotState(lockerinstance, 'cycle'):
+            if not control.RobotState(lockerinstance,'currentpos') == control.RobotState(lockerinstance,'setpos'):
+                if not control.RobotState(lockerinstance,'activecommand'):
+                    control.RobotGopos(lockerinstance,control.RobotState(lockerinstance,'setpos'))
+            else:
+                if not control.RobotState(lockerinstance,'activecommand'):
+                    return True
+        return False
 
 
     @step
@@ -195,12 +198,14 @@ class programController(object):
         holdtofillwithgas = False
         if control.CheckPiston(lockerinstance, "Seal", "Down"):
             holdtofillwithgas = True
-            control.SetPiston(lockerinstance, "Seal", "Up")
+            control.ResetPiston(lockerinstance, "Seal", "Down")
+            control.SetPiston(lockerinstance, "Seal", "Up", hold=True)
             control.setvalue(lockerinstance,"program","holdtofillwithgas",True)
         else:
-            control.SetPiston(lockerinstance, "ShieldingGas")
+            control.SetPiston(lockerinstance, "ShieldingGas", hold=True)
             return 5 if holdtofillwithgas else 1
-    
+        return False
+
 
     @step
     def step7(self, lockerinstance): #filling chamber with gas
@@ -226,6 +231,7 @@ class programController(object):
         if (control.LaserState(lockerinstance, 'onpath')
             and control.LaserState(lockerinstance, 'LaserReady')):
             return True
+        return False
 
 
     @step
@@ -237,8 +243,9 @@ class programController(object):
             control.SCOUTSetState(lockerinstance, 'AutostartOn')
         elif kdrawautostart:
             return True
+        return False
 
-    
+
     @step
     def step10(self, lockerinstance):
         with lockerinstance[0].lock:
@@ -248,9 +255,10 @@ class programController(object):
             control.SCOUTSetState(lockerinstance, 'ManualAlign')
         elif control.SCOUTState(lockerinstance, "ManualAlignCheck"):
             control.SCOUTResetState(lockerinstance, 'ManualAlignCheck')
-            control.SetPiston(lockerinstance, "HeadCooling")
-            control.SetPiston(lockerinstance, "CrossJet")
+            control.SetPiston(lockerinstance, "HeadCooling", hold=True)
+            control.SetPiston(lockerinstance, "CrossJet", hold=True)
             return True
+        return False
 
 
     @step
@@ -266,6 +274,7 @@ class programController(object):
             control.ResetPiston(lockerinstance, "CrossJet")
             control.ResetPiston(lockerinstance, "ShieldingGas")            
             return True
+        return False
 
 
     @step
@@ -286,4 +295,4 @@ class programController(object):
             lockerinstance[0].shared['Statuscodes'] = ['S13']
             lockerinstance[0].program['cycleended'] = True
             lockerinstance[0].program['stepnumber'] = 0
-        
+        return True

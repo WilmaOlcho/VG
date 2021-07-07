@@ -168,7 +168,8 @@ class SharedLocker(object):
                 'OutputChangedByRobot':False,
                 'requestlconresettimer':False,
                 'OutputsChangedByRobot':'',
-                'servo.homingattained':False}),
+                'servo.homingattained':False,
+                'servo.positionreached':False,}),
             'pistons':manager.dict({
                 'Alive':False,
                 'SealUp':False,
@@ -225,6 +226,8 @@ class SharedLocker(object):
                 'Channel':-1}),
             'servo':manager.dict({
                 'homepositionisknown':False,
+                'hominginprogress':False,
+                'stepinprogress':False,                
                 'Alive':False,
                 'homing':False,
                 'step':False,
@@ -232,6 +235,7 @@ class SharedLocker(object):
                 'run':False,
                 'stop':False,
                 'positionNumber':0,
+                'readposition':0,
                 'moving':False,
                 'active':False,
                 'iocoin':False,

@@ -27,6 +27,7 @@ class RobotVG(Kawasaki):
                         lockerinstance[0].robot['Alive'] = self.Alive
                     self.IOtab = [32*[False],32*[False]]
                     self.Robotloop(lockerinstance)
+                    print('robot breaks')
                 finally:
                     with lockerinstance[0].lock:
                         self.Alive = lockerinstance[0].robot['Alive']
@@ -153,10 +154,9 @@ class RobotVG(Kawasaki):
     def __GPIO(self, lockerinstance, input = False):
         output = []
         direction = ('I' if input else 'O')
-        lockerinstance[0].lock.acquire()
-        for i in range(1,33):
-            output.append(lockerinstance[0].GPIO[direction+str(i)])
-        lockerinstance[0].lock.release()
+        with lockerinstance[0].lock:
+            for i in range(1,33):
+                output.append(lockerinstance[0].GPIO[direction+str(i)])
         return output
 
     def __changedstate(self, lockerinstance):

@@ -71,6 +71,7 @@ class Servo(ModbusSerialClient):
     def IO(self, lockerinstance):
         try:
             status = self.read_holding_registers(int(self.addresses['status'][0],16),unit=self.unit)
+            currenttable = self.read_holding_registers(int(self.addresses['currenttable'][0],16),unit=self.unit)
             if isinstance(status,Exception): raise Exception(str(status))
         except Exception as e:
             ErrorEventWrite(lockerinstance, 'Reading status from servo unit error: ' + str(e) )
@@ -81,15 +82,18 @@ class Servo(ModbusSerialClient):
                 registerstatus = self.checkcode(stbits,codes[register])
                 with lockerinstance[0].lock:
                     lockerinstance[0].servo[register] = registerstatus
+            with lockerinstance[0].lock:
+                lockerinstance[0].servo['readposition'] = currenttable.registers[0]
+                    
         with lockerinstance[0].lock:
-            lockerinstance[0].servo["homepositionisknown"] |= not lockerinstance[0].troley['docked']
+            if not lockerinstance[0].troley['docked']:
+                lockerinstance[0].servo["homepositionisknown"] = False
             
-
-
 
     def status(self, lockerinstance, key):
         with lockerinstance[0].lock:
             result = lockerinstance[0].servo[key]
+        print('lockerinstance[0].servo[',key,'] is ',result)
         return result
     
     def currentmode(self, lockerinstance):
@@ -102,6 +106,7 @@ class Servo(ModbusSerialClient):
         else:
             return self.decode16bit2scomplement(ret.registers[0])
 
+
     def checkcode(self, data, code):
         if not isinstance(data, list) or not data: return False
         datacheck = []
@@ -111,6 +116,7 @@ class Servo(ModbusSerialClient):
                 data[abs(i)-1] = not data[abs(i)-1]
             datacheck.append(data[abs(i)-1])
         return reduce(lambda item, nextitem:item & nextitem,datacheck)
+
 
     def command(self, lockerinstance, code):
         if not isinstance(code, list) or not code: return False
@@ -125,12 +131,16 @@ class Servo(ModbusSerialClient):
         except Exception as e:
             ErrorEventWrite(lockerinstance, "Servo command returned exception: " + str(e) + str(ret))
 
+
     def extractaddress(self, masterkey = "addresses", key = "command"):
         data = self.settings[masterkey][key][0]
         if isinstance(data,str): data =  int(data,16)
         return data
 
+
     def homing(self, lockerinstance):
+        with lockerinstance[0].lock:
+            lockerinstance[0].servo['hominginprogress'] = True
         desiredmode = self.settings['modes']['homing'] & 0xff
         modeready = self.changemode(lockerinstance, desiredmode)
         if modeready == desiredmode:
@@ -146,14 +156,23 @@ class Servo(ModbusSerialClient):
             #TODO errorcathing
             self.write_registers(homingmethodaddress, values = [method],unit=self.unit)
             self.write_registers(homingspeedaddress, values = [5,lsBspeed,msBspeed,lsBreturnspeed,msBreturnspeed],unit=self.unit)
-
-            if self.status(lockerinstance, "operationenabled"):
-                self.command(lockerinstance, self.settings["commands"]["homingoperationstart"])
-        EventManager.AdaptEvent(lockerinstance,input = 'servo.homingattained',event='servo.homingattained')
-        def homereached(lockerinstance = lockerinstance):
-            with lockerinstance[0].lock:
-                lockerinstance[0].servo['homepositionisknown'] = True
-        TactWatchdog.WDT(lockerinstance, limitval=20, scale = 's', eventToCatch= "servo.homingattained", additionalFuncOnCatch= homereached, errToRaise= "Servo home positioning timeout error")
+            commandissent = False
+            while True:
+                if self.status(lockerinstance, "operationenabled") or commandissent:
+                    if not commandissent:
+                        self.command(lockerinstance, self.settings["commands"]["homingoperationstart"])
+                        sleep(0.5)
+                        commandissent = True
+                    else:
+                        EventManager.AdaptEvent(lockerinstance, count = 2, input = 'servo.homingattained',event='servo.homingattained', edge='rising')
+                        def homereached(lockerinstance = lockerinstance):
+                            with lockerinstance[0].lock:
+                                lockerinstance[0].servo['hominginprogress'] = False
+                                lockerinstance[0].servo['homepositionisknown'] = True
+                        TactWatchdog.WDT(lockerinstance, limitval=30, scale = 's', eventToCatch= "servo.homingattained", additionalFuncOnCatch= homereached, errToRaise= "Servo home positioning timeout error")
+                        break
+                else:
+                    self.run(lockerinstance)
 
     def decode16bit2scomplement(self, _2s):
         if not isinstance(_2s, int): return
@@ -168,7 +187,7 @@ class Servo(ModbusSerialClient):
         print(currentmode, desiredmode)
         switchon = self.status(lockerinstance, "switchon")
         openabled = self.status(lockerinstance, "operationenabled")
-        if currentmode != desiredmode:
+        if True: #currentmode != desiredmode:
             while True:
                 self.IO(lockerinstance)
                 if any([self.status(lockerinstance, key) for key in ['disabled','fault','readytoswitchon']]) :
@@ -183,11 +202,11 @@ class Servo(ModbusSerialClient):
             else:
                 if switchon or openabled:
                     self.run(lockerinstance)
-                    sleep(1)
+                    sleep(0.5)
                     self.IO(lockerinstance)
                 if openabled:
                     self.run(lockerinstance)
-                    sleep(1)
+                    sleep(0.5)
                     self.IO(lockerinstance)
         return self.currentmode(lockerinstance) & 0xff
 
@@ -198,6 +217,8 @@ class Servo(ModbusSerialClient):
         shaft to reach desired point of table and drives motor there.
 
         """
+        with lockerinstance[0].lock:
+            lockerinstance[0].servo['stepinprogress'] = True
         desiredmode = self.settings['modes']['pointtablepositioning'] & 0xff
         modeready = self.changemode(lockerinstance, desiredmode)
         if modeready == desiredmode:
@@ -242,6 +263,13 @@ class Servo(ModbusSerialClient):
                             command = self.settings['commands']['positioningrotationstartCCW']
                             print("CCW")
                         self.command(lockerinstance, command)
+                        sleep(0.5)
+                        EventManager.AdaptEvent(lockerinstance, count = 2, input = 'servo.positionreached',event='servo.positionreached', edge='rising')
+                        def posreached(lockerinstance = lockerinstance):
+                            with lockerinstance[0].lock:
+                                lockerinstance[0].servo['stepinprogress'] = False
+                        TactWatchdog.WDT(lockerinstance, limitval=30, scale = 's', eventToCatch= "servo.positionreached", additionalFuncOnCatch= posreached, errToRaise= "Servo positioning timeout error")
+                        
             elif not self.status(lockerinstance, "homepositionisknown"):
                 ErrorEventWrite(lockerinstance, "Homing required")
     
@@ -249,7 +277,7 @@ class Servo(ModbusSerialClient):
     def reset(self, lockerinstance):
         faultreset = self.settings['commands']['faultreset']
         _faultreset = map(lambda it: -it,faultreset)
-        if self.status(lockerinstance, "fault"):
+        if self.status(lockerinstance, "fault") or self.status(lockerinstance, "warning"):
             self.command(lockerinstance, _faultreset)
             self.command(lockerinstance, faultreset)
 
@@ -265,11 +293,13 @@ class Servo(ModbusSerialClient):
         
     def run(self, lockerinstance):
         command = []
-        if self.status(lockerinstance, "readytoswitchon") or self.status(lockerinstance, "disabled"):
+        if (self.status(lockerinstance, "readytoswitchon")
+            or self.status(lockerinstance, "disabled")):
             command = self.settings['commands']['switchon']
         if self.status(lockerinstance, "switchon"):
             command = self.settings['commands']['enableoperation']
         self.command(lockerinstance, command)
+        sleep(0.5)
 
 
  
