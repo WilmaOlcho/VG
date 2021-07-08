@@ -45,6 +45,8 @@ class ScrolledWidget(LabelFrame):
             self.cnv.itemconfig(self.intid1, window = self.container)        
             self.cnv.config(scrollregion = self.cnv.bbox('all'), highlightthickness = 0)
             self.cnv.bind_all("<MouseWheel>", self._mousescrolling)
+            if self.cget('text')!=self.root.variables.currentProgram:
+                self.config(text=self.root.variables.currentProgram)
         super().update()
 
 class PosTable(GeneralWidget):
