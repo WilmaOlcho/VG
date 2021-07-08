@@ -13,6 +13,7 @@ from time import sleep
 class Servo(ModbusSerialClient):
     def __init__(self, lockerinstance, jsonfile, *args, **kwargs):
         self.Alive = True
+        self.lockservo = False
         with lockerinstance[0].lock:
             lockerinstance[0].servo['Alive'] = True
         while self.Alive:
@@ -55,20 +56,27 @@ class Servo(ModbusSerialClient):
     def servoloop(self, lockerinstance):
         control = {'run':False, 'step':False, 'homing':False, 'stop':False, 'reset':False}
         while self.Alive:
-            for key in control.keys():
-                with lockerinstance[0].lock:
-                    control[key] = lockerinstance[0].servo[key]
-                    lockerinstance[0].servo[key] = False
-            if control['homing']: self.homing(lockerinstance)
-            if control['step']: self.step(lockerinstance)
-            if control['reset']: self.reset(lockerinstance)
-            if control['run']: self.run(lockerinstance)
-            if control['stop']: self.stop(lockerinstance)
+            if not self.lockservo:
+                for key in control.keys():
+                    with lockerinstance[0].lock:
+                        control[key] = lockerinstance[0].servo[key]
+                        lockerinstance[0].servo[key] = False
+                if control['homing']: self.homing(lockerinstance)
+                if control['step']: self.step(lockerinstance)
+                if control['reset']: self.reset(lockerinstance)
+                if control['run']: self.run(lockerinstance)
+                if control['stop']: self.stop(lockerinstance)
             self.IO(lockerinstance)
             with lockerinstance[0].lock:
                 self.Alive = lockerinstance[0].servo['Alive']
 
     def IO(self, lockerinstance):
+        with lockerinstance[0].lock:
+            self.lockservo = not lockerinstance[0].pistons['sensorSealDown']
+            self.lockservo |= not lockerinstance[0].robot['homepos']
+        if (self.lockservo
+            and not self.status(lockerinstance,'disabled')):
+            self.stop(lockerinstance)
         try:
             status = self.read_holding_registers(int(self.addresses['status'][0],16),unit=self.unit)
             currenttable = self.read_holding_registers(int(self.addresses['currenttable'][0],16),unit=self.unit)
