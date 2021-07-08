@@ -160,7 +160,7 @@ class Lamp(GeneralWidget):
         if highlight: keystartpos += 1
         key = self.key[keystartpos:]
         lit = self.root.variables[self.masterkey][key]
-        self.lit = lit!=0
+        self.lit = lit==0 if negation else lit!=0
         if self.lit:
             if errsign and lit == -1:
                 self.lamp.config(bg = self.settings['Color']['error'])
