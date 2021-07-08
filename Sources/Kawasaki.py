@@ -88,7 +88,6 @@ class RobotVG(Kawasaki):
                 if len(reg) > 3 and readregister:
                     with lockerinstance[0].lock:
                         lockerinstance[0].robot[key] = int(readregister[0])
-                        print(key, int(readregister[0]))
                 elif readregister:
                     if len(reg) == 1:
                         lockerinstance[0].robot[key] = float(readregister[0])

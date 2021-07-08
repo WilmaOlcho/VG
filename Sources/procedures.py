@@ -21,19 +21,14 @@ _logger = logging.getLogger(__name__)
 
 def startauto(lockerinstance):
     with lockerinstance[0].lock:
-        running = lockerinstance[0].program['running']
-        if not running:
-            lockerinstance[0].lock.acquire()
+        if not lockerinstance[0].program['running']:
             lockerinstance[0].program['running'] = True
             lockerinstance[0].program['stepnumber'] = 0
-            lockerinstance[0].program['cycle'] = 0
 
 
 def endprogram(lockerinstance):
     with lockerinstance[0].lock:
-        running = lockerinstance[0].program['running']
-        if running:
-            lockerinstance[0].lock.acquire()
+        if lockerinstance[0].program['running']:
             lockerinstance[0].program['running'] = False
             lockerinstance[0].program['stepcomplete'] = False
             lockerinstance[0].program['stepnumber'] = 0
@@ -42,19 +37,24 @@ def endprogram(lockerinstance):
 
 def nextstep(lockerinstance):
     with lockerinstance[0].lock:
-        stepcomplete = lockerinstance[0].program['stepcomplete']
-        if stepcomplete:
-            lockerinstance[0].lock.acquire()
+        if lockerinstance[0].program['stepcomplete']:
             lockerinstance[0].program['stepcomplete'] = False
             lockerinstance[0].program['stepnumber'] +=1
 
 
+def stopprocedure(lockerinstance):
+    with lockerinstance[0].lock:
+        lockerinstance[0].events['stopprogram'] = False
+        running = lockerinstance[0].program['running']
+    if not running: endprogram(lockerinstance)
+
+
 def startprocedure(lockerinstance):
     with lockerinstance[0].lock:
+        lockerinstance[0].events['startprogram'] = False
         step, auto = lockerinstance[0].program['stepmode'], lockerinstance[0].program['automode']
     if auto: startauto(lockerinstance)
     if step: nextstep(lockerinstance)
-
 
 def CheckSafety(lockerinstance):
     with lockerinstance[0].lock:
@@ -134,17 +134,17 @@ def GetState(lockerinstance, path, state, alternativepath = ''):
     with lockerinstance[0].lock:
         if state in lockerinstance[0].shared[path].keys():
             currentstate = lockerinstance[0].shared[path][state]
-            print('lockerinstance[0].',path,state,' is ',currentstate)
+            #print('lockerinstance[0].',path,state,' is ',currentstate)
         elif alternativepath:
             currentstate = lockerinstance[0].shared[alternativepath][state]
-            print('lockerinstance[0].',alternativepath,state,' is ',currentstate)
+            #print('lockerinstance[0].',alternativepath,state,' is ',currentstate)
         else:
             _logger.debug('GetState procedure got wrong parameters')
             currentstate = -1
     return currentstate
 
 def setvalue(lockerinstance, branch, register, value):
-    print('lockerinstance.shared[{}][{}] = {}'.format(branch, register, value))
+    #print('lockerinstance.shared[{}][{}] = {}'.format(branch, register, value))
     with lockerinstance[0].lock:
         lockerinstance[0].shared[branch][register] = value
 
@@ -302,20 +302,17 @@ def Initialise(lockerinstance):
     if step == 2:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
-        #checking if servo is at home
-        #ServoSetState(lockerinstance, 'reset')
-        #ServoSetState(lockerinstance, 'run')
-        if ServoState(lockerinstance, 'homepositionisknown'):
-            with lockerinstance[0].lock:
-                lockerinstance[0].program['stepnumber'] += 1
-        else:
-            if ((ServoState(lockerinstance, 'disabled')
-                or ServoState(lockerinstance, 'readytoswitchon')
-                or ServoState(lockerinstance, 'switchon'))
-                and not ServoState(lockerinstance, 'fault')):
-                ServoSetState(lockerinstance, 'run')
+        if not ServoState(lockerinstance, "hominginprogress"):
+            if ServoState(lockerinstance, 'homepositionisknown'):
+                with lockerinstance[0].lock:
+                    lockerinstance[0].program['stepnumber'] += 1
             else:
-                if not ServoState(lockerinstance, "hominginprogress"):
+                if ((ServoState(lockerinstance, 'disabled')
+                    or ServoState(lockerinstance, 'readytoswitchon')
+                    or ServoState(lockerinstance, 'switchon'))
+                    and not ServoState(lockerinstance, 'fault')):
+                    ServoSetState(lockerinstance, 'run')
+                else:
                     ServoSetState(lockerinstance, 'homing')
     if step == 3:
         with lockerinstance[0].lock:
@@ -377,6 +374,8 @@ def loadprogramline(lockerinstance, program, number):
         if result:
             with lockerinstance[0].lock:
                 lockerinstance[0].program['cycle'] = number
+                lockerinstance[0].program['programline'] = result[0]
+            print(result[0])
             return result[0]
         else: number +=1
         with lockerinstance[0].lock:
@@ -407,12 +406,9 @@ def Program(lockerinstance):
             lockerinstance[0].shared['Statuscodes'] = ['C0']
             progproxy['starttime'] = time.time()
             startindex = progproxy['startpos']
-        programline = loadprogramline(lockerinstance, program, startindex)
-        cycle = startindex
-        with lockerinstance[0].lock:
-            progproxy['programline'] = programline
-            progproxy['cycle'] = cycle if startindex else 1
-    if (cycle +1) >= end:
+        loadprogramline(lockerinstance, program, startindex)
+        cycle = startindex  
+    if cycle >= end:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['CD']
         endprogram(lockerinstance)

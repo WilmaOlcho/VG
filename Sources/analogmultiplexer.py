@@ -340,7 +340,7 @@ class MyMultiplexer(AnalogMultiplexer):
                     self.setPath(lockerinstance)
 
     def __release(self, lockerinstance):
-        if self.currentState:
+        if self.currentState is not None:
             if self.currentState[self.myOutput] or not any(self.currentState[:2]):
                 if not self.currentState[self.myOutput]:
                     if self.currentState[2]:
@@ -365,19 +365,17 @@ class MyMultiplexer(AnalogMultiplexer):
                 ack, rel = lockerinstance[0].mux['acquire'], lockerinstance[0].mux['release']
             if rel:
                 try:
-                    print('releasing')
                     self.__release(lockerinstance)
                 except Exception as e:
                     errstring = str(e)
-                    ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
+                    #ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
                 continue
             if ack: 
                 try:
-                    print('acquiring')
                     self.__acquire(lockerinstance)
                 except Exception as e:
                     errstring = str(e)
-                    ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
+                    #ErrorEventWrite(lockerinstance, errstring, errorlevel = 10)
 
 class MyLaserControl(LaserControl):
     def __init__(self, lockerinstance, settingFilePath = '', *args, **kwargs):

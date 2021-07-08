@@ -201,9 +201,9 @@ class Variables(dict):
         self.Alive = True
 
     def robotupdate(self):
-        lock = self.lockerinstance[0].lock
+        
         robot = self.lockerinstance[0].robot
-        with lock:
+        with self.lockerinstance[0].lock:
             if not self['ProgramActive']:
                 robot['go'] |= self['robot']['RobotGo']
                 robot['homing'] |= self['robot']['RobotHoming']
@@ -214,7 +214,7 @@ class Variables(dict):
                 self['robot']['actualposition'] = robot['currentpos']
                 self['robot']['RobotCommandActive'] = robot['activecommand']
                 self['robot']['RobotIsHome'] = robot['homepos']
-                self['robot']['RobotInAPosition'] = robot['currentpos'] == robot['setpos']
+                self['robot']['RobotInAPosition'] = int(robot['currentpos']) == int(robot['setpos'])
                 self['robot']['RobotHandMode'] = robot['handmode']
                 self['robot']['RobotMotorsOn'] = robot['motors']
                 self['robot']['RobotCycle'] = robot['cycle']
@@ -227,10 +227,10 @@ class Variables(dict):
         self['robot']['RobotHoming'] = False
 
     def troleyupdate(self):
-        lock = self.lockerinstance[0].lock
+        
         servo = self.lockerinstance[0].servo
         troley = self.lockerinstance[0].troley
-        with lock:
+        with self.lockerinstance[0].lock:
             if not self['ProgramActive']:
                 self['troley']['position'] != servo['positionNumber']
                 servo['positionNumber'] = self['troley']['position']
@@ -264,7 +264,7 @@ class Variables(dict):
         self['troley']['reset'] = False
 
     def scoutupdate(self):
-        lock = self.lockerinstance[0].lock
+        
         scout = self.lockerinstance[0].scout
         laser = self.lockerinstance[0].lcon
         safety = self.lockerinstance[0].safety
@@ -275,7 +275,7 @@ class Variables(dict):
                 self['scout']['page'] = int(self['scout']['page'])
             else:
                 self['scout']['page'] = 0
-        with lock:
+        with self.lockerinstance[0].lock:
             if not self['ProgramActive']:
                 if scout['version']:
                     self['scout']['versionvariable'] = scout['version']
@@ -364,9 +364,8 @@ class Variables(dict):
         
 
     def safetyupdate(self):
-        lock = self.lockerinstance[0].lock
         safety = self.lockerinstance[0].safety
-        with lock:
+        with self.lockerinstance[0].lock:
             if safety['EstopArmed'] and safety['ZoneArmed']:
                 self['statusindicators']['Safety'] = 1
             elif not safety['EstopArmed']:
@@ -393,9 +392,8 @@ class Variables(dict):
                 self['safety']['ProgramTroleyReleaseAcknowledged'] = False
 
     def pneumaticsupdate(self):
-        lock = self.lockerinstance[0].lock
         pneumatics = self.lockerinstance[0].pistons
-        with lock:
+        with self.lockerinstance[0].lock:
             if not self['ProgramActive']:
                 pneumatics['TroleyPusherFront'] = self['pistoncontrol']['pusher']['Right']['coil']
                 pneumatics['TroleyPusherBack'] = self['pistoncontrol']['pusher']['Left']['coil']
@@ -433,9 +431,8 @@ class Variables(dict):
             self['statusindicators']['Light'] = 1
 
     def programupdate(self):
-        lock = self.lockerinstance[0].lock
         program = self.lockerinstance[0].program
-        with lock:
+        with self.lockerinstance[0].lock:
             if self['ProgramActive']:
                 self['currentposition'] = 'wiersz {}, krok {}'.format(program['cycle'], program['stepnumber'])
                 self['processtime'] = (str(round(program['time'],2)))
@@ -451,13 +448,13 @@ class Variables(dict):
             program['running'] = self['ProgramActive']
 
     def misc(self):
-        self['safety']['OpenTheDoor'] |= self.internalEvents['stop']
+        self['safety']['OpenTheDoor'] |= self.internalEvents['stop'] and not self['ProgramActive']
         self.internalEvents['stop'] = False
 
 
     def update(self):
         lockerinstance = self.lockerinstance
-        with lockerinstance[0].lock:
+        with self.lockerinstance[0].lock:
             self.alive = lockerinstance[0].console['Alive']
             errors = '\n'.join(self['widgetsettings']['ErrorCodes'][i if i in self['widgetsettings']['ErrorCodes'].keys() else '']  for i in lockerinstance[0].shared['Errcodes'])
             info = '\n'.join(self['widgetsettings']['StatusCodes'][i if i in self['widgetsettings']['StatusCodes'].keys() else ''] for i in lockerinstance[0].shared['Statuscodes'])
