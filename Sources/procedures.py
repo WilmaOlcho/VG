@@ -286,10 +286,10 @@ def Initialise(lockerinstance):
             if not air:
                 ErrorEventWrite(lockerinstance, errcode ="18")
     if step == 1:
-        with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = [symbol,'I1']
         #checking if robot is at home
         if RobotState(lockerinstance, 'cycle'):
+            with lockerinstance[0].lock:
+                lockerinstance[0].shared['Statuscodes'] = [symbol,'I1']
             if RobotState(lockerinstance, 'homepos'):
                 with lockerinstance[0].lock:
                     lockerinstance[0].program['stepnumber'] += 1
@@ -351,7 +351,7 @@ def Initialise(lockerinstance):
             ErrorEventWrite(lockerinstance, errcode ="22")
     if step == 6:
         with lockerinstance[0].lock:
-            lockerinstance[0].shared['Statuscodes'] = [symbol,'I5']
+            lockerinstance[0].shared['Statuscodes'] = [symbol,'I6']
             lockerinstance[0].program['cycle'] = 0
             lockerinstance[0].program['stepnumber'] = 0            
             lockerinstance[0].program['initialising'] = False

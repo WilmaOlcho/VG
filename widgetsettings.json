@@ -225,23 +225,6 @@
                                     "error":"red"
                                 }
                             },
-                            "faultreactionactive":{
-                                "Label":"Reakcja na b\u0142\u0105d",
-                                "width":40,
-                                "height":40,
-                                "frame":{
-                                    "relief":"ridge",
-                                    "borderwidth":2
-                                },
-                                "caption":{
-                                    "width":19
-                                },
-                                "Color":{
-                                    "normal":"black",
-                                    "active":"red",
-                                    "error":"red"
-                                }
-                            },
                             "fault":{
                                 "Label":"b\u0142\u0105d",
                                 "width":40,
@@ -261,23 +244,6 @@
                             },
                             "warning":{
                                 "Label":"Ostrzezenie",
-                                "width":40,
-                                "height":40,
-                                "frame":{
-                                    "relief":"ridge",
-                                    "borderwidth":2
-                                },
-                                "caption":{
-                                    "width":19
-                                },
-                                "Color":{
-                                    "normal":"black",
-                                    "active":"yellow",
-                                    "error":"yellow"
-                                }
-                            },
-                            "homingattained":{
-                                "Label":"homingattained",
                                 "width":40,
                                 "height":40,
                                 "frame":{
@@ -561,23 +527,6 @@
                         },
                         "DoorLocked":{
                             "Label":"Drzwi zaryglowane",
-                            "width":40,
-                            "height":40,
-                            "frame":{
-                                "relief":"ridge",
-                                "borderwidth":2
-                            },
-                            "caption":{
-                                "width":25
-                            },
-                            "Color":{
-                                "normal":"black",
-                                "active":"green",
-                                "error":"red"
-                            }
-                        },
-                        "RobotEDM":{
-                            "Label":"Robot external Device monitoring",
                             "width":40,
                             "height":40,
                             "frame":{

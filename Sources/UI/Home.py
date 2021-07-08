@@ -200,8 +200,8 @@ class Positions(LabelFrame):
                 widget.__setattr__('flag',True)
                 self.root.variables.internalEvents['RefreshStartEnd'] = True
         if not anychange: self.root.variables.internalEvents['RefreshStartEnd'] = False
-        if self.root.variables.internalEvents['start']:
+        if self.root.variables['ProgramActive']:
             for widget in self.widgets: widget.config(state = 'disabled')
-        if self.root.variables.internalEvents['stop']:
+        else:
             for widget in self.widgets: widget.config(state = 'normal')
         super().update()
