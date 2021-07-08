@@ -2,8 +2,8 @@ from Sources.modbusTCPunits import Kawasaki
 from Sources.TactWatchdog import TactWatchdog as WDT
 from .common import EventManager, ErrorEventWrite, Bits, dictKeyByVal
 from functools import lru_cache
-from threading import Thread, currentThread
 import json
+import time
 
 class RobotVG(Kawasaki):
     def __init__(self, lockerinstance, configFile='', *args, **kwargs):
@@ -66,26 +66,37 @@ class RobotVG(Kawasaki):
         return result
 
     def misc(self, lockerinstance):
-        RobotRegister = []
-        for reg in ['CurrentPositionNumber','A','00A','X','00X','Y','00Y','Z','00Z',
-                    'StatusRegister0',  'StatusRegister1',  'StatusRegister2', 
-                    'StatusRegister3',  'StatusRegister4',  'StatusRegister5', 
-                    'StatusRegister6']:
-            RobotRegister.extend(self.read_holding_registers(lockerinstance, registerToStartFrom = reg))
-        if len(RobotRegister) == 16:
-            axisValues = {'A':[0,0], 'X':[0,0], 'Y':[0,0], 'Z':[0,0]}
-            with lockerinstance[0].lock:
-                lockerinstance[0].robot['currentpos'] = RobotRegister[0]
-                for axis in axisValues.keys():
-                    axisValues[axis] = self.__splitdecimals(lockerinstance[0].robot[axis])
-                for i, status in enumerate(RobotRegister[9:][:7]):
-                    lockerinstance[0].robot['StatusRegister' + str(i)] = status
-            for i, register, axis in [[x,RobotRegister[1:][:8][x], ['A','A','X','X','Y','Y','Z','Z'][x]] for x in range(len(RobotRegister[1:][:8]))]:
-                if i%2:
-                    if axisValues[axis][0] != register:
-                        self.write_register(lockerinstance, register = axis, value = register)
+        for reg, key in zip(['CurrentPositionNumber',
+                            'A','00A','X','00X','Y','00Y','Z','00Z',
+                            'StatusRegister0', 'StatusRegister1', 
+                            'StatusRegister2', 'StatusRegister3', 
+                            'StatusRegister4', 'StatusRegister5',
+                            'StatusRegister6'],
+                            ['currentpos',
+                            'A','A','X','X','Y','Y','Z','Z',
+                            'StatusRegister0', 'StatusRegister1', 
+                            'StatusRegister2', 'StatusRegister3', 
+                            'StatusRegister4', 'StatusRegister5', 
+                            'StatusRegister6']):
+            readregister = []
+            try:
+                readregister = self.read_holding_registers(lockerinstance, registerToStartFrom = reg)
+                time.sleep(0.05)
+            except Exception as e:
+                print(str(e))
+            else:
+                if len(reg) > 3 and readregister:
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].robot[key] = int(readregister[0])
+                        print(key, int(readregister[0]))
+                elif readregister:
+                    if len(reg) == 1:
+                        lockerinstance[0].robot[key] = float(readregister[0])
+                    else:
+                        lockerinstance[0].robot[key] += float('0.'+str(readregister[0]))
                 else:
-                    self.write_register(lockerinstance, register = '00'+axis, value = register)
+                    print(reg, 'is incorrect')
+
 
     def __Command(self, lockerinstance, command = ''):
         command_u = command[:1].upper() + command[1:]
