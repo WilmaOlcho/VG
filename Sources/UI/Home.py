@@ -27,7 +27,7 @@ class ThirdColumn(GeneralWidget):
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
 
 class ProcessVariables(LabelFrame):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'ProcessVariables')
         self.leftFrame = Frame(self)
         self.rightFrame = Frame(self)
@@ -65,14 +65,14 @@ class ProcessVariables(LabelFrame):
         super().update()
 
 class SecondColumn(GeneralWidget):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'SecondColumn')
         StatusIndicators(master = self)
         for widget in self.winfo_children():
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
 
 class FirstColumn(GeneralWidget):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'FirstColumn')
         ProgramSelect(self),
         Positions(self)
@@ -80,7 +80,7 @@ class FirstColumn(GeneralWidget):
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
 
 class ProgramSelect(LabelFrame):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'ProgramSelect')
         self.menubutton = tk.Menubutton(master = self, text = self.settings['Label'])
         self.menu = None
@@ -107,7 +107,7 @@ class ProgramSelect(LabelFrame):
         window = DeleteProgramWindow(self, self.menubutton)
         window.grab_set()
 
-    def loadprogramminmax(self, program):
+    def loadprogramminmax(self, program): #I love this function, it's look beautiful
         minimum = reduce(lambda x,y: (x[1] if isinstance(x,list) else x) if (x[1] if isinstance(x,list) else x) <= y[1] else y[1], program['Table'])
         maximum = reduce(lambda x,y: (x[1] if isinstance(x,list) else x) if (x[1] if isinstance(x,list) else x) >= y[1] else y[1], program['Table'])
         return (minimum, maximum)
@@ -135,11 +135,12 @@ class ProgramSelect(LabelFrame):
         super().update()
 
 class Positions(LabelFrame):
-    def __init__(self, master = None):
+    def __init__(self, master = None, **kwargs):
         super().__init__(master = master, branch = 'Positions')
         with open(self.root.variables.jsonpath, 'r') as jsonfile:
             self.programs = json.load(jsonfile)
         self.program = {}
+        self.refreshlock = True
         self.widgets = [
             ttk.Label(master = self, text = self.settings['from']),
             ttk.Entry(master = self, text = ''),
@@ -149,44 +150,56 @@ class Positions(LabelFrame):
         for widget in self.widgets:
             if isinstance(widget, tk.Entry):
                 widget.config(width = 5)
-                widget.bind("<FocusOut>",lambda x, obj = self: obj.setvalue())
             widget.pack(side = tk.LEFT, anchor = tk.N)
         self.pack()
         
     def nearest(self, value, attempts = list()):
         attemptlist = attempts.copy()
         attemptlist.sort(key = lambda element, v = int(value): abs(v - int(element)))
+        import tkinter.messagebox as messagebox #simplicity for a while
+        messagebox.showwarning('Co ty wyprawiasz!?','Podana wartość nie występuje w tablicy,\n    automatycznie poprawiono na:\n              {}'.format(attemptlist[0]))
         return attemptlist[0]
 
-    def setvalue(self):
-        if self.program:
-            for widget in self.widgets:
-                if isinstance(widget, tk.Entry):
-                    value = widget.get()
-                    if not value.isnumeric(): break
-                    value = int(value)
-                    positionsintable = [item[1] for item in self.program['Table']]
-                    if not value in positionsintable:
-                        value = self.nearest(value, positionsintable)
-                    if '2' in widget._name:
-                        self.root.variables.programposend = value
-                    else:
-                        self.root.variables.programposstart = value
-            self.root.variables.internalEvents['RefreshStartEnd'] = True
+    def setvalue(self, widget):
+            altered = False
+            if isinstance(widget, tk.Entry):
+                value = widget.get()
+                if not value.isnumeric(): return None
+                value = int(value)
+                positionsintable = [item[1] for item in self.program['Table']]
+                if not value in positionsintable:
+                    value = self.nearest(value, positionsintable)
+                if '2' in widget._name:
+                    altered |= self.root.variables.programposend != value
+                    self.root.variables.programposend = value
+                else:
+                    altered |= self.root.variables.programposstart != value
+                    self.root.variables.programposstart = value
+            if altered:
+                self.root.variables.internalEvents['RefreshStartEnd'] = True
         
     def update(self):
         for program in self.programs['Programs']:
             if program['Name'] == self.root.variables.currentProgram:
                 self.program = program
-        if self.root.variables.internalEvents['RefreshStartEnd']:
-            for widget in self.widgets:
-                if 'entry' in widget._name:
-                    widget.delete(0,tk.END)
-                    if '2' in widget._name:
-                        widget.insert(0,str(self.root.variables.programposend))
-                    else:
-                        widget.insert(0,str(self.root.variables.programposstart))
-        self.root.variables.internalEvents['RefreshStartEnd'] = False
+        anychange = False
+        for widget in self.widgets:
+            if widget != self.focus_get():
+                if hasattr(widget, 'flag'):
+                    if widget.flag:
+                        widget.flag = False
+                        self.setvalue(widget)
+                if self.root.variables.internalEvents['RefreshStartEnd']:
+                    if 'entry' in widget._name:
+                        expected = str(self.root.variables.programposend if '2' in widget._name else self.root.variables.programposstart)
+                        if widget.get() != expected:
+                            anychange = True
+                            widget.delete(0,tk.END)
+                            widget.insert(0,expected)
+            else: 
+                widget.__setattr__('flag',True)
+                self.root.variables.internalEvents['RefreshStartEnd'] = True
+        if not anychange: self.root.variables.internalEvents['RefreshStartEnd'] = False
         if self.root.variables.internalEvents['start']:
             for widget in self.widgets: widget.config(state = 'disabled')
         if self.root.variables.internalEvents['stop']:

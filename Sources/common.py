@@ -1,5 +1,9 @@
 from threading import Thread, currentThread
 
+
+import logging
+_logger = logging.getLogger(__name__)
+
 def BlankFunc(*args, **kwargs): #Blank func to use as default value in function type parameter
     pass
 
@@ -16,16 +20,26 @@ def dictKeyByVal(dict, byVal): #There is no default method to search for keys in
         return keys[0]
     return keys
 
-def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255, noerror = False):
+def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255, noerror = False, errcode = ''):
     with lockerinstance[0].lock:
-        if errstring not in lockerinstance[0].shared['Errors']: lockerinstance[0].shared['Errors'] += errstring + '\n'
+        if errstring:
+            if errstring not in lockerinstance[0].shared['Errors']:
+                lockerinstance[0].shared['Errors'] += errstring + '\n'
+                _logger.info(errstring)
         if not noerror:
             lockerinstance[0].errorlevel[errorlevel] = True
             lockerinstance[0].events['Error'] = True
+        if errcode and errcode in lockerinstance[0].shared['Errorcodeslist']:
+            if errcode not in lockerinstance[0].shared['Errcodes']:
+                lockerinstance[0].shared['Errcodes'].append(errcode)
+                _logger.info(lockerinstance[0].shared['Errorcodeslist']['errcode'])
+
 
 class EventManager():
-    def __init__(self, lockerinstance, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
+    def __init__(self, lockerinstance, count=1, input = '', edge = None, event = '', callback = BlankFunc, callbackargs = ()):
         self.backwardsrunning = False
+        self.count = count
+        self.howmanycatched = 0
         if not input:
             if event[0] == '-':
                 event = event[1:]
@@ -116,18 +130,24 @@ class EventManager():
                 currentstate = self.inputpath[self.input]
             if not self.Alive: break
             args = (lockerinstance, currentstate)
-            if any([self.noedge(*args), self.rising(*args), self.falling(*args), self.toggle(*args)]): break
+            if any([self.noedge(*args),
+                    self.rising(*args),
+                    self.falling(*args),
+                    self.toggle(*args)]):
+                self.howmanycatched += 1
+            if self.howmanycatched >= self.count:
+                break
         self.callback(*self.callbackargs)
         with lockerinstance[0].lock:
             if self.name in lockerinstance[0].ect: lockerinstance[0].ect.remove(self.name)
     
     @classmethod
-    def AdaptEvent(cls, lockerinstance, input = '', edge = None, name = '', event = '', callback = BlankFunc, callbackargs = ()):
+    def AdaptEvent(cls, lockerinstance, count=1, input = '', edge = None, name = '', event = '', callback = BlankFunc, callbackargs = ()):
         evname = event if not name else name
         with lockerinstance[0].lock:
             ectActive = str('EventCatcher: ' + evname) in lockerinstance[0].ect
         if not ectActive:
-            EventThread = Thread(target = cls, args = (lockerinstance, input, edge, event, callback, callbackargs))
+            EventThread = Thread(target = cls, args = (lockerinstance, count, input, edge, event, callback, callbackargs))
             EventThread.setName('EventCatcher: ' + evname)
             EventThread.start()
 

@@ -113,7 +113,8 @@
                 "Name":"Ustawienia i tryb r\u0119czny",
                 "Button":{
                     "width":25,
-                    "height":2
+                    "height":2,
+                    "relief":"ridge"
                 },
                 "Troley":{
                     "Label":"W\u00F3zek",
@@ -130,6 +131,15 @@
                             "key":"seal"
                         }
                     },
+                    "Button":{
+                        "masterkey":"safety",
+                        "width":33,
+                        "height":2,
+                        "bg":"#84bdac"
+                    },
+                    "buttons":{
+                        "Oddaj sterowanie wozkem":"~TroleyReady"
+                    },
                     "Servo":{
                         "Label":"Serwo",
                         "Button":{
@@ -137,10 +147,34 @@
                             "width":15,
                             "height":2
                         },
+                        "Entry":{
+                            "masterkey":"troley",
+                            "width":25  
+                        },
+                        "entries":{
+                            "Pozycja zadana":"position"
+                        },
                         "StatusIndicators":{
                             "Label":"Status",
                             "masterkey":"troley",
-                            "servoON":{
+                            "readytoswitchon":{
+                                "Label":"Serwo  gotowe do w\u0142\u0105czenia",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
+                            },
+                            "switchon":{
                                 "Label":"Serwo w\u0142\u0105czone",
                                 "width":40,
                                 "height":40,
@@ -157,7 +191,24 @@
                                     "error":"red"
                                 }
                             },
-                            "servoCOIN":{
+                            "operationenabled":{
+                                "Label":"Operacja wybrana",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"green",
+                                    "error":"red"
+                                }
+                            },
+                            "positionreached":{
                                 "Label":"Serwo na pozycji",
                                 "width":40,
                                 "height":40,
@@ -174,8 +225,8 @@
                                     "error":"red"
                                 }
                             },
-                            "servoREADY":{
-                                "Label":"Serwo gotowe",
+                            "faultreactionactive":{
+                                "Label":"Reakcja na b\u0142\u0105d",
                                 "width":40,
                                 "height":40,
                                 "frame":{
@@ -187,12 +238,12 @@
                                 },
                                 "Color":{
                                     "normal":"black",
-                                    "active":"green",
+                                    "active":"red",
                                     "error":"red"
                                 }
                             },
-                            "servoTGON":{
-                                "Label":"Serwo w ruchu",
+                            "fault":{
+                                "Label":"b\u0142\u0105d",
                                 "width":40,
                                 "height":40,
                                 "frame":{
@@ -204,8 +255,42 @@
                                 },
                                 "Color":{
                                     "normal":"black",
-                                    "active":"green",
+                                    "active":"red",
                                     "error":"red"
+                                }
+                            },
+                            "warning":{
+                                "Label":"Ostrzezenie",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"yellow",
+                                    "error":"yellow"
+                                }
+                            },
+                            "homingattained":{
+                                "Label":"homingattained",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"yellow",
+                                    "error":"yellow"
                                 }
                             },
                             "TroleyDocked":{
@@ -224,14 +309,38 @@
                                     "active":"green",
                                     "error":"red"
                                 }
+                            },
+                            "-homepositionisknown":{
+                                "Label":"Wymagane bazowanie",
+                                "width":40,
+                                "height":40,
+                                "frame":{
+                                    "relief":"ridge",
+                                    "borderwidth":2
+                                },
+                                "caption":{
+                                    "width":19
+                                },
+                                "Color":{
+                                    "normal":"black",
+                                    "active":"white",
+                                    "error":"red"
+                                }
+                            },
+                            "Entry":{
+                                "label":"Pozycja serwo",
+                                "width":3,
+                                "masterkey":"servo",
+                                "key":"pos",
+                                "state":"disabled"
                             }
                         },
                         "buttons":{
-                            "W\u0142\u0105cz":"servoRUN",
-                            "Wy\u0142\u0105cz":"servoSTOP",
-                            "Krok":"servoSTEP",
-                            "Bazowanie":"servoHOMING",
-                            "Reset":"servoRESET"}
+                            "W\u0142\u0105cz":"run",
+                            "Wy\u0142\u0105cz":"stop",
+                            "Krok":"step",
+                            "Bazowanie":"homing",
+                            "Reset":"reset"}
                     }
                 },
                 "Pneumatics":{
@@ -262,6 +371,23 @@
                     "StatusIndicators":{
                         "Label":"",
                         "masterkey":"laser",
+                        "locklaserloop":{
+                            "Label":"Laser przej\u0119ty przez p\u0142yty",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":19
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"yellow",
+                                "error":"red"
+                            }
+                        },
                         "!LaserBusy":{
                             "Label":"Laser zaj\u0119ty",
                             "width":40,
@@ -435,6 +561,23 @@
                         },
                         "DoorLocked":{
                             "Label":"Drzwi zaryglowane",
+                            "width":40,
+                            "height":40,
+                            "frame":{
+                                "relief":"ridge",
+                                "borderwidth":2
+                            },
+                            "caption":{
+                                "width":25
+                            },
+                            "Color":{
+                                "normal":"black",
+                                "active":"green",
+                                "error":"red"
+                            }
+                        },
+                        "RobotEDM":{
+                            "Label":"Robot external Device monitoring",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -927,7 +1070,7 @@
                         "NewProgram":{
                             "title":"Nowy program",
                             "Button":{
-                                "width":10,
+                                "width":20,
                                 "height":2
                             },
                             "buttons":{
@@ -952,7 +1095,7 @@
                         "DeleteProgram":{
                             "title":"Usu\u0144 program",
                             "Button":{
-                                "width":10,
+                                "width":20,
                                 "height":2
                             },
                             "buttons":{
@@ -977,7 +1120,7 @@
                         "AgainPrompt":{
                             "title":"Czy wykona\u0107 procedur\u0119 ponownie?",
                             "Button":{
-                                "width":10,
+                                "width":20,
                                 "height":2
                             },
                             "buttons":{
@@ -1272,7 +1415,7 @@
                 "NewProgram":{
                     "title":"Nowy program",
                     "Button":{
-                        "width":10,
+                        "width":20,
                         "height":2
                     },
                     "buttons":{
@@ -1297,7 +1440,7 @@
                 "DeleteProgram":{
                     "title":"Usu\u0144 program",
                     "Button":{
-                        "width":10,
+                        "width":20,
                         "height":2
                     },
                     "buttons":{
@@ -1322,7 +1465,7 @@
                 "AgainPrompt":{
                     "title":"Czy wykona\u0107 procedur\u0119 ponownie?",
                     "Button":{
-                        "width":10,
+                        "width":20,
                         "height":2
                     },
                     "buttons":{
@@ -1399,12 +1542,73 @@
         "5":"B\u0142\u0105d SCOUTa",
         "6":"B\u0142\u0105d SCOUTa {}",
         
+        "10":"Przerwany obwód bezpieczeństwa",
+        "11":"Strefa bezpieczeństwa otwarta!",
+        "12":"Drzwi serwisowe otwarte!",
+        "13":"Wózek poza pozycją bezpieczną!",
+        "14":"Uzbrojenie maszyny wymagane!",
+        "15":"Program jest nieprawidłowy",
+        "16":"Załadowanie programu nie powiodło się",
+        "17":"Błąd inicjalizacji: Nie ma gazu",
+        "18":"Błąd inicjalizacji: Nie ma powietrza",
+        "19":"Błąd inicjalizacji: Laser jest zajęty",
+        "20":"Błąd inicjalizacji: Błąd lasera",
+        "21":"Błąd inicjalizacji: K-Draw nie odpowiada",
+        "22":"Błąd inicjalizacji: Filtrowentylator nie wytworzył odpowiedniego podciśnienia",
+
+
+        
+
         "100":"Przekroczenie czasu taktu ",
         "101":"Przekroczenie czasu taktu {}",
         "200":"B\u0142\u0105d serwo, serwo zosta\u0142o zatrzymane",
         "201":"B\u0142\u0105d lasera, nie mo\u017Cna przypisa\u0107 kana\u0142u",
-        "202":""
+        "202":"",
+        "":""
 
+
+    },
+    "StatusCodes":{
+        "I":"Inicjalizacja",
+        "I.":"Inicjalizacja.",
+        "I..":"Inicjalizacja..",
+        "I...":"Inicjalizacja...",
+        "I0":"Kontrola pneumatyki",
+        "I1":"Kontrola robota",
+        "I1.2":"Robot wymaga uruchomienia",
+        "I2":"Kontrola serwo",
+        "I3":"Kontrola  ",
+        "I4":"Kontrola g\u0142owicy laserowej",
+        "I5":"Kontrola filtrowentylatora",
+        "I6":"Inicjalizacja zako\u0144czona powodzeniem",
+        "C0":"\u0141adowanie tabeli",
+        "CD":"Proces zako\u0144czony",
+        "SD":"Krok zako\u0144czony",
+        "S0":"Ustawienie receptury do nadania",
+        "S1":"Zmiana receptury",
+        "S2":"Opuszczenie uszczelniacza",
+        "S3":"Obr\u01F3t komory jeśli trzeba",
+        "S4":"Przygotowanie robota do zmiany pozycji",
+        "S5":"Zmiana pozycji robota",
+        "S6":"Podniesienie uszczelniacza i dociśnięcie uszczelki",
+        "S7":"Oczekiwanie na doci\u015Bni\u0119cie uszczelki",
+        "S7.2":"Wypełnienie komory gazem",
+        "S8":"Rezerwacja lasera",
+        "S8.2":"Oczekiwaie na zwolnienie lasera przez celę płyt palnika",
+        "S9":"Uruchomienie K-Draw",
+        "S10":"Pstrykanie foty wymiennikowi",
+        "S11":"Spawanie wymiennika",
+        "S12":"Zwalnianie lasera",
+        "S13":"",       
+        "S14":"",       
+        "S15":"",       
+        "S16":"",       
+        "S17":"",       
+        "S18":"",       
+        "S19":"",       
+        "S20":"",       
+        "S21":"",
+        "":""
 
     }
 }

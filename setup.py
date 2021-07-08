@@ -8,8 +8,25 @@ parameters = {
             'dest_base':'VGControl'
         }],
     'options':{'py2exe':{
-        'dist_dir':'Z:\\'
-    }}
+        'dist_dir':'Z:\\',
+        'skip_archive':True
+        
+    }},
+    'data_files':[('.',[
+            'amuxConfiguration.json',
+            'FlexiSoftVG_in.csv',
+            'FlexiSoftVG_out.csv',
+            'PneumaticsConfiguration.json',
+            'ScoutConfiguration.json',
+            'robotConfiguration.json',
+            'robot2Configuration.json',
+            'ServoSettings.json',
+            'SICKGMODconfiguration.json',
+            #'Programs.json',
+            'Troleysettings.json',
+            'icon.ico',
+            'widgetsettings.json' ])
+        ]
 }
 
 

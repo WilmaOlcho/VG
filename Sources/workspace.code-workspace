@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "..\\..\\pico"
+		}
+	],
+	"settings": {
+		"githubPullRequests.pullRequestDescription": "ask",
+		"githubPullRequests.remotes": [
+			"origin",
+			"upstream",
+			"https://github.com/WilmaOlcho/VG",
+			"https://github.com/WilmaOlcho/RADWAGLogger"
+		]
+	}
+}

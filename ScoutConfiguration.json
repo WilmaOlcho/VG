@@ -1,9 +1,9 @@
 {
     "connection":{
         "IP":"192.168.4.200",
-        "port":900
+        "port":3000
     },
-    "ProgramPath":"C:\\K-Draw\\",
-    "Receptures":"C:\\K-Draw\\Design"
+    "ProgramPath":"C:\\K-Draw_BETON\\",
+    "Recipes":"C:\\K-Draw_BETON\\Design"
 
 }

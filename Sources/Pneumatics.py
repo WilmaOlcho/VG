@@ -25,6 +25,7 @@ class PneumaticActive(Pneumatic):
         self.voltage = self.root['voltage']
         self.current = self.root['current']
         self.action = self.root['action']
+        self.oppositeaction = self.root['oppositeaction']
 
 class Piston(Pneumatic):
     def __init__(self, lockerinstance, branch, parent, *args, **kwargs):
@@ -62,10 +63,11 @@ class Coil(PneumaticActive):
 
     def controlSequence(self, lockerinstance):
         with lockerinstance[0].lock:
+            oppositeaction = lockerinstance[0].pistons[self.oppositeaction]
             cstate = lockerinstance[0].pistons['sensor'+self.action] if not self.nosensor else False
             rstate = lockerinstance[0].pistons[self.action]
             timers = list(lockerinstance[0].wdt)
-        if rstate and not cstate:
+        if rstate and not cstate and not oppositeaction:
             #print(self.action)
             with lockerinstance[0].lock:
                 lockerinstance[0].GPIO[self.address] = True

@@ -12,7 +12,8 @@ class TableScreen(GeneralWidget):
         self.table.grid(columnspan = 5, sticky = 'E')
         for button in self.settings["Buttons"]:
             tk.Button(master = self, command = lambda v = self, settings = button: v.btnclick(settings), text = button['Label']).grid(**button['grid'])
-    
+
+
     def btnclick(self, settings):
         if settings['action']=='save':
             self.root.variables.internalEvents['DumpProgramToFile'] = True

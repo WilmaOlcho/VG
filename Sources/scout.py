@@ -1,9 +1,15 @@
 import socket
 import json
 import re
-from .common import ErrorEventWrite, EventManager
+import time
+from .common import ErrorEventWrite, EventManager, Bits
 from .TactWatchdog import TactWatchdog
 WDT = TactWatchdog.WDT
+from pywinauto import Application
+from threading import Thread
+
+import logging
+_logger = logging.getLogger(__name__)
 
 class KDrawTCPInterface(socket.socket):
     '''Klasa dziedzicząca po socket.socket, zawierająca metody służące
@@ -25,7 +31,7 @@ class KDrawTCPInterface(socket.socket):
                 "port":3000 <- port serwera K-draw
             },
             "ProgramPath":"C:\\K-Draw\\", <- główny folder programu K-Draw
-            "Receptures":"C:\\K-Draw\\Design" <- folder z recepturami K-Draw
+            "Recipes":"C:\\K-Draw\\Design" <- folder z recepturami K-Draw
         }
         '''
         super().__init__(socket.AF_INET, socket.SOCK_STREAM,)
@@ -33,12 +39,13 @@ class KDrawTCPInterface(socket.socket):
         try:
             with open(configfile) as jsonfile:
                 self.config = json.load(jsonfile)
+            self.Bits = Bits(len=7, LE=True)
         except Exception as e:
             errstring = "KDrawTCPInterface can't load json file: " + str(e)
             ErrorEventWrite(lockerinstance, errstring)
         else:
             with lockerinstance[0].lock:
-                lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
+                lockerinstance[0].scout['recipesdir'] = self.config['Recipes']
 
     def connect(self, lockerinstance):
         '''
@@ -61,9 +68,11 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 event = lockerinstance[0].events['ScoutManagerReadyToSend']
             if event:
+                message = self.sendingqueue.pop(0)
                 with lockerinstance[0].lock:
                     lockerinstance[0].events['ScoutManagerReadyToSend'] = False
-                self.sendall(self.sendingqueue.pop(0))
+                    lockerinstance[0].scout['actualmessage'] = message
+                self.sendall(message)
                 self.receive(lockerinstance)
 
     def add_to_queue(self, lockerinstance, bytes_message):
@@ -111,6 +120,9 @@ class KDrawTCPInterface(socket.socket):
         gdzie COMMAND oznacza polecenie, ',' jest separatorem, a każde polecenie
         zakończone jest znakami zakończenia linii \r\n
         '''
+        with lockerinstance[0].lock:
+            if message[0] in lockerinstance[0].scout['LastMessageType']:
+                message[0] = 'STATUS'
         string = ''
         for element in message: #message is an list of parameters
             string += str(element) + ',' #parameters are splitted by coma
@@ -134,7 +146,8 @@ class KDrawTCPInterface(socket.socket):
         #it contains values splitted by ','
         if contents: ##Przekazywanie danych do metod dekodujących konkretne dane
             with lockerinstance[0].lock:
-                lockerinstance[0].scout['LastMessageType'] = contents[0]
+                lockerinstance[0].scout['LastMessageType'].append(contents[0])
+                lockerinstance[0].scout['LastMessageType'].pop(0)
             if contents[0] == 'STATUS': self.rec_write_status(lockerinstance, contents[1:])
             elif contents[0] == 'AL_REPORT': self.rec_AlarmReport(lockerinstance, contents[1:])
             elif contents[0] == 'AL_RESET': self.rec_AlarmReset(lockerinstance, contents[1:])
@@ -161,14 +174,15 @@ class KDrawTCPInterface(socket.socket):
         Metoda obsługująca ramkę zwrotną STATUS
         '''
         with lockerinstance[0].lock:
-            statusreceived = lockerinstance[0].scout['LastMessageType'] == 'STATUS'
+            statusreceived = 'STATUS' in lockerinstance[0].scout['LastMessageType']
         if statusreceived:
-            if len(statusdata[1]) == 7 and statusdata[0] != '0':
-                scout = lockerinstance[0].scout
-                scout['StatusCheckCode'] = bool(int(statusdata[0]))
+            if statusdata[1] and statusdata[0]:
+                binarydata = self.Bits(int(statusdata[1]))
                 with lockerinstance[0].lock:
+                    scout = lockerinstance[0].scout
+                    scout['StatusCheckCode'] = bool(int(statusdata[0]))
                     for i, status in enumerate(['ReadyOn','AutoStart','Alarm', 'rsv','WeldingProgress','LaserIsOn','Wobble']):
-                        scout['status'][status] = bool(int(statusdata[1][i]))
+                        scout['status'][status] = bool(int(binarydata[i]))
                     scout['MessageAck'] = True
             else:
                 ErrorEventWrite(lockerinstance, 'SCOUT status data was not fully received: ' + str(statusdata))
@@ -223,12 +237,11 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 savedrecipe = lockerinstance[0].scout['recipe']
             savedrecipe = self.__removefromstring(savedrecipe, '.dsg')
-            recipechanged = data[1] == savedrecipe
-            if recipechanged:
+            if data[1] == savedrecipe:
                 with lockerinstance[0].lock:
                     lockerinstance[0].scout['MessageAck'] = True
                     lockerinstance[0].scout['Recipechangedsuccesfully'] = True
-            if not recipechanged:
+            else:
                 ErrorEventWrite(lockerinstance, "SCOUT returned wrong Recipe Change ack message:\n{}".format(data))
         else:
             ErrorEventWrite(lockerinstance, "SCOUT returned incomplete Recipe Change ack message:\n{}".format(data))
@@ -273,9 +286,11 @@ class KDrawTCPInterface(socket.socket):
         Metoda obsługująca ramkę zwrotną LASER_CTRL
         '''
         if len(data) == 2:
+            laserack = False
             with lockerinstance[0].lock:
-                laserack = bool(int(data[1])) == lockerinstance[0].scout['LaserOn']
-                if laserack: lockerinstance[0].scout['MessageAck'] = True
+                laserack = (bool(int(data[1])) if data[1].isnumeric() else True if data[1] =='True' else False)== lockerinstance[0].scout['LaserCTRVal']
+                if laserack:
+                    lockerinstance[0].scout['MessageAck'] = True
             if not laserack:
                 ErrorEventWrite(lockerinstance, "SCOUT returned wrong LaserCTRL ack message:\n{}".format(data))
         else:
@@ -305,8 +320,9 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
                 alignpage = int(data[1]) == lockerinstance[0].scout['ManualAlignPage']
-                if checkcode and alignpage:
+                if checkcode == 1 and alignpage:
                     lockerinstance[0].scout['ManualAlignCheck'] = True
+                lockerinstance[0].scout['ManualWeldStatus'] = checkcode
                 lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualAlign fail:\n{}".format(data))
@@ -323,8 +339,9 @@ class KDrawTCPInterface(socket.socket):
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
                 weldpage = int(data[1]) == lockerinstance[0].scout['ManualWeldPage']
-                if checkcode and weldpage:
+                if checkcode == 1 and weldpage:
                     lockerinstance[0].scout['ManualWeldCheck'] = True
+                lockerinstance[0].scout['ManualWeldStatus'] = checkcode
                 lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualWeld went wrong:\n{}".format(data))
@@ -338,7 +355,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda obsługująca ramkę zwrotną GET_ALIGN_INFO
         '''
         if len(data) == 9 or len(data) == 6:
-            if data[0] == 1 and data[2] == 1:
+            if int(data[0]) == 1 and int(data[2]) == 1:
                 with lockerinstance[0].lock:
                     if len(data) == 6:
                         axy = data[3:]
@@ -453,6 +470,7 @@ class KDrawTCPInterface(socket.socket):
                 for i, character in enumerate(string):
                     if i in range(*searchresult.regs[0]): continue
                     newstring += character
+            else: newstring = string
             if string != newstring:
                 string = newstring
             else: break
@@ -463,11 +481,18 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę RECIPE_CHANGE
         '''
         with lockerinstance[0].lock:
+            currenttime = time.time()
+            lasttime = lockerinstance[0].scout['times']['setrecipe']
+            if currenttime - lasttime < lockerinstance[0].scout['times']['limitsetrecipe']:
+                return
             if not recipe:
                 recipe = lockerinstance[0].scout['recipe']
             else:
                 lockerinstance[0].scout['recipe'] = recipe
+            recipe
         recipe = self.__removefromstring(recipe, '.dsg')
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['lastrecipe'] = recipe
         message = self.encode_message(lockerinstance, ['RECIPE_CHANGE',recipe])
         self.add_to_queue(lockerinstance, message)
 
@@ -489,6 +514,8 @@ class KDrawTCPInterface(socket.socket):
         '''
         with lockerinstance[0].lock:
             page = lockerinstance[0].scout['ManualAlignPage']
+            lockerinstance[0].scout['ManualAlignCheck'] = False
+            lockerinstance[0].scout['ManualAlignStatus'] = 0
         message = self.encode_message(lockerinstance, ['MANUAL_ALIGN', str(page)])
         self.add_to_queue(lockerinstance, message)
 
@@ -498,6 +525,8 @@ class KDrawTCPInterface(socket.socket):
         '''
         with lockerinstance[0].lock:
             page = lockerinstance[0].scout['ManualWeldPage']
+            lockerinstance[0].scout['ManualWeldCheck'] = False
+            lockerinstance[0].scout['ManualWeldStatus'] = 0
         message = self.encode_message(lockerinstance, ['MANUAL_WELD', page])
         self.add_to_queue(lockerinstance, message)
 
@@ -511,6 +540,34 @@ class KDrawTCPInterface(socket.socket):
         message = self.encode_message(lockerinstance, ['WELD_RUN', len(pages), *pages])
         self.add_to_queue(lockerinstance, message)
 
+class scoutwindowThread(Application):
+    def __init__(self, lockerinstance, *args, **kwargs):
+        super().__init__(backend="uia")
+        self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
+        self.controlloop(lockerinstance)
+
+    def controlloop(self, lockerinstance):
+        while True:
+            try:
+                self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
+            except Exception as e:
+                ErrorEventWrite(lockerinstance, "SCOUTwindowThread raised exception:" + str(e))
+            with lockerinstance[0].lock:
+                recipe = lockerinstance[0].scout['recipe']
+                currentrecipe = lockerinstance[0].scout['currentrecipe']
+            if recipe != currentrecipe:
+                try:
+                    recpath = self.scoutwindow.child_window(title_re=".*dsg").window_text()
+                except:
+                    pass
+                else:
+                    if recpath:
+                        recipename = recpath.split("\\")[-1][:-4]
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].scout['currentrecipe'] = recipename
+            with lockerinstance[0].lock:
+                alive = not lockerinstance[0].events["closeApplication"]
+            if not alive: break
 class SCOUT():
     def __init__(self, lockerinstance, configfile):
         while True:
@@ -520,18 +577,27 @@ class SCOUT():
             except Exception as e:
                 ErrorEventWrite(lockerinstance, 'SCOUT manager cant load json file:\n{}'.format(str(e)))
             else:
-                self.Alive = True
-                with lockerinstance[0].lock:
-                    lockerinstance[0].scout['Alive'] = True
-                    lockerinstance[0].scout['recipesdir'] = self.config['Receptures']
-                self.connection = KDrawTCPInterface(lockerinstance, configfile)
                 try:
-                    self.connection.connect(lockerinstance)
-                    self.connection.setblocking(False)
+                    self.startkdraw()
                 except Exception as e:
-                    ErrorEventWrite(lockerinstance, 'SCOUT manager cant connect with k-draw:\n{}'.format(str(e)))
+                    ErrorEventWrite(lockerinstance, 'SCOUT manager cant start k-draw:\n{}'.format(str(e)))
                 else:
-                    self.loop(lockerinstance)
+                    self.Alive = True
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].scout['Alive'] = True
+                        lockerinstance[0].scout['recipesdir'] = self.config['Recipes']
+                    self.connection = KDrawTCPInterface(lockerinstance, configfile)
+                    try:
+                        self.connection.connect(lockerinstance)
+                        self.connection.setblocking(False)
+                    except Exception as e:
+                        ErrorEventWrite(lockerinstance, 'SCOUT manager cant connect with k-draw:\n{}'.format(str(e)))
+                    else:
+                        with lockerinstance[0].lock:
+                            lockerinstance[0].scout['lastrecipe'] = ''
+                        scoutapp = Thread(target = scoutwindowThread, args=(lockerinstance,))
+                        scoutapp.start()
+                        self.loop(lockerinstance)
             finally:
                 with lockerinstance[0].lock:
                     self.Alive = lockerinstance[0].scout['Alive']
@@ -539,6 +605,22 @@ class SCOUT():
                 if not self.Alive or letdie:
                     self.connection.close()
                     break
+
+    def startkdraw(self):
+        from os import popen
+        from time import sleep
+        import wmi
+        pcs = list(filter(lambda p:'K-Draw.exe' == p.Properties_('Name').Value, wmi.WMI().InstancesOf('Win32_Process')))
+        if not pcs:
+            startstr = 'start "K-Draw.exe" /D '+str(self.config['ProgramPath']) + ' ' + str(self.config['ProgramPath'])+'K-Draw.exe'
+            popen(startstr)
+            sleep(15)
+        else:
+            import psutil
+            pcs = pcs[0]
+            handle = psutil.Process(int(pcs.Properties_('ProcessId')))
+            handle.resume()
+
 
     def loop(self, lockerinstance):
         while self.Alive:
@@ -573,7 +655,6 @@ class SCOUT():
                 if getaligninfo: lockerinstance[0].scout['GetAlignInfo'] = False
                 laserctrl = lockerinstance[0].scout['LaserCTRL']
                 if laserctrl: lockerinstance[0].scout['LaserCTRL'] = False
-                 #TODO laserctrl
             if alarm and lastrecv != 'AL_REPORT': self.connection.GetAlarmReport(lockerinstance)
             if tlaseron: self.connection.TurnOnLaser(lockerinstance)
             if tlaseroff: self.connection.TurnOffLaser(lockerinstance)

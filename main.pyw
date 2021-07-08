@@ -1,59 +1,48 @@
 from multiprocessing import Process, current_process, freeze_support, set_start_method
-
-#import site # py2exe can't find it
-#import os, re
-#for path in os.environ['PATH'].split(';'):
-#    if any(re.findall('Python',path)):
-#        if not re.findall('Scripts',path) and not re.findall('site-packgages',path):
-#            site.addsitedir(path+'lib\\site-packages')
-#        else:
-#            site.addsitedir(path)
+from pathlib import Path
+import os
 
 from Sources.StaticLock import SharedLocker
 from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
 from Sources.Kawasaki import RobotVG
+from Sources.LaserBeamRedirector import RobotPlyty
 from Sources.Pneumatics import PneumaticsVG
 from Sources.Servo import Servo
 from Sources.Troley import Troley
 from Sources.sickgmod import GMOD
 #from gui import console
 from Sources.UI.MainWindow import Window
-from pathlib import Path
 from Sources.scout import SCOUT
-from Sources.programController import programController
+from Sources.programController import programController as Program
+
+
+import logging
+_logger = logging.getLogger(__name__)
+
 
 class ApplicationManager(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         __file__ = ''
-        self.locker = SharedLocker()
-        self.lock = {0:self.locker}
+        
         path = str(Path(__file__).parent.absolute())+'\\'
-        self.AmuxConfigurationFile = path + 'amuxConfiguration.json'
-        self.LconConfigurationFile = path + 'amuxConfiguration.json'
-        self.RobotConfigurationFile = path + 'robotConfiguration.json'
-        self.ServoConfigurationFile = path + 'ServoSettings.json'
-        self.TroleyConfigurationFile = path + 'Troleysettings.json'
-        self.PneumaticsConfigurationFile = path + 'PneumaticsConfiguration.json'
-        self.SICKGMOD0ConfigurationFile = path + 'SICKGMODconfiguration.json'
-        self.ScoutConfigurationFile = path + 'Scoutconfiguration.json'
-        self.programs = path + 'Programs.json'
-        self.widgets = path + 'widgetsettings.json'
-        self.processes = [
-            Process(name = 'Window', target = Window, args=(self.lock,self.widgets, self.programs)),
-            Process(name = 'MyMultiplexer', target = MyMultiplexer, args=(self.lock, self.AmuxConfigurationFile,)),
-            Process(name = 'Servo', target = Servo,  args=(self.lock, self.ServoConfigurationFile,)),
-            Process(name = 'MyLaserControl', target = MyLaserControl, args=(self.lock, self.LconConfigurationFile,)),
-            Process(name = 'RobotVG', target = RobotVG,  args=(self.lock, self.RobotConfigurationFile, *args,)),
-            Process(name = 'PneumaticsVG', target = PneumaticsVG, args=(self.lock, self.PneumaticsConfigurationFile,)),
-            Process(name = 'GMOD', target = GMOD, args=(self.lock, self.SICKGMOD0ConfigurationFile,)),
-            Process(name = 'Troley', target = Troley, args=(self.lock, self.TroleyConfigurationFile,)),
-            Process(name = 'Program', target = programController, args=(self.lock, self.programs,)),
-            Process(name = 'SCOUT', target = SCOUT, args = (self.lock, self.ScoutConfigurationFile,))
-        ]    
-        for process in self.processes: 
+        self.locker = SharedLocker(mainpath = path)
+        self.lock = {0:self.locker}
+
+        self.processes = []
+        with self.locker.lock:
+            for processclass in self.locker.shared['main'].keys():
+                if self.locker.shared['main'][processclass]:
+                    self.processes.append(Process(name = processclass, target = eval(processclass), args=(self.lock, *self.locker.shared['paramfiles'][processclass])) )
+
+        for process in self.processes:
             process.start()
+        for process in self.processes:
+            with self.locker.lock:
+                self.locker.shared['PID'][process.name] = process.pid
+            print(process.name, process.pid)
         self.EventLoop(self.lock, *args, **kwargs)
+
 
     def EventLoop(self, lockerinstance, *args, **kwargs):
         ps = []
@@ -63,12 +52,11 @@ class ApplicationManager(object):
             with self.lock[0].lock:
                 self.ApplicationAlive = not self.lock[0].events['closeApplication']
                 if not self.ApplicationAlive:
-                    self.lock[0].servo['Alive'] = False
-                    self.lock[0].mux['Alive'] = False
-                    self.lock[0].robot['Alive'] = False
-                    self.lock[0].pistons['Alive'] = False
-                    self.lock[0].console['Alive'] = False
-                    self.lock[0].lcon['Alive'] = False
+                    for key in self.lock[0].shared.keys():
+                        if hasattr(self.lock[0].shared[key],'__dict__'):
+                            cdict = self.lock[0].shared[key]
+                            if 'Alive' in cdict.keys():
+                                cdict['Alive'] = False
             if not self.ApplicationAlive:
                 stillalive = False
                 for i, process in enumerate(self.processes):
@@ -88,11 +76,36 @@ class ApplicationManager(object):
                 if not stillalive: break
             self.errorcatching(lockerinstance)
 
+
     def errorcatching(self, lockerinstance):
-        for proces in self.processes:
-            if not proces.is_alive():
+        restoring = []
+        for process in [*self.processes,*restoring]:
+            if not process.is_alive():
                 with self.lock[0].lock:
-                    self.lock[0].events['closeApplication'] = True
+                   restore = not self.lock[0].events['closeApplication']
+                if restore:
+                    if hasattr(process,"name"):
+                        restoring.append(process.name)
+                        self.processes.remove(process)
+                        if process.name in ['scout','RobotPlyty']:
+                            import psutil, wmi, re
+                            applist = wmi.WMI()
+                            def IsProcessValid(process, KnownProcessValue='K-Draw', VariableName='Name'):
+                                if hasattr(process, 'Properties_'):
+                                    return re.findall(str(KnownProcessValue), str(process.Properties_(VariableName).Value))
+                            InstanceWeLookingFor = list(filter(IsProcessValid,self.processes))
+                            if InstanceWeLookingFor:
+                                psutil.Process(InstanceWeLookingFor[0].ProcessId).terminate()
+
+
+        for processclass in self.locker.shared['main'].keys():
+            if processclass in restoring:
+                process = Process(name = processclass, target = eval(processclass), args=(self.lock, *self.locker.shared['paramfiles'][processclass]))
+                self.processes.append(process)
+                process.start()
+                with lockerinstance[0].lock:
+                    self.lock[0].shared['PID'][process.name] = process.pid
+                print(process.name, 'restored    PID:',process.pid)
         with lockerinstance[0].lock:
             if lockerinstance[0].events['ack']:
                 lockerinstance[0].events['Error'] = False

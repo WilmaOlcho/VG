@@ -23,12 +23,14 @@ class SettingsScreen(GeneralWidget):
             PistonControl(master = self.miscpneumaticsframe, button = 'HeadCooling'),
             self.miscpneumaticsframe
         ]
+        self.buttons = []
         self.buttonsframe = tk.Frame(master = self)
         for number, widget in enumerate(self.widgets):
             if isinstance(widget, LabelFrame):
-                button = tk.Button(master = self.buttonsframe, font = self.font(), text = widget.settings['Label'], command = lambda obj = self, key = number: obj.show(key), **self.settings['Button'])
-                button.pack(side = tk.TOP, anchor = tk.NW)
+                self.buttons.append(tk.Button(master = self.buttonsframe, font = self.font(), text = widget.settings['Label'], command = lambda obj = self, key = number: obj.show(key), **self.settings['Button']))
+                self.buttons[number].pack(side = tk.TOP, anchor = tk.NW)
             else:
+                self.buttons.append(None)
                 widget.pack(anchor = tk.NW)
         self.buttonsframe.pack(side = tk.LEFT, anchor = tk.NW)
         self.pack(expand = tk.YES, fill=tk.BOTH)
@@ -37,7 +39,11 @@ class SettingsScreen(GeneralWidget):
         for number, widget in enumerate(self.widgets):
             if number == key:
                 widget.pack(side = tk.LEFT, anchor = tk.NW)
+                if isinstance(self.buttons[number], tk.Button):
+                    self.buttons[number].config(relief='sunken')
             else:
+                if isinstance(self.buttons[number], tk.Button):
+                    self.buttons[number].config(relief='ridge')
                 if isinstance(widget, LabelFrame):
                     widget.pack_forget()
 
@@ -45,10 +51,13 @@ class Troley(LabelFrame):
     def __init__(self, master = None):
         super().__init__(master = master, branch = 'Troley')
         self.pistonlabeledFrame = LabelFrame(self, branch = 'Pneumatics')
+        self.buttonsframe = Frame(self)
         ServoControl(master = self)
         for piston in self.settings['Pneumatics']:
             if piston in KEYWORDS: continue
             PistonControl(master = self.pistonlabeledFrame, button=piston).pack(anchor = tk.N)
+        for key, value in self.settings['buttons'].items():
+            Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
         for widget in self.winfo_children():
             widget.pack(anchor = tk.NW)
 
@@ -140,9 +149,13 @@ class ServoControl(LabelFrame):
     def __init__(self, master = None, buttons = {}, lamps = {}):
         super().__init__(master = master, branch = 'Servo')
         self.buttonsframe = Frame(self)
-        StatusIndicators(self)
+        self.entriesframe = Frame(self)
+        statusframe = StatusIndicators(self)
         for key, value in self.settings['buttons'].items():
             Button(self.buttonsframe, text = key, key = value).pack(anchor = tk.N)
+        for key, value in self.settings['entries'].items():
+            Entry(self.entriesframe, text = key, key = value).pack(anchor = tk.N)
+        Entry(statusframe)
         for widget in self.winfo_children():
             widget.pack(side = tk.LEFT, anchor = tk.N)
 

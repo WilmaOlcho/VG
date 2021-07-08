@@ -2,36 +2,62 @@ from multiprocessing import Manager, Lock, Array, Value
 
 class SharedLocker(object):
     def __init__(self, *args, **kwargs):
+        self.mainpath = kwargs.pop('mainpath','.\\')
         manager = Manager()
         self.inputs = Array('b',32*[False])
         self.outputs = Array('b',32*[False])
-#        self.GPIO = {
-#            'I1': self.inputs[0], 'I2': self.inputs[1], 'I3': self.inputs[2], 'I4': self.inputs[3],
-#            'I5': self.inputs[4], 'I6': self.inputs[5], 'I7': self.inputs[6], 'I8': self.inputs[7],
-#            'I9': self.inputs[8], 'I10': self.inputs[9], 'I11': self.inputs[10], 'I12': self.inputs[11],
-#            'I13': self.inputs[12], 'I14': self.inputs[13], 'I15': self.inputs[14], 'I16': self.inputs[15],
-#            'I17': self.inputs[16], 'I18': self.inputs[17], 'I19': self.inputs[18], 'I20': self.inputs[19],
-#            'I21': self.inputs[20], 'I22': self.inputs[21], 'I23': self.inputs[22], 'I24': self.inputs[23],
-#            'I25': self.inputs[24], 'I26': self.inputs[25], 'I27': self.inputs[26], 'I28': self.inputs[27],
-#            'I29': self.inputs[28], 'I30': self.inputs[29], 'I31': self.inputs[30], 'I32': self.inputs[31],
-#            'O1': self.outputs[0], 'O2': self.outputs[1], 'O3': self.outputs[2], 'O4': self.outputs[3],
-#            'O5': self.outputs[4], 'O6': self.outputs[5], 'O7': self.outputs[6], 'O8': self.outputs[7],
-#            'O9': self.outputs[8], 'O10': self.outputs[9], 'O11': self.outputs[10], 'O12': self.outputs[11],
-#            'O13': self.outputs[12], 'O14': self.outputs[13], 'O15': self.outputs[14], 'O16': self.outputs[15],
-#            'O17': self.outputs[16], 'O18': self.outputs[17], 'O19': self.outputs[18], 'O20': self.outputs[19],
-#            'O21': self.outputs[20], 'O22': self.outputs[21], 'O23': self.outputs[22], 'O24': self.outputs[23],
-#            'O25': self.outputs[24], 'O26': self.outputs[25], 'O27': self.outputs[26], 'O28': self.outputs[27],
-#            'O29': self.outputs[28], 'O30': self.outputs[29], 'O31': self.outputs[30], 'O32': self.outputs[31]}
         self.shared = manager.dict({
+            'main':manager.dict({
+                'Window':True,
+                'MyMultiplexer':True,
+                'Servo':True,
+                'MyLaserControl':True,
+                'RobotVG':True,
+                'PneumaticsVG':True,
+                'GMOD':True,
+                'Troley':True,
+                'Program':True,
+                'SCOUT':True,
+                'RobotPlyty':True
+            }),
+            'PID':manager.dict({
+                'Window':0,
+                'MyMultiplexer':0,
+                'Servo':0,
+                'MyLaserControl':0,
+                'RobotVG':0,
+                'PneumaticsVG':0,
+                'GMOD':0,
+                'Troley':0,
+                'Program':0,
+                'SCOUT':0,
+                'RobotPlyty':0
+            }),
+            'paramfiles':manager.dict({
+                'Window':(self.mainpath + 'widgetsettings.json', self.mainpath + 'Programs.json',),
+                'MyMultiplexer':(self.mainpath + 'amuxConfiguration.json',),
+                'Servo':(self.mainpath + 'ServoSettings.json',),
+                'MyLaserControl':(self.mainpath + 'amuxConfiguration.json',),
+                'RobotVG':(self.mainpath + 'robotConfiguration.json',),
+                'PneumaticsVG':(self.mainpath + 'PneumaticsConfiguration.json',),
+                'GMOD':(self.mainpath + 'SICKGMODconfiguration.json',),
+                'Troley':(self.mainpath + 'Troleysettings.json',),
+                'Program':(self.mainpath + 'Programs.json',),
+                'RobotPlyty':(self.mainpath + 'robot2Configuration.json',),
+                'SCOUT':(self.mainpath + 'Scoutconfiguration.json',)
+            }),
             'SCOUT':manager.dict({
                 'Alive':False,
                 'WaitingForData':False,
                 'connectionbuffer':b'',
-                'LastMessageType':"",
+                'LastMessageType':manager.list(['','','','']),
+                'actualmessage':b'',
                 'MessageAck':False,
                 'version':'',
-                'recipe':'',
+                'recipe':'test',
+                'lastrecipe':'test',
                 'recipesdir':'',
+                'currentrecipe':"",
                 'pagesToWeld':manager.list([]),
                 'weldrunpagescount':0,
                 'LaserOn':False,
@@ -66,6 +92,12 @@ class SharedLocker(object):
                     "amplitude":0,
                     "power":0
                 }),
+                'times':manager.dict({
+                    'setrecipe':0,
+                    'limitsetrecipe':30,
+                    'autostart':0,
+                    'status':0
+                }),
                 'SetRecipe':False,
                 'TurnLaserOn':False,
                 'TurnLaserOff':False,
@@ -84,7 +116,11 @@ class SharedLocker(object):
                 'LaserCTRVal':False
 
             }),
+            'Errorcodeslist':manager.list(),
             'Errors':'',
+            'Errcodes':manager.list(),
+            'Statuscodes':manager.list(),
+            "Steptime":0.0,
             'servoModuleFirstAccess':True,
             'configurationError':False,
             'TactWDT':False,
@@ -103,9 +139,12 @@ class SharedLocker(object):
                 'ChillerWarning':False,
                 'LaserReady':False,
                 'LaserOn':False,
-                'LaserAssigned':False
+                'LaserAssigned':False,
+                'InternalControlSet':False,
+                'locklaserloop':False
                 }),
             'events':manager.dict({
+                'stopprogram':False,
                 'ScoutManagerReadyToSend':False,
                 'KDrawMessageReceived':False,
                 'KDrawWaitingForMessage':False,
@@ -128,7 +167,9 @@ class SharedLocker(object):
                 'closeApplication':False,
                 'OutputChangedByRobot':False,
                 'requestlconresettimer':False,
-                'OutputsChangedByRobot':''}),
+                'OutputsChangedByRobot':'',
+                'servo.homingattained':False,
+                'servo.positionreached':False,}),
             'pistons':manager.dict({
                 'Alive':False,
                 'SealUp':False,
@@ -146,9 +187,12 @@ class SharedLocker(object):
                 'sensorVacuumOk':True,
                 'ShieldingGas':False,
                 'HeadCooling':False,
-                'CrossJet':False}),
+                'CrossJet':False,
+                '':False}),
             'safety':manager.dict({
+                'TroleyReadyForcedbyProgram':False,
                 'EstopArmed':False,
+                'TroleyDirection':False,
                 'DoorOpen':False,
                 "OpenTheDoorAck":False,
                 'OpenTheDoor':False,
@@ -181,18 +225,33 @@ class SharedLocker(object):
                 'Alive':False,
                 'Channel':-1}),
             'servo':manager.dict({
+                'homepositionisknown':False,
+                'hominginprogress':False,
+                'stepinprogress':False,                
                 'Alive':False,
                 'homing':False,
                 'step':False,
                 'reset':False,
                 'run':False,
                 'stop':False,
-                'positionNumber':-1,
+                'positionNumber':0,
+                'readposition':0,
                 'moving':False,
                 'active':False,
                 'iocoin':False,
                 'ioready':False,
-                'iotgon':False
+                'iotgon':False,
+                "notreadytoswitchon":False,
+                "disabled":False,
+                "readytoswitchon":False,
+                "switchon":False,
+                "operationenabled":False,
+                "faultreactionactive":False,
+                "fault":False,
+                "warning":False,
+                'positionreached':False,
+                "homingattained":False,
+                "homepositionerror":False
                 }),
             'troley':manager.dict({
                 'Alive':False,
@@ -207,7 +266,7 @@ class SharedLocker(object):
                 }),
             'robot':manager.dict({
                 'CommandControl':True,
-                'PositionControl':False,
+                'PositionControl':True,
                 'Alive':False,
                 'error':False,
                 'homepos':False,
@@ -234,6 +293,14 @@ class SharedLocker(object):
                 'StatusRegister4':0,
                 'StatusRegister5':0,
                 'StatusRegister6':0}),
+            'robot2':manager.dict({
+                'Alive':False,
+                'error':False,
+                'Status':0,
+                'Info':0,
+                'Est_VG':0.0,
+                'Est_PLYTY':0.0,
+                'laserlocked':False}),
             'console':manager.dict({
                 'Alive':False}),
             'GPIO':manager.dict({
@@ -281,7 +348,10 @@ class SharedLocker(object):
                 'startpos':0,
                 'endpos':0,
                 'programline':manager.list([]),
-                'cycleended':False
+                'cycleended':False,
+                'handmodelaserrequire':False,
+                'laserrequire':False,
+                "holdtofillwithgas":False
                 })
                 })
         self.scout = self.shared['SCOUT']
@@ -299,6 +369,7 @@ class SharedLocker(object):
         self.mux = self.shared['mux']
         self.servo = self.shared['servo']
         self.robot = self.shared['robot']
+        self.robot2 = self.shared['robot2']
         self.console = self.shared['console']
         self.GPIO = self.shared['GPIO']
         self.SICKGMOD0 = self.shared['SICKGMOD0']

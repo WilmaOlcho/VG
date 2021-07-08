@@ -3,10 +3,12 @@ from tkinter import ttk
 from win32api import GetSystemMetrics
 import re
 
-KEYWORDS = ["Label","masterkey", "Name", "masterkey", "width", "height"]
+KEYWORDS = ["Label","masterkey", "Name", "masterkey", "width", "height", "Entry"]
+
 
 def Blank(*args, **kwargs):
     return None
+
 
 def getroot(obj):
     while True:
@@ -22,16 +24,21 @@ def getroot(obj):
 class GeneralWidget(tk.Frame):
     def __init__(self, master = None, branch = ''):
         tk.Frame.__init__(self, master)
-        self.settings = master.settings[branch] if branch else master.settings
+        if branch and branch in master.settings.keys():
+            self.settings = master.settings[branch]
+        else:
+            self.settings = master.settings
         self.root = getroot(master)
         self.widgets = []
         self.font = self.root.font
         self.master = master
 
+
     def update(self):
         super().update()
         for widget in list(self.children.values()): #winfo_children() returns full list of childrens, even if some of them are destroyed
             widget.update()
+
 
 Frame = GeneralWidget
 
@@ -49,42 +56,84 @@ class Button(GeneralWidget, tk.Button):
         self.key = key
         if key:
             self.masterkey = self.settings['masterkey']
+            if '~' in key[0] or '-' in key[0]:
+                self.keyattribute = key[0]
+                self.key = self.key[1:]
+            else:
+                self.keyattribute = ''
         self.callback = callback
 
     def click(self):
+        self.focus_set()
         self.root.variables.internalEvents['buttonclicked'] = True
         if self.key:
-            if self.key[0] == '-':
-                self.root.variables[self.masterkey][self.key[1:]] = False
+            if self.keyattribute == '-':
+                self.root.variables[self.masterkey][self.key] = False
+            elif self.keyattribute == '~':
+                self.root.variables[self.masterkey][self.key] = not self.root.variables[self.masterkey][self.key]
             else:
                 self.root.variables[self.masterkey][self.key] = True
         else:
             self.callback()
 
+    def update(self):
+        super().update()
+        if self.key:
+            value = "#84bdac"
+            if self.root.variables[self.masterkey][self.key]:
+                value = "#f96348"
+            if self.key + "Highlight" in self.root.variables[self.masterkey].keys():
+                base = int(value[1:],16)
+                if self.root.variables[self.masterkey][self.key + "Highlight"]:
+                    base |= 0xAADD89
+                value = '#' + hex(base)[2:]
+            self.config(bg = value)
+
+
 class Entry(GeneralWidget):
-    def __init__(self, master = None, text = '', key = ''):
+    def __init__(self, master = None, text = '', key = '', entrytype = 'numerical', **kw):
         super().__init__(master = master, branch = 'Entry')
         self.Label = ttk.Label(master = self, font = self.font(), text = text)
-        self.entry = tk.Entry(master = self, width = self.settings['width'])
+        self.entry = tk.Entry(master = self)
+        for param in self.settings.keys():
+            if param in ['width', 'state']:
+                self.entry.config(**{param:self.settings[param]})
         self.entry.bind('<FocusOut>',self.ReadEntry)
-        self.key = key
+        self.key = self.settings['key'] if not key else key
+        self.type = entrytype
         self.masterkey = self.settings['masterkey']
         self.Label.pack()
         self.entry.pack()
         
+
     def ReadEntry(self, event):
-        self.root.variables[self.masterkey][self.key] = self.entry.get()
+        value = self.entry.get()
+        if value.isnumeric() and self.type == 'numerical': pass
+        elif value.isalpha() and self.type == 'alpha': pass
+        elif value.isalnum() and self.type == 'alphanumerical': pass
+        elif self.type == 'text': pass
+        else: return None
+        self.root.variables[self.masterkey][self.key] = value
+
 
     def WriteEntry(self):
         value = self.root.variables[self.masterkey][self.key]
-        if self.entry.get() != value:
+        state = self.entry.cget('state') == 'disabled'
+        if state:
+            self.entry.config(state = 'normal')
+        if self.entry.get() != str(value):
             self.entry.delete(0,tk.END)
             self.entry.insert(0,value)
+        if state:
+            self.entry.config(state = 'disabled')
+
 
     def update(self):
         focus = self.focus_get()
         if focus != self.entry:
             self.WriteEntry()
+        else:
+            self.ReadEntry(None)
         super().update()
 
 class Lamp(GeneralWidget):
@@ -98,6 +147,7 @@ class Lamp(GeneralWidget):
         self.caption.pack(side = tk.LEFT)
         self.lamp.pack(side = tk.LEFT)
         self.lit = False
+
 
     def update(self):
         super().update()
@@ -133,9 +183,11 @@ class Window(GeneralWidget, tk.Toplevel):
         else:
             self.title(self._name)
 
+
     def destroy(self):
         self.destroyed = True
         super().destroy()
+
 
     def center(self):
         screenWidth = GetSystemMetrics(0)
@@ -145,20 +197,24 @@ class Window(GeneralWidget, tk.Toplevel):
         y = int(screenHeigth/2 - size[1]/2)
         self.geometry('+{}+{}'.format(x,y))
 
-class RecipesMenu(Frame):
+
+
+class Menu(Frame):
     def __init__(self, master = None, callback = Blank,items = [], width = 20, variable = '', settings = {}, text = '', side = tk.TOP):
         super().__init__(master, branch = '')
         if settings: self.settings = settings
-        self.width = width
+        self.width = width - 5
         self.callback = callback
-        self.menubutton = tk.Menubutton(self, width = self.width, relief = 'sunken', bg = 'white', text = text)
+        self.menubutton = tk.Menubutton(self, justify = tk.CENTER, width = self.width, relief = 'sunken', bg = 'white', text = text)
         self.menu = None
         self.items = items
         self.variable = variable
+        self.state = "normal"
         self.createmenu()
         for widget in self.winfo_children():
             widget.unbind('<Button-3>')
-            widget.pack(side = side, expand = 1, fill = 'both')
+            widget.pack(side = side, expand = tk.YES, fill = tk.BOTH)
+
 
     def createmenu(self):
         if isinstance(self.menu, tk.Menu):
@@ -167,30 +223,42 @@ class RecipesMenu(Frame):
         self.menubutton['menu'] = self.menu
         for item in self.items:
             self.menu.add_command(label = item, command = lambda obj = self, choice = item: obj.setvariable(choice))
-        self.menubutton.pack(expand = 1, fill = 'both')
+        self.menubutton.pack(expand = tk.YES, fill = tk.BOTH)
+
 
     def config(self, **kwargs):
         self.menubutton.config(**kwargs)
+
 
     def update(self):
         self.menubutton.config(text = self.variable)
         super().update()
 
-    def setvariable(self, recipe):
-        self.menubutton.configure(text = recipe)
-        self.variable = recipe
+
+    def setvariable(self, text):
+        self.menubutton.configure(text = text)
+        self.variable = text
         self.callback(self)
+
 
     def __type__(self):
         return "MENU"
 
+
     def get(self):
         return self.variable
 
+
     def delete(self, *args, **kwargs):
         pass
+
 
     def insert(self, index, value, *args, **kwargs):
         self.variable = value
     
 
+#class PromptMenu(Menu):
+
+
+#class RecipesMenu(Menu):
+    
