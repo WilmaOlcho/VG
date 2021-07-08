@@ -77,6 +77,7 @@ class Window(dict):
         self.Alive = True
         self.loop(lockerinstance)
 
+
     def loop(self, lockerinstance):
         while self.Alive:
             self.window.update()

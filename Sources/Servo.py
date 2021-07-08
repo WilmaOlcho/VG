@@ -101,7 +101,6 @@ class Servo(ModbusSerialClient):
     def status(self, lockerinstance, key):
         with lockerinstance[0].lock:
             result = lockerinstance[0].servo[key]
-        print('lockerinstance[0].servo[',key,'] is ',result)
         return result
     
     def currentmode(self, lockerinstance):
@@ -134,7 +133,6 @@ class Servo(ModbusSerialClient):
         try:
             addr = int(self.settings['addresses']['command'][0],16)
             ret = self.write_registers(addr, values = [self.Bits(value[::-1])],unit = self.unit)
-            print(hex(addr), str(ret))
             assert(not isinstance(ret, ExceptionResponse))
         except Exception as e:
             ErrorEventWrite(lockerinstance, "Servo command returned exception: " + str(e) + str(ret))
@@ -192,7 +190,6 @@ class Servo(ModbusSerialClient):
     def changemode(self, lockerinstance, desiredmode):
         currentmode = self.currentmode(lockerinstance) & 0xff
         desiredmode &= 0xff
-        print(currentmode, desiredmode)
         switchon = self.status(lockerinstance, "switchon")
         openabled = self.status(lockerinstance, "operationenabled")
         if True: #currentmode != desiredmode:
