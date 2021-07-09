@@ -50,8 +50,9 @@ class TactWatchdog(object):
         self.setpoint()
         limitval *= self.scaleMultiplier[scale]
         self.active = True
+        retlock = False
         while True:
-            additionalFuncOnLoop()
+            ret = additionalFuncOnLoop()
             with lockerinstance[0].lock:
                 lockerinstance[0].shared['TactWDT'] = True
                 if eventToCatch[0] == '-':
@@ -66,11 +67,18 @@ class TactWatchdog(object):
                         lockerinstance[0].events[eventToCatch] = False
                 additionalFuncOnCatch()
                 break
-            if self.elapsed() >= limitval:
-                if not noerror: ErrorEventWrite(lockerinstance, errstring = errToRaise, errorlevel = errorlevel)
-                additionalFuncOnExceed()
-                self.Destruct()
-                break
+            if ret != 'scoutlocked':
+                if retlock:
+                    retlock = False
+                    self.setpoint()
+                if self.elapsed() >= limitval:
+                    if not noerror: ErrorEventWrite(lockerinstance, errstring = errToRaise, errorlevel = errorlevel)
+                    additionalFuncOnExceed()
+                    self.Destruct()
+                    break
+            elif not retlock:
+                retlock = True
+                limitval = limitval - self.elapsed()
             with lockerinstance[0].lock:
                 Alive = thr.currentThread().name in lockerinstance[0].wdt and not lockerinstance[0].events['closeApplication']
             if self.destruct or not Alive:

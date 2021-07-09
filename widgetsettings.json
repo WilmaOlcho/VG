@@ -1314,7 +1314,6 @@
                                 "action":"start",
                                 "result":"self.root.variables['ProgramActive'] \u003D True\nself.root.variables.internalEvents['start'] \u003D True",
                                 "condition":"self.root.variables['ProgramActive']",
-                                "anticondition":"self.root.variables['ProgramActive']",
                                 "active":{
                                     "bg":"lightgreen"
                                 },
@@ -1324,7 +1323,6 @@
                             },
                             "stop":{
                                 "action":"stop",
-                                "anticondition":"not self.root.variables['ProgramActive']",
                                 "result":"self.root.variables['ProgramActive'] \u003D False\nself.root.variables.internalEvents['stop'] \u003D True"
                             }                   
                         }

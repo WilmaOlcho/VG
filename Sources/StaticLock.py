@@ -99,6 +99,7 @@ class SharedLocker(object):
                     'status':0
                 }),
                 'SetRecipe':False,
+                'recipechanging':False,
                 'TurnLaserOn':False,
                 'TurnLaserOff':False,
                 'GetVersion':False,
@@ -169,6 +170,7 @@ class SharedLocker(object):
                 'requestlconresettimer':False,
                 'OutputsChangedByRobot':'',
                 'servo.homingattained':False,
+                '_':False,
                 'servo.positionreached':False,}),
             'pistons':manager.dict({
                 'Alive':False,
@@ -351,7 +353,9 @@ class SharedLocker(object):
                 'cycleended':False,
                 'handmodelaserrequire':False,
                 'laserrequire':False,
-                "holdtofillwithgas":False
+                "holdtofillwithgas":False,
+                "steplock":False
+                
                 })
                 })
         self.scout = self.shared['SCOUT']

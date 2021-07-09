@@ -103,10 +103,12 @@ class KDrawTCPInterface(socket.socket):
                 data = b''
             finally:
                 with lockerinstance[0].lock:
+                    scoutlocked = lockerinstance[0].robot2['laserlocked']
                     lockerinstance[0].scout['WaitingForData'] = True
                     lockerinstance[0].scout['connectionbuffer'] += data
                     if b'\r\n' in lockerinstance[0].scout['connectionbuffer']:
                         lockerinstance[0].events['KDrawMessageReceived'] = True #Utworzenie zdarzenia przerywającego odbiór danych w przypadku ich kompletności
+                return "scoutlocked" if scoutlocked else None
         def catch(obj = self, lockerinstance = lockerinstance): #Metoda wywoływana przy zakończeniu działania timera
             lockerinstance[0].scout['WaitingForData'] = False
             obj.decode_messsage(lockerinstance)
@@ -236,13 +238,14 @@ class KDrawTCPInterface(socket.socket):
         if len(data) == 2:
             with lockerinstance[0].lock:
                 savedrecipe = lockerinstance[0].scout['recipe']
+                lockerinstance[0].scout['recipechanging'] = False
             savedrecipe = self.__removefromstring(savedrecipe, '.dsg')
-            if data[1] == savedrecipe:
-                with lockerinstance[0].lock:
-                    lockerinstance[0].scout['MessageAck'] = True
-                    lockerinstance[0].scout['Recipechangedsuccesfully'] = True
-            else:
-                ErrorEventWrite(lockerinstance, "SCOUT returned wrong Recipe Change ack message:\n{}".format(data))
+            #if data[1] == savedrecipe:
+            with lockerinstance[0].lock:
+                lockerinstance[0].scout['MessageAck'] = True
+                lockerinstance[0].scout['Recipechangedsuccesfully'] = True
+            #else:
+            #    ErrorEventWrite(lockerinstance, "SCOUT returned wrong Recipe Change ack message:\n{} != {}".format(data, savedrecipe))
         else:
             ErrorEventWrite(lockerinstance, "SCOUT returned incomplete Recipe Change ack message:\n{}".format(data))
 
@@ -481,6 +484,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę RECIPE_CHANGE
         '''
         with lockerinstance[0].lock:
+            lockerinstance[0].scout['recipechanging'] = False
             currenttime = time.time()
             lasttime = lockerinstance[0].scout['times']['setrecipe']
             if currenttime - lasttime < lockerinstance[0].scout['times']['limitsetrecipe']:
@@ -489,12 +493,12 @@ class KDrawTCPInterface(socket.socket):
                 recipe = lockerinstance[0].scout['recipe']
             else:
                 lockerinstance[0].scout['recipe'] = recipe
-            recipe
         recipe = self.__removefromstring(recipe, '.dsg')
         with lockerinstance[0].lock:
             lockerinstance[0].scout['lastrecipe'] = recipe
         message = self.encode_message(lockerinstance, ['RECIPE_CHANGE',recipe])
         self.add_to_queue(lockerinstance, message)
+
 
     def SetWobble(self, lockerinstance):
         '''
@@ -625,6 +629,7 @@ class SCOUT():
     def loop(self, lockerinstance):
         while self.Alive:
             with lockerinstance[0].lock:
+                scoutlocked = lockerinstance[0].robot2['laserlocked']
                 self.Alive = lockerinstance[0].scout['Alive'] and not lockerinstance[0].events['closeApplication']
                 if not self.Alive: break
                 lastrecv = lockerinstance[0].scout['LastMessageType']
@@ -670,4 +675,5 @@ class SCOUT():
             if getaligninfo: self.connection.GetAlignInfo(lockerinstance)
             if laserctrl: self.connection.LaserCTRL(lockerinstance)
             self.connection.GetStatus(lockerinstance)
-            self.connection.retrievequeue(lockerinstance)
+            if not scoutlocked:
+                self.connection.retrievequeue(lockerinstance)

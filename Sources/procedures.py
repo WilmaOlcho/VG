@@ -1,3 +1,4 @@
+from Sources.common import EventManager
 from Sources import ErrorEventWrite
 from Sources.TactWatchdog import TactWatchdog
 WDT = TactWatchdog.WDT
@@ -27,13 +28,22 @@ def startauto(lockerinstance):
 
 
 def endprogram(lockerinstance):
+    RobotGopos(lockerinstance,0)
+    def robend(lockerinstance = lockerinstance):
+        ServoSetState(lockerinstance, 'run')
+        ServoSetState(lockerinstance, 'run')
+        ServoSetValue(lockerinstance, 'positionNumber', 1)
+        ServoSetState(lockerinstance, 'step')
+        def end(lockerinstance = lockerinstance):
+            pass #oddac sterowanie wozkiem
+        EventManager.AdaptEvent(lockerinstance,input = 'servo.stepinprogress', edge='falling', callback = end)
+    EventManager.AdaptEvent(lockerinstance,input = 'robot.homepos', callback = robend)
     with lockerinstance[0].lock:
         if lockerinstance[0].program['running']:
             lockerinstance[0].program['running'] = False
             lockerinstance[0].program['stepcomplete'] = False
             lockerinstance[0].program['stepnumber'] = 0
             lockerinstance[0].program['cycle'] = 0
-
 
 def nextstep(lockerinstance):
     with lockerinstance[0].lock:
@@ -408,7 +418,7 @@ def Program(lockerinstance):
             startindex = progproxy['startpos']
         loadprogramline(lockerinstance, program, startindex)
         cycle = startindex  
-    if cycle >= end:
+    if cycle > end:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['CD']
         endprogram(lockerinstance)

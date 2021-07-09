@@ -1,9 +1,7 @@
 from functools import reduce
 import json
-from logging import captureWarnings
 from Sources import ErrorEventWrite, EventManager, Bits
 from Sources.TactWatchdog import TactWatchdog
-
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus.factory import ExceptionResponse
 
@@ -81,6 +79,7 @@ class Servo(ModbusSerialClient):
             status = self.read_holding_registers(int(self.addresses['status'][0],16),unit=self.unit)
             currenttable = self.read_holding_registers(int(self.addresses['currenttable'][0],16),unit=self.unit)
             if isinstance(status,Exception): raise Exception(str(status))
+            if isinstance(currenttable,Exception): raise Exception(str(currenttable))
         except Exception as e:
             ErrorEventWrite(lockerinstance, 'Reading status from servo unit error: ' + str(e) )
         else:
@@ -107,7 +106,7 @@ class Servo(ModbusSerialClient):
         try:
             addr = int(self.settings['addresses']['currentmode'][0],16)
             ret = self.read_holding_registers(addr, 1 ,unit = self.unit)
-            assert(not isinstance(ret, ExceptionResponse))
+            if isinstance(ret, Exception): raise Exception(str(ret))
         except Exception as e:
             ErrorEventWrite(lockerinstance, "Servo currentmode returned exception: " + str(e) + str(ret))
         else:
@@ -304,7 +303,6 @@ class Servo(ModbusSerialClient):
         if self.status(lockerinstance, "switchon"):
             command = self.settings['commands']['enableoperation']
         self.command(lockerinstance, command)
-        sleep(0.5)
-
+        self.IO(lockerinstance)
 
  

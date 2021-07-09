@@ -34,9 +34,6 @@ class Frame(GeneralWidget):
         self.OverallNotebook.grid(**self.settings['Notebook']['grid'])
 
     def update(self):
-        start = self.root.variables.internalEvents['start']
-        stop = self.root.variables.internalEvents['stop']
-        ###
         TroleyPrompt = self.root.variables['safety']['ProgramTroleyRelease']
         if TroleyPrompt:
             def click(*args, **kwargs):
@@ -46,8 +43,8 @@ class Frame(GeneralWidget):
 
         super().update()
         self.ackbutton.config(bg = 'red' if self.root.variables.internalEvents['error'] else 'yellow')
-        if start: self.root.variables.internalEvents['start'] = False
-        if stop: self.root.variables.internalEvents['stop'] = False
+        #if start: self.root.variables.internalEvents['start'] = False
+        #if stop: self.root.variables.internalEvents['stop'] = False
 
 
     def ack(self):

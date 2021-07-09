@@ -11,8 +11,8 @@ class Variables(dict):
         self.jsonpath = ''
         self.currentProgram = ''
         self.currentProgramIndex = 0
-        self.programposstart = 0
-        self.programposend = 1
+        self['programposstart'] = 0 
+        self['programposend'] = 1 
         self.programcolumns = ["ID","Kolejność","Program SCOUT","Warstwa SCOUT","Pozycja robota","Tabela pozycji","Pozycja serwo","Pilnuj lasera","reserved"]
         self.displayedprogramcolumns = [False,True,True,True,True,True,True,True,False]
         self.columnwidths = [4,10,30,15,14,14,17,17,15]
@@ -439,20 +439,23 @@ class Variables(dict):
                 self['progress'] = str(program['cycle'])
                 self['step'] = str(program['stepnumber'])
             self['scout']['recipes'] = list(program['recipes'])
-            program['startpos'] = self.programposstart
-            program['endpos'] = self.programposend
+            program['startpos'] = int(self['programposstart'])
+            program['endpos'] = int(self['programposend'])
             program['ProgramName'] = self.currentProgram
             program['ProgramsFilePath'] = self.jsonpath
             program['stepmode'] = not self['auto']
             program['automode'] = self['auto']
-            program['running'] = self['ProgramActive']
+            if self['ProgramActive'] and self.internalEvents['start']:
+                program['running'] = True
+            else:
+                self['ProgramActive'] = program['running']
+            if self['ProgramActive'] and self.internalEvents['stop']:
+                self['ProgramActive'] = False
+                program['running'] = False
+
 
     def misc(self):
         self['safety']['OpenTheDoor'] |= self.internalEvents['stop'] and not self['ProgramActive']
-        self.internalEvents['stop'] = False
-
-
-    def update(self):
         lockerinstance = self.lockerinstance
         with self.lockerinstance[0].lock:
             self.alive = lockerinstance[0].console['Alive']
@@ -472,6 +475,17 @@ class Variables(dict):
                 self.internalEvents['ack'] = False
             if lockerinstance[0].events['Error']:
                 self['ProgramActive'] = False
+            if self.internalEvents['start']:
+                self.internalEvents['start'] = False
+                events['startprogram'] = True
+            if self.internalEvents['stop']:
+                self.internalEvents['stop'] = False
+                events['stopprogram'] = True
+
+
+    def update(self):
+        
+
         self.robotupdate()
         self.scoutupdate()
         self.troleyupdate()

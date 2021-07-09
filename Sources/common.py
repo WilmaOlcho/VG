@@ -1,5 +1,5 @@
 from threading import Thread, currentThread
-
+import re
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -22,6 +22,10 @@ def dictKeyByVal(dict, byVal): #There is no default method to search for keys in
 
 def ErrorEventWrite(lockerinstance, errstring = '', errorlevel = 255, noerror = False, errcode = ''):
     with lockerinstance[0].lock:
+        #scoutlocked = lockerinstance[0].robot2['laserlocked']
+        #if re.findall('SCOUT',errstring):
+        #    if scoutlocked:
+        #        return None
         if errstring:
             if errstring not in lockerinstance[0].shared['Errors']:
                 lockerinstance[0].shared['Errors'] += errstring + '\n'
@@ -64,7 +68,7 @@ class EventManager():
         self.edge = edge
         self.callback = callback
         self.callbackargs = callbackargs
-        self.event = event
+        self.event = event if event else '_'
         with lockerinstance[0].lock:
             self.state = self.inputpath[self.input]
             self.Alive = True
@@ -75,13 +79,12 @@ class EventManager():
     def noedge(self, lockerinstance, currentstate):
         if not self.edge: 
             if (currentstate ^ self.sign):
-                if self.event:
-                    with lockerinstance[0].lock:
-                        if self.backwardsrunning:
-                            lockerinstance[0].events[self.event] = currentstate
-                        else:
-                            lockerinstance[0].events[self.event] = True
-                    return True
+                with lockerinstance[0].lock:
+                    if self.backwardsrunning:
+                        lockerinstance[0].events[self.event] = currentstate
+                    else:
+                        lockerinstance[0].events[self.event] = True
+                return True
         return False
     
     def rising(self, lockerinstance, currentstate):
@@ -90,13 +93,12 @@ class EventManager():
                 with lockerinstance[0].lock:
                     self.state = self.inputpath[self.input]
             elif currentstate:
-                if self.event:
-                    with lockerinstance[0].lock:
-                        if self.backwardsrunning:
-                            lockerinstance[0].events[self.event] = False
-                        else:
-                            lockerinstance[0].events[self.event] = True
-                    return True
+                with lockerinstance[0].lock:
+                    if self.backwardsrunning:
+                        lockerinstance[0].events[self.event] = False
+                    else:
+                        lockerinstance[0].events[self.event] = True
+                return True
         return False
 
     def falling(self, lockerinstance, currentstate):
@@ -105,22 +107,18 @@ class EventManager():
                 with lockerinstance[0].lock:
                     self.state = self.inputpath[self.input]
             elif not currentstate:
-                if self.event:
-                    with lockerinstance[0].lock:
-                        lockerinstance[0].events[self.event] = True
-                    return True
+                with lockerinstance[0].lock:
+                    lockerinstance[0].events[self.event] = True
+                return True
         return False
 
     def toggle(self, lockerinstance, currentstate):
         if self.edge == 'toggle':
             if self.state != currentstate:
-                if self.event:
-                    with lockerinstance[0].lock:
-                        if self.backwardsrunning:
-                            lockerinstance[0].events[self.event] = self.state
-                        else:
-                            lockerinstance[0].events[self.event] = True
-                    return True
+                state = (not self.backwardsrunning) or (self.backwardsrunning and self.state)
+                with lockerinstance[0].lock:
+                    lockerinstance[0].events[self.event] = state
+                return True
         return False
 
     def loop(self, lockerinstance):

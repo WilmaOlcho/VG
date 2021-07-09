@@ -91,7 +91,7 @@ class Button(GeneralWidget, tk.Button):
 
 
 class Entry(GeneralWidget):
-    def __init__(self, master = None, text = '', key = '', entrytype = 'numerical', **kw):
+    def __init__(self, master = None, masterkey = '', text = '', key = '', entrytype = 'numerical', **kw):
         super().__init__(master = master, branch = 'Entry')
         self.Label = ttk.Label(master = self, font = self.font(), text = text)
         self.entry = tk.Entry(master = self)
@@ -101,7 +101,10 @@ class Entry(GeneralWidget):
         self.entry.bind('<FocusOut>',self.ReadEntry)
         self.key = self.settings['key'] if not key else key
         self.type = entrytype
-        self.masterkey = self.settings['masterkey']
+        if not 'masterkey' in self.settings.keys():
+            self.masterkey = None if not masterkey else masterkey
+        else:
+            self.masterkey = self.settings['masterkey'] if not masterkey else masterkey
         self.Label.pack()
         self.entry.pack()
         
@@ -113,11 +116,17 @@ class Entry(GeneralWidget):
         elif value.isalnum() and self.type == 'alphanumerical': pass
         elif self.type == 'text': pass
         else: return None
-        self.root.variables[self.masterkey][self.key] = value
+        if self.masterkey:
+            self.root.variables[self.masterkey][self.key] = value
+        else:
+            self.root.variables[self.key] = value
 
 
     def WriteEntry(self):
-        value = self.root.variables[self.masterkey][self.key]
+        if self.masterkey:
+            value = self.root.variables[self.masterkey][self.key]
+        else:
+            value = self.root.variables[self.key]
         state = self.entry.cget('state') == 'disabled'
         if state:
             self.entry.config(state = 'normal')
@@ -136,6 +145,10 @@ class Entry(GeneralWidget):
             self.ReadEntry(None)
         super().update()
 
+    def config(self, *args, **kwargs):
+        state = kwargs.pop('state','normal')
+        self.entry.config(state = state)
+        super().config(*args, **kwargs)
 class Lamp(GeneralWidget):
     def __init__(self, master = None, branch = "Lamp"):
         super().__init__(master = master, branch = branch)
