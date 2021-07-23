@@ -57,6 +57,10 @@ class Window(dict):
         root = self.window
         with open(settingsfile) as jsonfile:
             widgetsettings = json.load(jsonfile)
+            """
+            W context manager zmienne lokalne nie umierają po zakończeniu gniazdowania,
+            tak samo jak w try,except
+            """
         root.__setattr__('variables', Variables(lockerinstance, **widgetsettings))
         root.__setattr__('settings', root.variables['widgetsettings'])
         root.variables.jsonpath = programs

@@ -106,10 +106,10 @@ class programController(object):
             with lockerinstance[0].lock:
                 scode = "S" + str(re.search( r'\d+', func.__name__).group())
                 lockerinstance[0].shared['Statuscodes'] = [scode]
-            result = func(self, lockerinstance, *args, **kwargs)
+            result = func(lockerinstance, *args, **kwargs)
             if result:
                 print(scode,'returned', result)
-                def stepexceed(s = self,l=lockerinstance):
+                def stepexceed(l=lockerinstance):
                     with l[0].lock:
                         l[0].program['stepcomplete'] = True
                         l[0].program['steplock'] = False

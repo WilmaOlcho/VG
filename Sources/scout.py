@@ -484,7 +484,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę RECIPE_CHANGE
         '''
         with lockerinstance[0].lock:
-            lockerinstance[0].scout['recipechanging'] = False
+            lockerinstance[0].scout['recipechanging'] = True
             currenttime = time.time()
             lasttime = lockerinstance[0].scout['times']['setrecipe']
             if currenttime - lasttime < lockerinstance[0].scout['times']['limitsetrecipe']:

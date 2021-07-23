@@ -203,10 +203,12 @@ def SCOUTResetState(lockerinstance, state):
 
 def SetPiston(lockerinstance, pistonname, action= '', hold = False):
     def holdpiston(lockerinstance= lockerinstance, pname = pistonname, paction = action):
+        import threading as thr
+        name = thr.currentThread().name
         with lockerinstance[0].lock:
             if not lockerinstance[0].program['running']:
-                import threading as thr
-                lockerinstance[0].wdt.remove(thr.currentThread().name)
+                if name in lockerinstance[0].wdt:
+                    lockerinstance[0].wdt.remove(name)
                 return None
         if paction:
             setvalue(lockerinstance, 'pistons', pname + action, True)

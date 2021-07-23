@@ -230,7 +230,7 @@ class RobotPlyty(Kawasaki):
             currentstatus = str(self.read_holding_registers(lockerinstance, registerToStartFrom='status')[0])
             #est_plyty = self.read_holding_registers(lockerinstance, registerToStartFrom='est_time_PLYTY')[0]
         except Exception as e:
-            print(str(e))
+            pass
         else:
             with lockerinstance[0].lock:
                 lockerinstance[0].robot2['Status'] = currentstatus
