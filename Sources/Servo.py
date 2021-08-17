@@ -9,6 +9,9 @@ from time import sleep
 
 
 class Servo(ModbusSerialClient):
+    resetting_after_redock = False
+
+
     def __init__(self, lockerinstance, jsonfile, *args, **kwargs):
         self.Alive = True
         self.lockservo = False
@@ -52,18 +55,24 @@ class Servo(ModbusSerialClient):
                 break
 
     def servoloop(self, lockerinstance):
-        control = {'run':False, 'step':False, 'homing':False, 'stop':False, 'reset':False}
+        control = {'run':False, 'step':False, 'homing':False, 'stop':False, 'reset':False, "resetting_after_redock":False}
+        def callback(l = lockerinstance):
+            with l[0].lock:
+                l[0].servo['resetting_after_redock'] = True
         while self.Alive:
             if not self.lockservo:
                 for key in control.keys():
                     with lockerinstance[0].lock:
                         control[key] = lockerinstance[0].servo[key]
-                        lockerinstance[0].servo[key] = False
+                        if key != "resetting_after_redock":
+                            lockerinstance[0].servo[key] = False 
                 if control['homing']: self.homing(lockerinstance)
                 if control['step']: self.step(lockerinstance)
                 if control['reset']: self.reset(lockerinstance)
                 if control['run']: self.run(lockerinstance)
                 if control['stop']: self.stop(lockerinstance)
+                if control['resetting_after_redock']: self.reset_after_redocking(lockerinstance)
+                EventManager.AdaptEvent(lockerinstance, count = 1, input = 'safety.TroleyReady',event='safety.TroleyReady', edge='falling', callback = callback)
             self.IO(lockerinstance)
             with lockerinstance[0].lock:
                 self.Alive = lockerinstance[0].servo['Alive']
@@ -284,7 +293,25 @@ class Servo(ModbusSerialClient):
         if self.status(lockerinstance, "fault") or self.status(lockerinstance, "warning"):
             self.command(lockerinstance, _faultreset)
             self.command(lockerinstance, faultreset)
+        else:
+            with lockerinstance[0].lock:
+                lockerinstance[0].servo['resetting_after_redock'] = False
 
+
+    def reset_after_redocking(self, lockerinstance):
+        if self.status(lockerinstance, "fault"):
+            def faultreset(obj = self, lock = lockerinstance):
+                def raisereset(l = lock):
+                    with l[0].lock:
+                        l[0].safety['ResetServo'] = True
+                def releasereset(l=lock):
+                    with l[0].lock:
+                        l[0].safety['ResetServo'] = False
+                TactWatchdog.WDT(lock, errToRaise = 'reset_after_redocking0', additionalFuncOnStart = raisereset, additionalFuncOnExceed = releasereset, noerror = True, scale = 's',limitval = 1)
+                def callback(o = obj, l = lock):
+                    TactWatchdog.WDT(l, errToRaise = 'reset_after_redocking2', additionalFuncOnExceed = lambda _o = o, _l = l: _.reset(_l), noerror = True, scale = 's', limitval = 10)
+                EventManager.AdaptEvent(lock, count = 1, input = 'safety.ServoSupplied',event='safety.ServoSupplied', edge='rising', callback = callback)
+            TactWatchdog.WDT(lockerinstance, errToRaise = 'reset_after_redocking3', additionalFuncOnStart = faultreset ,additionalFuncOnExceed = lambda _o = self, _l = lockerinstance: _o.reset_after_redocking(_l), noerror = True, scale = 's', limitval = 5)
 
     def stop(self, lockerinstance):
         command = []

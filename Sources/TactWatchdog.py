@@ -92,7 +92,7 @@ class TactWatchdog(object):
     def WDT(cli,
             lockerinstance,
             limitval = 100,
-            errToRaise = 'limit',
+            errToRaise = '',
             caption = 'Event',
             scale = 'ms',
             errorlevel = 255,
@@ -104,10 +104,17 @@ class TactWatchdog(object):
             noerror = False,
             *args, **kwargs):
         if 'timeout' in kwargs.keys(): limitval = kwargs.pop('timeout')
-
-        lockerinstance[0].lock.acquire()
-        timerActive = 'WDT: '+errToRaise in lockerinstance[0].wdt
-        lockerinstance[0].lock.release()
+        #if not errToRaise:
+        #    with lockerinstance[0].lock:
+        #        i = 0
+        #        while True:
+        #            if not "WDT: "+str(i) in lockerinstance[0].wdt:
+        #                break
+        #            else:
+        #                i +=1
+        #    errToRaise = str(i)
+        with lockerinstance[0].lock:
+            timerActive = 'WDT: '+errToRaise in lockerinstance[0].wdt
         if not timerActive:
             timer = thr.Thread(target=cli().WDTloop, args = (lockerinstance,
                                                     limitval,

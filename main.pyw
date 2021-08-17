@@ -42,7 +42,7 @@ class ApplicationManager(object):
         with lockerinstance[0].lock:
             for processclass in lockerinstance[0].shared['main'].keys():
                 if lockerinstance[0].shared['main'][processclass]:
-                    self.processes.append(Process(name = processclass, target = eval(processclass), args=(lockerinstance[0].lock, *lockerinstance[0].shared['paramfiles'][processclass])) )
+                    self.processes.append(Process(name = processclass, target = eval(processclass), args=(lockerinstance, *lockerinstance[0].shared['paramfiles'][processclass])) )
 
         for process in self.processes:
             process.start()
@@ -50,7 +50,7 @@ class ApplicationManager(object):
             with lockerinstance[0].lock:
                 lockerinstance[0].shared['PID'][process.name] = process.pid
             print(process.name, process.pid)
-        self.EventLoop(lockerinstance[0].lock, *args, **kwargs)
+        self.EventLoop(lockerinstance, *args, **kwargs)
 
 
     def EventLoop(self, lockerinstance, *args, **kwargs):
@@ -106,7 +106,7 @@ class ApplicationManager(object):
                                 psutil.Process(InstanceWeLookingFor[0].ProcessId).terminate()
         for processclass in lockerinstance[0].shared['main'].keys():
             if processclass in restoring:
-                process = Process(name = processclass, target = eval(processclass), args=(lockerinstance[0].lock, *lockerinstance[0].shared['paramfiles'][processclass]))
+                process = Process(name = processclass, target = eval(processclass), args=(lockerinstance, *lockerinstance[0].shared['paramfiles'][processclass]))
                 self.processes.append(process)
                 process.start()
                 with lockerinstance[0].lock:

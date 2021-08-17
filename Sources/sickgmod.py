@@ -166,14 +166,9 @@ class SICKGmod(FX0GMOD):
     def write_coil(self, address, value):
         word = address//16
         bit = address%16
-        readword = self.Bits(self.datablock.getValues(word))
-        writeword = (~(0b1<<bit)&readword)|(value<<bit)
-        # 0b1<<bit - binary position for bit to write
-        # ~(0b1<<bit) - negated position represents bitmask for every other bits
-        # ~(0b1<<bit)&readbyte - whole value except one bit to write
-        # (value<<bit) - bit to write on position (0 if False) 
-        # (~(0b1<<bit)&readbyte)|(value<<bit) - write bit to it's position
-        self.datablock.setValues(word, writeword)
+        writeword = self.Bits(self.datablock.getValues(word)[0])
+        writeword[bit] = value
+        self.datablock.setValues(word, self.Bits(writeword))
 
 class ModbusTcpServerExternallyTerminated(ModbusTcpServer):
     def __init__(self, context, framer = None, identity=None,

@@ -364,9 +364,13 @@ class KDrawTCPInterface(socket.socket):
                         axy = data[3:]
                         data = data[:3]
                         for i in range(3):
-                            integer = int(axy[i])
-                            afterdot = axy[i] - integer
-                            data.expand([integer, afterdot])
+                            if '.' in axy[i]:
+                                split = axy[i].split('.')
+                                integer = int(split[0])
+                                afterdot = int(split[1])
+                                data.expand([integer, afterdot])
+                            else:
+                                data.expand([0,0])
                     for i, value in enumerate(['0','1','2','A','dotA','X','dotX','Y','dotY']):
                         lockerinstance[0].scout['AlignInfo'][value] = int(data[i])  
                     lockerinstance[0].scout['MessageAck'] = True

@@ -217,7 +217,9 @@ class SharedLocker(object):
                 'TroleyReady':False,
                 "resetbutton":False,
                 "Estopresetrecquired":False,
-                "Zoneresetrecquired":False}),
+                "Zoneresetrecquired":False,
+                'ResetServo':False,
+                'ServoSupplied':False}),
             'mux':manager.dict({
                 'busy':False,
                 'ready':False,
@@ -253,7 +255,8 @@ class SharedLocker(object):
                 "warning":False,
                 'positionreached':False,
                 "homingattained":False,
-                "homepositionerror":False
+                "homepositionerror":False,
+                "resetting_after_redock":False
                 }),
             'troley':manager.dict({
                 'Alive':False,

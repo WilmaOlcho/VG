@@ -26,14 +26,14 @@ Byte2.5;THC right NC.XTIO[3].I6
 Byte2.6;
 Byte2.7;
 Byte 3;Module 4 [XTIO[4]]
-Byte3.0;KierunekWózka.XTIO[4].I1
+Byte3.0;
 Byte3.1;
 Byte3.2;RobotDeadman.XTIO[4].I3I4
 Byte3.3;-
-Byte3.4;
+Byte3.4;KierunekWózka.XTIO[4].I5
 Byte3.5;
 Byte3.6;
-Byte3.7;
+Byte3.7;LaserEmituje.XTIO[4].I8
 Byte 4;Module 1 [XTIO[1]]
 Byte4.0;DrzwiRygiel.XTIO[1].Q1
 Byte4.1;DrzwiReset.XTIO[1].Q2
@@ -62,10 +62,10 @@ Byte6.5;
 Byte6.6;
 Byte6.7;
 Byte 7;Module 4 [XTIO[4]]
-Byte7.0;WozekGotowy.XTIO[4].Q1
+Byte7.0;
 Byte7.1;
-Byte7.2;
-Byte7.3;
+Byte7.2;BladLampka.XTIO[4].Q3
+Byte7.3;WozekGotowy.XTIO[4].Q4
 Byte7.4;
 Byte7.5;
 Byte7.6;
@@ -88,3 +88,12 @@ Byte9.4;EDMErrorZaworPowGlowny
 Byte9.5;StrefaWewn_OK
 Byte9.6;TrybReczny_OK
 Byte9.7;OtwarcieDrzwiSygnalDotarl
+Byte 10;
+Byte10.0;
+Byte10.1;
+Byte10.2;
+Byte10.3;
+Byte10.4;
+Byte10.5;
+Byte10.6;
+Byte10.7;ServoSupplied
