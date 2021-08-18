@@ -235,10 +235,11 @@ class KDrawTCPInterface(socket.socket):
         '''
         Metoda obsługująca ramkę zwrotną RECIPE_CHANGE
         '''
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['recipechanging'] = False
         if len(data) == 2:
             with lockerinstance[0].lock:
                 savedrecipe = lockerinstance[0].scout['recipe']
-                lockerinstance[0].scout['recipechanging'] = False
             savedrecipe = self.__removefromstring(savedrecipe, '.dsg')
             #if data[1] == savedrecipe:
             with lockerinstance[0].lock:
@@ -319,13 +320,16 @@ class KDrawTCPInterface(socket.socket):
         '''
         Metoda obsługująca ramkę zwrotną MANUAL_ALIGN
         '''
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['photosshooting'] = False
         if len(data) == 2:
             with lockerinstance[0].lock:
+                print(data)
                 checkcode = int(data[0])
                 alignpage = int(data[1]) == lockerinstance[0].scout['ManualAlignPage']
                 if checkcode == 1 and alignpage:
                     lockerinstance[0].scout['ManualAlignCheck'] = True
-                lockerinstance[0].scout['ManualWeldStatus'] = checkcode
+                lockerinstance[0].scout['ManualAlignStatus'] = checkcode
                 lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualAlign fail:\n{}".format(data))
@@ -338,6 +342,8 @@ class KDrawTCPInterface(socket.socket):
         '''
         Metoda obsługująca ramkę zwrotną MANUAL_WELD
         '''
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['weldinginprogress'] = False
         if len(data) == 2:
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
@@ -521,6 +527,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę MANUAL_ALIGN
         '''
         with lockerinstance[0].lock:
+            lockerinstance[0].scout['photosshooting'] = True
             page = lockerinstance[0].scout['ManualAlignPage']
             lockerinstance[0].scout['ManualAlignCheck'] = False
             lockerinstance[0].scout['ManualAlignStatus'] = 0
@@ -532,6 +539,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę MANUAL_WELD
         '''
         with lockerinstance[0].lock:
+            lockerinstance[0].scout['weldinginprogress'] = True
             page = lockerinstance[0].scout['ManualWeldPage']
             lockerinstance[0].scout['ManualWeldCheck'] = False
             lockerinstance[0].scout['ManualWeldStatus'] = 0
@@ -549,9 +557,9 @@ class KDrawTCPInterface(socket.socket):
         self.add_to_queue(lockerinstance, message)
 
 class scoutwindowThread(Application):
+    scoutwindow = None
     def __init__(self, lockerinstance, *args, **kwargs):
         super().__init__(backend="uia")
-        self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
         self.controlloop(lockerinstance)
 
     def controlloop(self, lockerinstance):
@@ -560,19 +568,25 @@ class scoutwindowThread(Application):
                 self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
             except Exception as e:
                 ErrorEventWrite(lockerinstance, "SCOUTwindowThread raised exception:" + str(e))
-            with lockerinstance[0].lock:
-                recipe = lockerinstance[0].scout['recipe']
-                currentrecipe = lockerinstance[0].scout['currentrecipe']
-            if recipe != currentrecipe:
-                try:
-                    recpath = self.scoutwindow.child_window(title_re=".*dsg").window_text()
-                except:
-                    pass
-                else:
-                    if recpath:
-                        recipename = recpath.split("\\")[-1][:-4]
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].scout['currentrecipe'] = recipename
+            else:
+                with lockerinstance[0].lock:
+                    recipe = lockerinstance[0].scout['recipe']
+                    currentrecipe = lockerinstance[0].scout['currentrecipe']
+                if recipe != currentrecipe:
+                    try:
+                        self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
+                    except Exception as e:
+                        print("failed ",str(e))
+                    else:
+                        try:
+                            recpath = self.scoutwindow.child_window(title_re=".*dsg").window_text()
+                        except Exception as e:
+                            print("failed ",str(e))
+                        else:
+                            if recpath:
+                                recipename = recpath.split("\\")[-1][:-4]
+                                with lockerinstance[0].lock:
+                                    lockerinstance[0].scout['currentrecipe'] = recipename
             with lockerinstance[0].lock:
                 alive = not lockerinstance[0].events["closeApplication"]
             if not alive: break

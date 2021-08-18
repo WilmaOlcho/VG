@@ -100,6 +100,8 @@ class SharedLocker(object):
                 }),
                 'SetRecipe':False,
                 'recipechanging':False,
+                'photosshooting':False,
+                'weldinginprogress':False,
                 'TurnLaserOn':False,
                 'TurnLaserOff':False,
                 'GetVersion':False,

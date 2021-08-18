@@ -202,6 +202,7 @@ class RobotPlyty(Kawasaki):
         #        self.Lasernet.top.TabControl.select("Control")
         #        if self.Lasernet.top.Button8.window_text() == 'ON':
         self.klasernet.ExternalControlOff.click()
+        self.klasernet.AnalogControlOff.click()
 
 
     def Robotloop(self, lockerinstance):
@@ -234,14 +235,7 @@ class RobotPlyty(Kawasaki):
         else:
             with lockerinstance[0].lock:
                 lockerinstance[0].robot2['Status'] = currentstatus
-                #lockerinstance[0].robot2['Est_PLYTY'] = est_plyty
-                info = str(lockerinstance[0].robot2['Info'])
-                #est_vg = lockerinstance[0].robot2['Est_VG']
-            #if (info in self.addresses['info_values'].keys()) and (currentstatus in self.addresses['status_values'].keys()):         
-            #    nprtstr = "BETON: {}, PLYTY: {}".format(self.addresses['info_values'][info],self.addresses['status_values'][currentstatus])
-            #    if nprtstr != self.prtstr:
-            #        self.prtstr = nprtstr
-            #        ErrorEventWrite(lockerinstance, nprtstr)
+
 
     def InfoUpdate(self, lockerinstance):
         with lockerinstance[0].lock:
@@ -259,12 +253,10 @@ class RobotPlyty(Kawasaki):
             info = str(lockerinstance[0].robot2['Info'])
             #est_vg = lockerinstance[0].robot2['Est_VG']
             #est_plyty = lockerinstance[0].robot2['Est_PLYTY']
-        if self.addresses['info_values'][info] in ['busy']:
-            if not self.addresses['status_values'][status] in ['laser_required', 'welding']:
-                self.redirectlasertoVG(lockerinstance)
-        elif self.addresses['info_values'][info] in ['nop']:
-            if self.addresses['status_values'][status] in ['laser_required']:
-                self.redirectlasertoPLYTY(lockerinstance)
+        if self.addresses['info_values'][info] in ['busy'] and not self.addresses['status_values'][status] in ['welding']:
+            self.redirectlasertoVG(lockerinstance)
+        elif self.addresses['info_values'][info] in ['nop'] and self.addresses['status_values'][status] in ['laser_required']:
+            self.redirectlasertoPLYTY(lockerinstance)
 
 
     def redirectlasertoPLYTY(self, lockerinstance):
@@ -283,3 +275,4 @@ class RobotPlyty(Kawasaki):
             lockerinstance[0].robot2['laserlocked'] = False
             lockerinstance[0].lcon['locklaserloop'] = False
         self.ResumeKdraw()
+        self.klasernet.AnalogControlOn.click()

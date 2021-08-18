@@ -316,8 +316,13 @@ def Initialise(lockerinstance):
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
         if not ServoState(lockerinstance, "hominginprogress"):
             if ServoState(lockerinstance, 'homepositionisknown'):
-                with lockerinstance[0].lock:
-                    lockerinstance[0].program['stepnumber'] += 1
+                ServoSetState(lockerinstance,'run')
+                ServoSetState(lockerinstance,'run')
+                ServoSetValue(lockerinstance,'positionNumber', 1)
+                ServoSetState(lockerinstance,'step')
+                if int(ServoState(lockerinstance, 'readposition')) == 1:
+                    with lockerinstance[0].lock:
+                        lockerinstance[0].program['stepnumber'] += 1
             else:
                 if ((ServoState(lockerinstance, 'disabled')
                     or ServoState(lockerinstance, 'readytoswitchon')
@@ -413,6 +418,9 @@ def Program(lockerinstance):
     with open(programspath, 'r') as jsonfile:
         programs = json.load(jsonfile)
     program = list(filter(lambda x: x['Name'] == programname, programs['Programs']))[0]
+    if int(ServoState(lockerinstance,'readposition')) == 0:
+        with lockerinstance[0].lock:
+            progproxy['initialised'] = False
     if cycle == 0: #table is from 1
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = ['C0']
@@ -432,6 +440,8 @@ def Program(lockerinstance):
             progproxy['stepnumber']=0
             progproxy['programline'] = programline
             progproxy['cycleended'] = False
+            lockerinstance[0].scout['ManualAlignCheck'] = False
+            lockerinstance[0].scout['ManualWeldCheck'] = False
 
         
 

@@ -455,7 +455,7 @@ class Variables(dict):
 
 
     def misc(self):
-        self['safety']['OpenTheDoor'] |= self.internalEvents['stop'] and not self['ProgramActive']
+        #self['safety']['OpenTheDoor'] |= self.internalEvents['stop'] and not self['ProgramActive']
         lockerinstance = self.lockerinstance
         with self.lockerinstance[0].lock:
             self.alive = lockerinstance[0].console['Alive']

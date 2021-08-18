@@ -106,16 +106,17 @@ class programController(object):
             with lockerinstance[0].lock:
                 scode = "S" + str(re.search( r'\d+', func.__name__).group())
                 lockerinstance[0].shared['Statuscodes'] = [scode]
-            result = func(lockerinstance, *args, **kwargs)
+            result = func(self, lockerinstance, *args, **kwargs)
             if result:
                 print(scode,'returned', result)
                 def stepexceed(l=lockerinstance):
                     with l[0].lock:
                         l[0].program['stepcomplete'] = True
                         l[0].program['steplock'] = False
-                WDT(lockerinstance, errToRaise='stepfreeze', additionalFuncOnExceed = stepexceed, noerror = True, limitval = int(result), scale = 'ms')
-                with lockerinstance[0].lock:
-                    lockerinstance[0].program['steplock'] = True
+                def steploop(l = lockerinstance):
+                    with l[0].lock:
+                        l[0].program['steplock'] = True
+                WDT(lockerinstance, additionalFuncOnStart = steploop, additionalFuncOnLoop = steploop,errToRaise='stepfreeze', additionalFuncOnExceed = stepexceed, noerror = True, limitval = int(result), scale = 'ms')
             return result
         return internal
 
@@ -134,17 +135,21 @@ class programController(object):
 
     @step
     def step1(self, lockerinstance): #Scout change recipe
-        #if control.Robot2State(lockerinstance, "laserlocked"):
-        #    with lockerinstance[0].lock:
-        #        lockerinstance[0].shared['Statuscodes'] = ['S8.2']
-        #    return
+        if control.Robot2State(lockerinstance, "laserlocked"):
+            with lockerinstance[0].lock:
+                lockerinstance[0].shared['Statuscodes'] = ['S8.2']
+                if lockerinstance[0].robot2['Status'] == 2:
+                    return False
         if not control.SCOUTState(lockerinstance, 'recipechanging'):
             if (control.SCOUTState(lockerinstance, 'recipe')[:-4]!= control.SCOUTState(lockerinstance, 'currentrecipe')):
-                print(control.SCOUTState(lockerinstance, 'recipe')[:-4], control.SCOUTState(lockerinstance, 'currentrecipe'))
+                with lockerinstance[0].lock:
+                    lockerinstance[0].program['laserrequire'] = True
+                print('"',control.SCOUTState(lockerinstance, 'recipe')[:-4],'" [vs] "', control.SCOUTState(lockerinstance, 'currentrecipe'),'"')
                 control.SCOUTSetState(lockerinstance, 'SetRecipe')
             with lockerinstance[0].lock:
                 scoutrecipe = lockerinstance[0].scout['currentrecipe']
                 programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
+                print(programrecipe)
             if scoutrecipe == programrecipe[:-4]:
                 return True
         return False
@@ -175,7 +180,6 @@ class programController(object):
             programservopos = int(lockerinstance[0].program['programline'][control.SERVOPOS])
         stepinprogress = control.ServoState(lockerinstance, 'stepinprogress')
         readpos = int(control.ServoState(lockerinstance,'readposition'))
-        print(programservopos, readpos)
         if not stepinprogress:
             if readpos == programservopos:
                 return True
@@ -184,6 +188,7 @@ class programController(object):
                     control.RobotSetState(lockerinstance, 'homing')  
                 else:
                     control.ServoSetValue(lockerinstance, 'positionNumber', programservopos)
+                    print(programservopos, readpos)
                     control.ServoSetState(lockerinstance, 'run')
                     control.ServoSetState(lockerinstance, 'run')
                     control.ServoSetState(lockerinstance, 'step')
@@ -248,7 +253,7 @@ class programController(object):
         if control.Robot2State(lockerinstance, "laserlocked"):
             with lockerinstance[0].lock:
                 lockerinstance[0].shared['Statuscodes'] = ['S8.2']
-            return
+            return False
         if (not control.LaserState(lockerinstance, 'onpath') 
             or not control.LaserState(lockerinstance, 'LaserReady')):
             control.LaserSetState(lockerinstance, "acquire")
@@ -272,41 +277,48 @@ class programController(object):
             return True
         return False
 
+    #TODO Scout errorcatching
 
     @step
     def step10(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].scout['ManualAlignPage'] = lockerinstance[0].program['programline'][control.PAGE]
-        if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
-            and not control.SCOUTState(lockerinstance, "ManualAlignCheck")):
-            control.SCOUTSetState(lockerinstance, 'ManualAlign')
-        elif control.SCOUTState(lockerinstance, "ManualAlignStatus") == 1:
-            control.SetPiston(lockerinstance, "HeadCooling", hold=True)
-            control.SetPiston(lockerinstance, "CrossJet", hold=True)
-            return True
-        elif control.SCOUTState(lockerinstance, "ManualAlignStatus"):
-            print(control.SCOUTState(lockerinstance, "ManualAlignStatus"))
-            return True
+        if not control.SCOUTState(lockerinstance, "photosshooting"):
+            if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
+                and not control.SCOUTState(lockerinstance, "ManualAlignCheck")):
+                control.SCOUTSetState(lockerinstance, 'ManualAlign')
+            elif control.SCOUTState(lockerinstance, "ManualAlignStatus") == 1:
+                control.SetPiston(lockerinstance, "HeadCooling", hold=True)
+                control.SetPiston(lockerinstance, "CrossJet", hold=True)
+                return True
+            elif control.SCOUTState(lockerinstance, "ManualAlignStatus"):
+                print(control.SCOUTState(lockerinstance, "ManualAlignStatus"))
+                return True
         return False
 
+
+    #TODO Scout manualalign checking
 
     @step
     def step11(self, lockerinstance):
         with lockerinstance[0].lock:
             lockerinstance[0].scout['ManualWeldPage'] = lockerinstance[0].program['programline'][control.PAGE]
-        if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
-            and not control.SCOUTState(lockerinstance, 'ManualWeldCheck')):
-            control.SCOUTSetState(lockerinstance, 'ManualWeld')
-        elif control.SCOUTState(lockerinstance, 'ManualWeldStatus') == 1:
-            control.ResetPiston(lockerinstance, "HeadCooling")
-            control.ResetPiston(lockerinstance, "CrossJet")
-            control.ResetPiston(lockerinstance, "ShieldingGas") 
-            return True
-        elif control.SCOUTState(lockerinstance, 'ManualWeldStatus') != 1:
-            print(control.SCOUTState(lockerinstance, 'ManualWeldStatus'))
-            return True
+        if not control.SCOUTState(lockerinstance, "weldinginprogress"):
+            if (not control.EventState(lockerinstance, 'KDrawWaitingForMessage')
+                and not control.SCOUTState(lockerinstance, 'ManualWeldCheck')):
+                control.SCOUTSetState(lockerinstance, 'ManualWeld')
+            elif control.SCOUTState(lockerinstance, 'ManualWeldStatus') == 1:
+                control.ResetPiston(lockerinstance, "HeadCooling")
+                control.ResetPiston(lockerinstance, "CrossJet")
+                control.ResetPiston(lockerinstance, "ShieldingGas") 
+                return True
+            elif control.SCOUTState(lockerinstance, 'ManualWeldStatus') != 1:
+                print(control.SCOUTState(lockerinstance, 'ManualWeldStatus'))
+                return True
         return False
 
+
+    #TODO Scout manualweld cheching
 
     @step
     def step12(self, lockerinstance):
@@ -324,6 +336,7 @@ class programController(object):
         else:
             return True
         return False
+
 
 
     @step
