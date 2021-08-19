@@ -324,7 +324,6 @@ class KDrawTCPInterface(socket.socket):
             lockerinstance[0].scout['photosshooting'] = False
         if len(data) == 2:
             with lockerinstance[0].lock:
-                print(data)
                 checkcode = int(data[0])
                 alignpage = int(data[1]) == lockerinstance[0].scout['ManualAlignPage']
                 if checkcode == 1 and alignpage:
@@ -576,12 +575,12 @@ class scoutwindowThread(Application):
                     try:
                         self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
                     except Exception as e:
-                        print("failed ",str(e))
+                        pass
                     else:
                         try:
                             recpath = self.scoutwindow.child_window(title_re=".*dsg").window_text()
                         except Exception as e:
-                            print("failed ",str(e))
+                            pass
                         else:
                             if recpath:
                                 recipename = recpath.split("\\")[-1][:-4]
@@ -645,6 +644,15 @@ class SCOUT():
 
 
     def loop(self, lockerinstance):
+        def setyellow(lockerinstance = lockerinstance):
+            with lockerinstance[0].lock:
+                lockerinstance[0].GPIO['O19'] = True
+                lockerinstance[0].GPIO['somethingChanged'] = True
+        def resetyellow(lockerinstance = lockerinstance):
+            with lockerinstance[0].lock:
+                lockerinstance[0].GPIO['O19'] = False
+                lockerinstance[0].GPIO['somethingChanged'] = True
+
         while self.Alive:
             with lockerinstance[0].lock:
                 scoutlocked = lockerinstance[0].robot2['laserlocked']
@@ -692,6 +700,8 @@ class SCOUT():
             if malign: self.connection.ManualAlign(lockerinstance)
             if getaligninfo: self.connection.GetAlignInfo(lockerinstance)
             if laserctrl: self.connection.LaserCTRL(lockerinstance)
+            EventManager.AdaptEvent(lockerinstance, input = 'scout.weldinginprogress', edge='rising', callback = setyellow)
+            EventManager.AdaptEvent(lockerinstance, input = 'scout.weldinginprogress', edge='falling', callback = resetyellow)
             self.connection.GetStatus(lockerinstance)
             if not scoutlocked:
                 self.connection.retrievequeue(lockerinstance)

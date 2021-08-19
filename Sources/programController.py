@@ -146,12 +146,13 @@ class programController(object):
                     lockerinstance[0].program['laserrequire'] = True
                 print('"',control.SCOUTState(lockerinstance, 'recipe')[:-4],'" [vs] "', control.SCOUTState(lockerinstance, 'currentrecipe'),'"')
                 control.SCOUTSetState(lockerinstance, 'SetRecipe')
-            with lockerinstance[0].lock:
-                scoutrecipe = lockerinstance[0].scout['currentrecipe']
-                programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
-                print(programrecipe)
-            if scoutrecipe == programrecipe[:-4]:
-                return True
+        with lockerinstance[0].lock:
+            scoutrecipe = lockerinstance[0].scout['currentrecipe']
+            programrecipe = lockerinstance[0].program['programline'][control.RECIPE]
+        print(programrecipe)
+        if scoutrecipe == programrecipe[:-4]:
+
+            return True
         return False
 
 
@@ -189,8 +190,6 @@ class programController(object):
                 else:
                     control.ServoSetValue(lockerinstance, 'positionNumber', programservopos)
                     print(programservopos, readpos)
-                    control.ServoSetState(lockerinstance, 'run')
-                    control.ServoSetState(lockerinstance, 'run')
                     control.ServoSetState(lockerinstance, 'step')
         return False
 
