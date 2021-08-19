@@ -87,8 +87,13 @@ class Servo(ModbusSerialClient):
         try:
             status = self.read_holding_registers(int(self.addresses['status'][0],16),unit=self.unit)
             currenttable = self.read_holding_registers(int(self.addresses['currenttable'][0],16),unit=self.unit)
+            currentposition = self.read_holding_registers(0x2b2f,2,unit=self.unit)
+            if isinstance(status,ExceptionResponse): raise Exception(str(status))
+            if isinstance(currenttable,ExceptionResponse): raise Exception(str(currenttable))
+            if isinstance(currentposition,ExceptionResponse): raise Exception(str(currentposition))
             if isinstance(status,Exception): raise Exception(str(status))
             if isinstance(currenttable,Exception): raise Exception(str(currenttable))
+            if isinstance(currentposition,Exception): raise Exception(str(currentposition))
         except Exception as e:
             ErrorEventWrite(lockerinstance, 'Reading status from servo unit error: ' + str(e) )
         else:
@@ -98,8 +103,19 @@ class Servo(ModbusSerialClient):
                 registerstatus = self.checkcode(stbits,codes[register])
                 with lockerinstance[0].lock:
                     lockerinstance[0].servo[register] = registerstatus
+
+            #print(currenttable.registers[0])
+            pos = currenttable.registers[0]
+            if not pos:
+                _actual_pos = currentposition.registers[0]
+                if _actual_pos == 7856: pos = 3
+                elif _actual_pos == 24464: pos = 2
+                else: pos = 0
+            print(pos)
+            if pos:
+                lockerinstance[0].servo["homepositionisknown"] = True
             with lockerinstance[0].lock:
-                lockerinstance[0].servo['readposition'] = currenttable.registers[0]
+                lockerinstance[0].servo['readposition'] = pos
                     
         with lockerinstance[0].lock:
             if not lockerinstance[0].troley['docked']:
