@@ -112,7 +112,9 @@ class KDrawTCPInterface(socket.socket):
         def catch(obj = self, lockerinstance = lockerinstance): #Metoda wywoływana przy zakończeniu działania timera
             lockerinstance[0].scout['WaitingForData'] = False
             obj.decode_messsage(lockerinstance)
-        WDT(lockerinstance, additionalFuncOnExceed = catch, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", limitval = 60, scale = 's', eventToCatch = "KDrawMessageReceived")
+        def exceed(obj = self, lockerinstance = lockerinstance): #Metoda wywoływana przy zakończeniu działania timera
+            lockerinstance[0].scout['recipechanging'] = False
+        WDT(lockerinstance, additionalFuncOnExceed = exceed, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", limitval = 60, scale = 's', eventToCatch = "KDrawMessageReceived")
 
     def encode_message(self, lockerinstance, message):
         '''

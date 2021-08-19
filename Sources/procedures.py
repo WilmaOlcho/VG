@@ -316,20 +316,14 @@ def Initialise(lockerinstance):
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I2']
         if not ServoState(lockerinstance, "hominginprogress"):
             if ServoState(lockerinstance, 'homepositionisknown'):
-                if int(ServoState(lockerinstance, 'readposition')) == 1:
+                if int(ServoState(lockerinstance, 'readposition')):
                     with lockerinstance[0].lock:
                         lockerinstance[0].program['stepnumber'] += 1
                 else:
                     ServoSetValue(lockerinstance,'positionNumber', 1)
                     ServoSetState(lockerinstance,'step')
             else:
-                if ((ServoState(lockerinstance, 'disabled')
-                    or ServoState(lockerinstance, 'readytoswitchon')
-                    or ServoState(lockerinstance, 'switchon'))
-                    and not ServoState(lockerinstance, 'fault')):
-                    ServoSetState(lockerinstance, 'run')
-                else:
-                    ServoSetState(lockerinstance, 'homing')
+                ServoSetState(lockerinstance, 'homing')
     if step == 3:
         with lockerinstance[0].lock:
             lockerinstance[0].shared['Statuscodes'] = [symbol,'I3']
@@ -441,6 +435,9 @@ def Program(lockerinstance):
             progproxy['cycleended'] = False
             lockerinstance[0].scout['ManualAlignCheck'] = False
             lockerinstance[0].scout['ManualWeldCheck'] = False
+            lockerinstance[0].scout['recipechanging'] = False
+            lockerinstance[0].scout['photosshooting'] = False
+            lockerinstance[0].scout['weldinginprogress'] = False
 
         
 

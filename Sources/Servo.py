@@ -5,6 +5,8 @@ from Sources.TactWatchdog import TactWatchdog
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus.factory import ExceptionResponse
 
+import sys
+sys.setrecursionlimit(10000)
 from time import sleep
 
 
@@ -132,7 +134,7 @@ class Servo(ModbusSerialClient):
             ret = self.read_holding_registers(addr, 1 ,unit = self.unit)
             if isinstance(ret, Exception): raise Exception(str(ret))
         except Exception as e:
-            ErrorEventWrite(lockerinstance, "Servo currentmode returned exception: " + str(e) + str(ret))
+            ErrorEventWrite(lockerinstance, "Servo currentmode returned exception: " + str(e))
         else:
             return self.decode16bit2scomplement(ret.registers[0])
 
@@ -158,7 +160,7 @@ class Servo(ModbusSerialClient):
             ret = self.write_registers(addr, values = [self.Bits(value[::-1])],unit = self.unit)
             assert(not isinstance(ret, ExceptionResponse))
         except Exception as e:
-            ErrorEventWrite(lockerinstance, "Servo command returned exception: " + str(e) + str(ret))
+            ErrorEventWrite(lockerinstance, "Servo command returned exception: " + str(e))
         sleep(0.1)
 
 
@@ -174,9 +176,9 @@ class Servo(ModbusSerialClient):
         desiredmode = self.settings['modes']['homing'] & 0xff
         modeready = self.changemode(lockerinstance, desiredmode)
         if modeready == desiredmode:
-            self.run(lockerinstance)
-            self.run(lockerinstance)
-            self.run(lockerinstance)
+            for i in range(100):
+                self.run(lockerinstance)
+                if self.status(lockerinstance, "operationenabled") and self.status(lockerinstance, "positionreached"): break
             homingsettings = self.settings['homing']
             lsBspeed = homingsettings['lsBspeed']
             msBspeed = homingsettings['msBspeed']
@@ -220,7 +222,7 @@ class Servo(ModbusSerialClient):
     def changemode(self, lockerinstance, desiredmode):
         currentmode = self.currentmode(lockerinstance) & 0xff
         desiredmode &= 0xff
-        if currentmode != desiredmode:
+        if True:#currentmode != desiredmode:
             while True:
                 if any([self.status(lockerinstance, key) for key in ['disabled','fault','readytoswitchon']]) :
                     break
@@ -241,15 +243,15 @@ class Servo(ModbusSerialClient):
 
         """
         with lockerinstance[0].lock:
-            stepinprogress = lockerinstance[0].servo['stepinprogress']
+            if 'WDT: servo.positionreached' in lockerinstance[0].wdt:
+                return
             lockerinstance[0].servo['stepinprogress'] = True
-        if stepinprogress: return
         desiredmode = self.settings['modes']['pointtablepositioning'] & 0xff
         modeready = self.changemode(lockerinstance, desiredmode)
         if modeready == desiredmode:
-            self.run(lockerinstance)
-            self.run(lockerinstance)
-            self.run(lockerinstance)
+            for i in range(100):
+                self.run(lockerinstance)
+                if self.status(lockerinstance, "operationenabled") and self.status(lockerinstance, "positionreached"): break
             if self.status(lockerinstance, "operationenabled") and self.status(lockerinstance, "homepositionisknown"):
                 stepnb = int(self.status(lockerinstance, "positionNumber"))
                 print(stepnb)
