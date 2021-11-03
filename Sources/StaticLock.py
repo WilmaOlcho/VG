@@ -99,6 +99,9 @@ class SharedLocker(object):
                     'status':0
                 }),
                 'SetRecipe':False,
+                'recipechanging':False,
+                'photosshooting':False,
+                'weldinginprogress':False,
                 'TurnLaserOn':False,
                 'TurnLaserOff':False,
                 'GetVersion':False,
@@ -169,6 +172,7 @@ class SharedLocker(object):
                 'requestlconresettimer':False,
                 'OutputsChangedByRobot':'',
                 'servo.homingattained':False,
+                '_':False,
                 'servo.positionreached':False,}),
             'pistons':manager.dict({
                 'Alive':False,
@@ -215,7 +219,9 @@ class SharedLocker(object):
                 'TroleyReady':False,
                 "resetbutton":False,
                 "Estopresetrecquired":False,
-                "Zoneresetrecquired":False}),
+                "Zoneresetrecquired":False,
+                'ResetServo':False,
+                'ServoSupplied':False}),
             'mux':manager.dict({
                 'busy':False,
                 'ready':False,
@@ -251,7 +257,8 @@ class SharedLocker(object):
                 "warning":False,
                 'positionreached':False,
                 "homingattained":False,
-                "homepositionerror":False
+                "homepositionerror":False,
+                "resetting_after_redock":False
                 }),
             'troley':manager.dict({
                 'Alive':False,
@@ -351,7 +358,9 @@ class SharedLocker(object):
                 'cycleended':False,
                 'handmodelaserrequire':False,
                 'laserrequire':False,
-                "holdtofillwithgas":False
+                "holdtofillwithgas":False,
+                "steplock":False
+                
                 })
                 })
         self.scout = self.shared['SCOUT']

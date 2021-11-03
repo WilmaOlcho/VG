@@ -50,8 +50,9 @@ class TactWatchdog(object):
         self.setpoint()
         limitval *= self.scaleMultiplier[scale]
         self.active = True
+        retlock = False
         while True:
-            additionalFuncOnLoop()
+            ret = additionalFuncOnLoop()
             with lockerinstance[0].lock:
                 lockerinstance[0].shared['TactWDT'] = True
                 if eventToCatch[0] == '-':
@@ -66,11 +67,18 @@ class TactWatchdog(object):
                         lockerinstance[0].events[eventToCatch] = False
                 additionalFuncOnCatch()
                 break
-            if self.elapsed() >= limitval:
-                if not noerror: ErrorEventWrite(lockerinstance, errstring = errToRaise, errorlevel = errorlevel)
-                additionalFuncOnExceed()
-                self.Destruct()
-                break
+            if ret != 'scoutlocked':
+                if retlock:
+                    retlock = False
+                    self.setpoint()
+                if self.elapsed() >= limitval:
+                    if not noerror: ErrorEventWrite(lockerinstance, errstring = errToRaise, errorlevel = errorlevel)
+                    additionalFuncOnExceed()
+                    self.Destruct()
+                    break
+            elif not retlock:
+                retlock = True
+                limitval = limitval - self.elapsed()
             with lockerinstance[0].lock:
                 Alive = thr.currentThread().name in lockerinstance[0].wdt and not lockerinstance[0].events['closeApplication']
             if self.destruct or not Alive:
@@ -84,7 +92,7 @@ class TactWatchdog(object):
     def WDT(cli,
             lockerinstance,
             limitval = 100,
-            errToRaise = 'limit',
+            errToRaise = '',
             caption = 'Event',
             scale = 'ms',
             errorlevel = 255,
@@ -96,10 +104,17 @@ class TactWatchdog(object):
             noerror = False,
             *args, **kwargs):
         if 'timeout' in kwargs.keys(): limitval = kwargs.pop('timeout')
-
-        lockerinstance[0].lock.acquire()
-        timerActive = 'WDT: '+errToRaise in lockerinstance[0].wdt
-        lockerinstance[0].lock.release()
+        #if not errToRaise:
+        #    with lockerinstance[0].lock:
+        #        i = 0
+        #        while True:
+        #            if not "WDT: "+str(i) in lockerinstance[0].wdt:
+        #                break
+        #            else:
+        #                i +=1
+        #    errToRaise = str(i)
+        with lockerinstance[0].lock:
+            timerActive = 'WDT: '+errToRaise in lockerinstance[0].wdt
         if not timerActive:
             timer = thr.Thread(target=cli().WDTloop, args = (lockerinstance,
                                                     limitval,

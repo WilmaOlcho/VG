@@ -34,9 +34,6 @@ class Frame(GeneralWidget):
         self.OverallNotebook.grid(**self.settings['Notebook']['grid'])
 
     def update(self):
-        start = self.root.variables.internalEvents['start']
-        stop = self.root.variables.internalEvents['stop']
-        ###
         TroleyPrompt = self.root.variables['safety']['ProgramTroleyRelease']
         if TroleyPrompt:
             def click(*args, **kwargs):
@@ -46,8 +43,8 @@ class Frame(GeneralWidget):
 
         super().update()
         self.ackbutton.config(bg = 'red' if self.root.variables.internalEvents['error'] else 'yellow')
-        if start: self.root.variables.internalEvents['start'] = False
-        if stop: self.root.variables.internalEvents['stop'] = False
+        #if start: self.root.variables.internalEvents['start'] = False
+        #if stop: self.root.variables.internalEvents['stop'] = False
 
 
     def ack(self):
@@ -60,6 +57,10 @@ class Window(dict):
         root = self.window
         with open(settingsfile) as jsonfile:
             widgetsettings = json.load(jsonfile)
+            """
+            W context manager zmienne lokalne nie umierają po zakończeniu gniazdowania,
+            tak samo jak w try,except
+            """
         root.__setattr__('variables', Variables(lockerinstance, **widgetsettings))
         root.__setattr__('settings', root.variables['widgetsettings'])
         root.variables.jsonpath = programs
@@ -76,6 +77,7 @@ class Window(dict):
         self.frame.pack()
         self.Alive = True
         self.loop(lockerinstance)
+
 
     def loop(self, lockerinstance):
         while self.Alive:

@@ -1,7 +1,10 @@
 from multiprocessing import Process, current_process, freeze_support, set_start_method
 from pathlib import Path
-import os
+import os, psutil, wmi, re
 
+
+
+#Pliki programu, moduły
 from Sources.StaticLock import SharedLocker
 from Sources.analogmultiplexer import MyMultiplexer, MyLaserControl
 from Sources.Kawasaki import RobotVG
@@ -16,32 +19,38 @@ from Sources.scout import SCOUT
 from Sources.programController import programController as Program
 
 
+
+
 import logging
 _logger = logging.getLogger(__name__)
 
 
 class ApplicationManager(object):
     def __init__(self, *args, **kwargs):
+        """
+        Application manager initialise StaticLock
+
+        """
         super().__init__(*args, **kwargs)
         __file__ = ''
         
         path = str(Path(__file__).parent.absolute())+'\\'
-        self.locker = SharedLocker(mainpath = path)
-        self.lock = {0:self.locker}
+        lockerinstance = {}
+        lockerinstance[0] = SharedLocker(mainpath = path)
 
         self.processes = []
-        with self.locker.lock:
-            for processclass in self.locker.shared['main'].keys():
-                if self.locker.shared['main'][processclass]:
-                    self.processes.append(Process(name = processclass, target = eval(processclass), args=(self.lock, *self.locker.shared['paramfiles'][processclass])) )
+        with lockerinstance[0].lock:
+            for processclass in lockerinstance[0].shared['main'].keys():
+                if lockerinstance[0].shared['main'][processclass]:
+                    self.processes.append(Process(name = processclass, target = eval(processclass), args=(lockerinstance, *lockerinstance[0].shared['paramfiles'][processclass])) )
 
         for process in self.processes:
             process.start()
         for process in self.processes:
-            with self.locker.lock:
-                self.locker.shared['PID'][process.name] = process.pid
+            with lockerinstance[0].lock:
+                lockerinstance[0].shared['PID'][process.name] = process.pid
             print(process.name, process.pid)
-        self.EventLoop(self.lock, *args, **kwargs)
+        self.EventLoop(lockerinstance, *args, **kwargs)
 
 
     def EventLoop(self, lockerinstance, *args, **kwargs):
@@ -49,12 +58,12 @@ class ApplicationManager(object):
         psb = []
         sstr = ''
         while True:
-            with self.lock[0].lock:
-                self.ApplicationAlive = not self.lock[0].events['closeApplication']
+            with lockerinstance[0].lock:
+                self.ApplicationAlive = not lockerinstance[0].events['closeApplication']
                 if not self.ApplicationAlive:
-                    for key in self.lock[0].shared.keys():
-                        if hasattr(self.lock[0].shared[key],'__dict__'):
-                            cdict = self.lock[0].shared[key]
+                    for key in lockerinstance[0].shared.keys():
+                        if hasattr(lockerinstance[0].shared[key],'__dict__'):
+                            cdict = lockerinstance[0].shared[key]
                             if 'Alive' in cdict.keys():
                                 cdict['Alive'] = False
             if not self.ApplicationAlive:
@@ -81,14 +90,13 @@ class ApplicationManager(object):
         restoring = []
         for process in [*self.processes,*restoring]:
             if not process.is_alive():
-                with self.lock[0].lock:
-                   restore = not self.lock[0].events['closeApplication']
+                with lockerinstance[0].lock:
+                   restore = not lockerinstance[0].events['closeApplication']
                 if restore:
                     if hasattr(process,"name"):
                         restoring.append(process.name)
                         self.processes.remove(process)
                         if process.name in ['scout','RobotPlyty']:
-                            import psutil, wmi, re
                             applist = wmi.WMI()
                             def IsProcessValid(process, KnownProcessValue='K-Draw', VariableName='Name'):
                                 if hasattr(process, 'Properties_'):
@@ -96,15 +104,13 @@ class ApplicationManager(object):
                             InstanceWeLookingFor = list(filter(IsProcessValid,self.processes))
                             if InstanceWeLookingFor:
                                 psutil.Process(InstanceWeLookingFor[0].ProcessId).terminate()
-
-
-        for processclass in self.locker.shared['main'].keys():
+        for processclass in lockerinstance[0].shared['main'].keys():
             if processclass in restoring:
-                process = Process(name = processclass, target = eval(processclass), args=(self.lock, *self.locker.shared['paramfiles'][processclass]))
+                process = Process(name = processclass, target = eval(processclass), args=(lockerinstance, *lockerinstance[0].shared['paramfiles'][processclass]))
                 self.processes.append(process)
                 process.start()
                 with lockerinstance[0].lock:
-                    self.lock[0].shared['PID'][process.name] = process.pid
+                    lockerinstance[0].shared['PID'][process.name] = process.pid
                 print(process.name, 'restored    PID:',process.pid)
         with lockerinstance[0].lock:
             if lockerinstance[0].events['ack']:
@@ -116,7 +122,7 @@ class ApplicationManager(object):
                 lockerinstance[0].events['ack'] = False
                 
 
-
+#punkt początkowy programu
 if __name__=="__main__":
     freeze_support()
     main = ApplicationManager()

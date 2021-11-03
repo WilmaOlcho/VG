@@ -1,9 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
-from pathlib import Path
 import json
 from .Widgets import VariablesFrames, StatusIndicators, GeneralWidget
-from .Widgets import LabelFrame, Window, Button, getroot, KEYWORDS
+from .Widgets import LabelFrame, KEYWORDS, Button, Entry
 from .Widgets import Frame, DeleteProgramWindow, NewProgramWindow
 from functools import reduce
 
@@ -25,6 +24,10 @@ class ThirdColumn(GeneralWidget):
                 eval(key)(self)
         for widget in self.winfo_children():
             widget.pack(side = tk.BOTTOM, fill ='x', anchor = tk.S)
+        for widget in self.winfo_children():
+            widget.bind('<Button-1>',lambda event:event.widget.focus_set())
+
+
 
 class ProcessVariables(LabelFrame):
     def __init__(self, master = None, **kwargs):
@@ -128,9 +131,9 @@ class ProgramSelect(LabelFrame):
         if self.root.variables.internalEvents['ProgramMenuRefresh']:
             self.createmenu()
             self.root.variables.internalEvents['ProgramMenuRefresh'] = False
-        if self.root.variables.internalEvents['start']:
+        if self.root.variables['ProgramActive']:
             self.menubutton.config(state = 'disabled')
-        if self.root.variables.internalEvents['stop']:
+        if self.root.variables['ProgramActive']:
             self.menubutton.config(state = 'normal')
         super().update()
 
@@ -143,12 +146,12 @@ class Positions(LabelFrame):
         self.refreshlock = True
         self.widgets = [
             ttk.Label(master = self, text = self.settings['from']),
-            ttk.Entry(master = self, text = ''),
+            Entry(master = self, text = '', key = "programposstart"),
             ttk.Label(master = self, text = self.settings['to']),
-            ttk.Entry(master = self, text = '')
+            Entry(master = self, text = '', key = "programposend")
         ]
         for widget in self.widgets:
-            if isinstance(widget, tk.Entry):
+            if isinstance(widget, Entry):
                 widget.config(width = 5)
             widget.pack(side = tk.LEFT, anchor = tk.N)
         self.pack()
@@ -184,24 +187,26 @@ class Positions(LabelFrame):
                 self.program = program
         anychange = False
         for widget in self.widgets:
-            if widget != self.focus_get():
-                if hasattr(widget, 'flag'):
-                    if widget.flag:
-                        widget.flag = False
-                        self.setvalue(widget)
-                if self.root.variables.internalEvents['RefreshStartEnd']:
-                    if 'entry' in widget._name:
-                        expected = str(self.root.variables.programposend if '2' in widget._name else self.root.variables.programposstart)
-                        if widget.get() != expected:
-                            anychange = True
-                            widget.delete(0,tk.END)
-                            widget.insert(0,expected)
-            else: 
-                widget.__setattr__('flag',True)
-                self.root.variables.internalEvents['RefreshStartEnd'] = True
-        if not anychange: self.root.variables.internalEvents['RefreshStartEnd'] = False
-        if self.root.variables.internalEvents['start']:
+            widget.update()
+            
+        #    if widget != self.focus_get():
+        #        if hasattr(widget, 'flag'):
+        #            if widget.flag:
+        #                widget.flag = False
+        #                self.setvalue(widget)
+        #        if self.root.variables.internalEvents['RefreshStartEnd']:
+        #            if 'entry' in widget._name:
+        #                expected = str(self.root.variables.programposend if '2' in widget._name else self.root.variables.programposstart)
+        #                if widget.get() != expected:
+        ##                    anychange = True
+        #                    widget.delete(0,tk.END)
+        #                    widget.insert(0,expected)
+        #    else: 
+        #        widget.__setattr__('flag',True)
+        #        self.root.variables.internalEvents['RefreshStartEnd'] = True
+        #if not anychange: self.root.variables.internalEvents['RefreshStartEnd'] = False
+        if self.root.variables['ProgramActive']:
             for widget in self.widgets: widget.config(state = 'disabled')
-        if self.root.variables.internalEvents['stop']:
+        else:
             for widget in self.widgets: widget.config(state = 'normal')
         super().update()

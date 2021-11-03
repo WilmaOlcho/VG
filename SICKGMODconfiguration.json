@@ -48,12 +48,14 @@
         "TrybReczny_OK":"DeadMan",
         "Reset.XTIO[2].I5":"resetbutton",
         "E-StopWymagaResetu":"Estopresetrecquired",
-        "StrefaWewnWymagaResetu":"Zoneresetrecquired"
+        "StrefaWewnWymagaResetu":"Zoneresetrecquired",
+        "ServoSupplied":"ServoSupplied"
     },
     "outputbinding":{
         "sourcemasterkey":"safety",
         "destinymasterkey":"SICKGMOD0",
         "OpenTheDoor":"OtworzDrzwi",
-        "TroleyReady":"WozekGotowy"
+        "TroleyReady":"WozekGotowy",
+        "ResetServo":"ResetServo"
     }    
 }

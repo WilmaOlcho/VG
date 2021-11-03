@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from .Widgets.ScrolledTable import ScrolledWidget, PosTable
-from .Widgets import getroot, GeneralWidget, NewProgramWindow, DeleteProgramWindow
+from .Widgets import GeneralWidget, NewProgramWindow, DeleteProgramWindow
 import json
 
 class TableScreen(GeneralWidget):

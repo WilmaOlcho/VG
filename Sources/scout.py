@@ -103,14 +103,18 @@ class KDrawTCPInterface(socket.socket):
                 data = b''
             finally:
                 with lockerinstance[0].lock:
+                    scoutlocked = lockerinstance[0].robot2['laserlocked']
                     lockerinstance[0].scout['WaitingForData'] = True
                     lockerinstance[0].scout['connectionbuffer'] += data
                     if b'\r\n' in lockerinstance[0].scout['connectionbuffer']:
                         lockerinstance[0].events['KDrawMessageReceived'] = True #Utworzenie zdarzenia przerywającego odbiór danych w przypadku ich kompletności
+                return "scoutlocked" if scoutlocked else None
         def catch(obj = self, lockerinstance = lockerinstance): #Metoda wywoływana przy zakończeniu działania timera
             lockerinstance[0].scout['WaitingForData'] = False
             obj.decode_messsage(lockerinstance)
-        WDT(lockerinstance, additionalFuncOnExceed = catch, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", limitval = 60, scale = 's', eventToCatch = "KDrawMessageReceived")
+        def exceed(obj = self, lockerinstance = lockerinstance): #Metoda wywoływana przy zakończeniu działania timera
+            lockerinstance[0].scout['recipechanging'] = False
+        WDT(lockerinstance, additionalFuncOnExceed = exceed, additionalFuncOnCatch = catch, additionalFuncOnLoop = loop, additionalFuncOnStart = start ,errToRaise = "KDrawTCPInterface recv() timeout error\n", limitval = 60, scale = 's', eventToCatch = "KDrawMessageReceived")
 
     def encode_message(self, lockerinstance, message):
         '''
@@ -233,16 +237,18 @@ class KDrawTCPInterface(socket.socket):
         '''
         Metoda obsługująca ramkę zwrotną RECIPE_CHANGE
         '''
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['recipechanging'] = False
         if len(data) == 2:
             with lockerinstance[0].lock:
                 savedrecipe = lockerinstance[0].scout['recipe']
             savedrecipe = self.__removefromstring(savedrecipe, '.dsg')
-            if data[1] == savedrecipe:
-                with lockerinstance[0].lock:
-                    lockerinstance[0].scout['MessageAck'] = True
-                    lockerinstance[0].scout['Recipechangedsuccesfully'] = True
-            else:
-                ErrorEventWrite(lockerinstance, "SCOUT returned wrong Recipe Change ack message:\n{}".format(data))
+            #if data[1] == savedrecipe:
+            with lockerinstance[0].lock:
+                lockerinstance[0].scout['MessageAck'] = True
+                lockerinstance[0].scout['Recipechangedsuccesfully'] = True
+            #else:
+            #    ErrorEventWrite(lockerinstance, "SCOUT returned wrong Recipe Change ack message:\n{} != {}".format(data, savedrecipe))
         else:
             ErrorEventWrite(lockerinstance, "SCOUT returned incomplete Recipe Change ack message:\n{}".format(data))
 
@@ -316,13 +322,15 @@ class KDrawTCPInterface(socket.socket):
         '''
         Metoda obsługująca ramkę zwrotną MANUAL_ALIGN
         '''
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['photosshooting'] = False
         if len(data) == 2:
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
                 alignpage = int(data[1]) == lockerinstance[0].scout['ManualAlignPage']
                 if checkcode == 1 and alignpage:
                     lockerinstance[0].scout['ManualAlignCheck'] = True
-                lockerinstance[0].scout['ManualWeldStatus'] = checkcode
+                lockerinstance[0].scout['ManualAlignStatus'] = checkcode
                 lockerinstance[0].scout['MessageAck'] = True
             if not checkcode:
                 ErrorEventWrite(lockerinstance, "SCOUT returned ManualAlign fail:\n{}".format(data))
@@ -335,6 +343,8 @@ class KDrawTCPInterface(socket.socket):
         '''
         Metoda obsługująca ramkę zwrotną MANUAL_WELD
         '''
+        with lockerinstance[0].lock:
+            lockerinstance[0].scout['weldinginprogress'] = False
         if len(data) == 2:
             with lockerinstance[0].lock:
                 checkcode = int(data[0])
@@ -361,9 +371,13 @@ class KDrawTCPInterface(socket.socket):
                         axy = data[3:]
                         data = data[:3]
                         for i in range(3):
-                            integer = int(axy[i])
-                            afterdot = axy[i] - integer
-                            data.expand([integer, afterdot])
+                            if '.' in axy[i]:
+                                split = axy[i].split('.')
+                                integer = int(split[0])
+                                afterdot = int(split[1])
+                                data.expand([integer, afterdot])
+                            else:
+                                data.expand([0,0])
                     for i, value in enumerate(['0','1','2','A','dotA','X','dotX','Y','dotY']):
                         lockerinstance[0].scout['AlignInfo'][value] = int(data[i])  
                     lockerinstance[0].scout['MessageAck'] = True
@@ -481,6 +495,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę RECIPE_CHANGE
         '''
         with lockerinstance[0].lock:
+            lockerinstance[0].scout['recipechanging'] = True
             currenttime = time.time()
             lasttime = lockerinstance[0].scout['times']['setrecipe']
             if currenttime - lasttime < lockerinstance[0].scout['times']['limitsetrecipe']:
@@ -489,12 +504,12 @@ class KDrawTCPInterface(socket.socket):
                 recipe = lockerinstance[0].scout['recipe']
             else:
                 lockerinstance[0].scout['recipe'] = recipe
-            recipe
         recipe = self.__removefromstring(recipe, '.dsg')
         with lockerinstance[0].lock:
             lockerinstance[0].scout['lastrecipe'] = recipe
         message = self.encode_message(lockerinstance, ['RECIPE_CHANGE',recipe])
         self.add_to_queue(lockerinstance, message)
+
 
     def SetWobble(self, lockerinstance):
         '''
@@ -513,6 +528,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę MANUAL_ALIGN
         '''
         with lockerinstance[0].lock:
+            lockerinstance[0].scout['photosshooting'] = True
             page = lockerinstance[0].scout['ManualAlignPage']
             lockerinstance[0].scout['ManualAlignCheck'] = False
             lockerinstance[0].scout['ManualAlignStatus'] = 0
@@ -524,6 +540,7 @@ class KDrawTCPInterface(socket.socket):
         Metoda kodująca ramkę MANUAL_WELD
         '''
         with lockerinstance[0].lock:
+            lockerinstance[0].scout['weldinginprogress'] = True
             page = lockerinstance[0].scout['ManualWeldPage']
             lockerinstance[0].scout['ManualWeldCheck'] = False
             lockerinstance[0].scout['ManualWeldStatus'] = 0
@@ -541,9 +558,9 @@ class KDrawTCPInterface(socket.socket):
         self.add_to_queue(lockerinstance, message)
 
 class scoutwindowThread(Application):
+    scoutwindow = None
     def __init__(self, lockerinstance, *args, **kwargs):
         super().__init__(backend="uia")
-        self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
         self.controlloop(lockerinstance)
 
     def controlloop(self, lockerinstance):
@@ -552,19 +569,25 @@ class scoutwindowThread(Application):
                 self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
             except Exception as e:
                 ErrorEventWrite(lockerinstance, "SCOUTwindowThread raised exception:" + str(e))
-            with lockerinstance[0].lock:
-                recipe = lockerinstance[0].scout['recipe']
-                currentrecipe = lockerinstance[0].scout['currentrecipe']
-            if recipe != currentrecipe:
-                try:
-                    recpath = self.scoutwindow.child_window(title_re=".*dsg").window_text()
-                except:
-                    pass
-                else:
-                    if recpath:
-                        recipename = recpath.split("\\")[-1][:-4]
-                        with lockerinstance[0].lock:
-                            lockerinstance[0].scout['currentrecipe'] = recipename
+            else:
+                with lockerinstance[0].lock:
+                    recipe = lockerinstance[0].scout['recipe']
+                    currentrecipe = lockerinstance[0].scout['currentrecipe']
+                if recipe != currentrecipe:
+                    try:
+                        self.scoutwindow = self.connect(title_re=".*K-Draw V.*").window(title_re=".*K-Draw.*", visible_only=False)
+                    except Exception as e:
+                        pass
+                    else:
+                        try:
+                            recpath = self.scoutwindow.child_window(title_re=".*dsg").window_text()
+                        except Exception as e:
+                            pass
+                        else:
+                            if recpath:
+                                recipename = recpath.split("\\")[-1][:-4]
+                                with lockerinstance[0].lock:
+                                    lockerinstance[0].scout['currentrecipe'] = recipename
             with lockerinstance[0].lock:
                 alive = not lockerinstance[0].events["closeApplication"]
             if not alive: break
@@ -623,8 +646,18 @@ class SCOUT():
 
 
     def loop(self, lockerinstance):
+        def setyellow(lockerinstance = lockerinstance):
+            with lockerinstance[0].lock:
+                lockerinstance[0].GPIO['O19'] = True
+                lockerinstance[0].GPIO['somethingChanged'] = True
+        def resetyellow(lockerinstance = lockerinstance):
+            with lockerinstance[0].lock:
+                lockerinstance[0].GPIO['O19'] = False
+                lockerinstance[0].GPIO['somethingChanged'] = True
+
         while self.Alive:
             with lockerinstance[0].lock:
+                scoutlocked = lockerinstance[0].robot2['laserlocked']
                 self.Alive = lockerinstance[0].scout['Alive'] and not lockerinstance[0].events['closeApplication']
                 if not self.Alive: break
                 lastrecv = lockerinstance[0].scout['LastMessageType']
@@ -669,5 +702,8 @@ class SCOUT():
             if malign: self.connection.ManualAlign(lockerinstance)
             if getaligninfo: self.connection.GetAlignInfo(lockerinstance)
             if laserctrl: self.connection.LaserCTRL(lockerinstance)
+            EventManager.AdaptEvent(lockerinstance, input = 'scout.weldinginprogress', edge='rising', callback = setyellow)
+            EventManager.AdaptEvent(lockerinstance, input = 'scout.weldinginprogress', edge='falling', callback = resetyellow)
             self.connection.GetStatus(lockerinstance)
-            self.connection.retrievequeue(lockerinstance)
+            if not scoutlocked:
+                self.connection.retrievequeue(lockerinstance)

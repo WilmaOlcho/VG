@@ -225,23 +225,6 @@
                                     "error":"red"
                                 }
                             },
-                            "faultreactionactive":{
-                                "Label":"Reakcja na b\u0142\u0105d",
-                                "width":40,
-                                "height":40,
-                                "frame":{
-                                    "relief":"ridge",
-                                    "borderwidth":2
-                                },
-                                "caption":{
-                                    "width":19
-                                },
-                                "Color":{
-                                    "normal":"black",
-                                    "active":"red",
-                                    "error":"red"
-                                }
-                            },
                             "fault":{
                                 "Label":"b\u0142\u0105d",
                                 "width":40,
@@ -261,23 +244,6 @@
                             },
                             "warning":{
                                 "Label":"Ostrzezenie",
-                                "width":40,
-                                "height":40,
-                                "frame":{
-                                    "relief":"ridge",
-                                    "borderwidth":2
-                                },
-                                "caption":{
-                                    "width":19
-                                },
-                                "Color":{
-                                    "normal":"black",
-                                    "active":"yellow",
-                                    "error":"yellow"
-                                }
-                            },
-                            "homingattained":{
-                                "Label":"homingattained",
                                 "width":40,
                                 "height":40,
                                 "frame":{
@@ -561,23 +527,6 @@
                         },
                         "DoorLocked":{
                             "Label":"Drzwi zaryglowane",
-                            "width":40,
-                            "height":40,
-                            "frame":{
-                                "relief":"ridge",
-                                "borderwidth":2
-                            },
-                            "caption":{
-                                "width":25
-                            },
-                            "Color":{
-                                "normal":"black",
-                                "active":"green",
-                                "error":"red"
-                            }
-                        },
-                        "RobotEDM":{
-                            "Label":"Robot external Device monitoring",
                             "width":40,
                             "height":40,
                             "frame":{
@@ -1365,7 +1314,6 @@
                                 "action":"start",
                                 "result":"self.root.variables['ProgramActive'] \u003D True\nself.root.variables.internalEvents['start'] \u003D True",
                                 "condition":"self.root.variables['ProgramActive']",
-                                "anticondition":"self.root.variables['ProgramActive']",
                                 "active":{
                                     "bg":"lightgreen"
                                 },
@@ -1375,7 +1323,6 @@
                             },
                             "stop":{
                                 "action":"stop",
-                                "anticondition":"not self.root.variables['ProgramActive']",
                                 "result":"self.root.variables['ProgramActive'] \u003D False\nself.root.variables.internalEvents['stop'] \u003D True"
                             }                   
                         }
@@ -1577,7 +1524,7 @@
         "I1":"Kontrola robota",
         "I1.2":"Robot wymaga uruchomienia",
         "I2":"Kontrola serwo",
-        "I3":"Kontrola  ",
+        "I3":"Kontrola  Generaora wiązki laserowej",
         "I4":"Kontrola g\u0142owicy laserowej",
         "I5":"Kontrola filtrowentylatora",
         "I6":"Inicjalizacja zako\u0144czona powodzeniem",
